@@ -1,4 +1,4 @@
-package titan.ccp.kiekerbridge.test;
+package titan.ccp.aggregation;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;

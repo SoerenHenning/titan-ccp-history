@@ -1,4 +1,4 @@
-package titan.ccp.kiekerbridge.test;
+package titan.ccp.model;
 
 import java.nio.BufferOverflowException;
 
