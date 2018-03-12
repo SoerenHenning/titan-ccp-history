@@ -11,10 +11,15 @@ import titan.ccp.model.PowerConsumptionRecord;
 
 public class Scratch {
 
+	// Create SensorRegistry by querying it from corresponding server
+	private final SensorRegistry sensorRegistry = SensorRegistry.load();
+	
 	public void process(PowerConsumptionRecord record) {
 		
+		
+		byte[] identifier2 = record.getIdentifier();
 		Identifier identifier = null; // Obtain from record
-		MachineSensor sensor = getSensorForIdentifier(identifier);
+		MachineSensor sensor = this.sensorRegistry.getSensorForIdentifier(identifier);
 		
 		// Update last sensor value
 		sensor.setLastValue(0); //TODO
@@ -31,9 +36,22 @@ public class Scratch {
 		
 	}
 	
-	public MachineSensor getSensorForIdentifier(Identifier identifier) {
-		//TODO 
-		return null;
+	
+	public static class SensorRegistry {
+		
+		//TODO HashMap for efficient access to machine sensors
+		//TODO maybe access to root (but perhaps better not)
+		
+		public MachineSensor getSensorForIdentifier(Identifier identifier) {
+			//TODO 
+			return null;
+		}
+	
+		public static SensorRegistry load() {
+			//TODO load and parse from json etc.
+			return new SensorRegistry();
+		}
+		
 	}
 	
 	public static interface Sensor {
