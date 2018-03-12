@@ -13,58 +13,65 @@ public class Scratch {
 
 	public void process(PowerConsumptionRecord record) {
 		
-		Identifier identifier = null; // Optain from record
-		
+		Identifier identifier = null; // Obtain from record
 		MachineSensor sensor = getSensorForIdentifier(identifier);
 		
 		// Update last sensor value
+		sensor.setLastValue(0); //TODO
 		
-		List<SensorClass> affectedSensors = getParents(sensor); // Stored in bottom up fashion
+		// Get all affected sensor classes
+		List<SensorClass> affectedSensors = sensor.getParents(); // Stored in bottom up fashion
 		
-		for (Sensor affectedSensor : affectedSensors) {
-			// Recalculate affected Sensor
+		for (SensorClass affectedSensor : affectedSensors) {
+			// Recalculate affected sensor class
+			affectedSensor.getStatistics();
+
+			//TODO update
 		}
 		
 	}
-	
-	// Member of MachineSensor
-	public List<SensorClass> getParents(MachineSensor sensor) {
-		Optional<SensorClass> parent = sensor.getParent();
-		List<SensorClass> parents = new ArrayList<>();
-		while (parent.isPresent()) {
-			parents.add(parent.get());
-			parent = parent.get().getParent();
-		}
-		return parents;
-	}
-	
 	
 	public MachineSensor getSensorForIdentifier(Identifier identifier) {
-		
-		
+		//TODO 
 		return null;
 	}
 	
 	public static interface Sensor {
-		
-		
+				
 		public Optional<SensorClass> getParent(); 
-		
+
 	}
 	
 	public static abstract class AbstractSensor implements Sensor  {
 		
+		private final Optional<SensorClass> parent = Optional.empty();
 		
 		public Optional<SensorClass> getParent() {
-			return null;
+			return this.parent;
 		} 
 		
 	}
 	
 	public static class MachineSensor extends AbstractSensor {
 		
+		private long lastValue;
+		
+		public List<SensorClass> getParents() {
+			Optional<SensorClass> parent = this.getParent();
+			List<SensorClass> parents = new ArrayList<>();
+			while (parent.isPresent()) {
+				parents.add(parent.get());
+				parent = parent.get().getParent();
+			}
+			return parents;
+		}
+
 		public long getLastValue() {
-			return 0; //TODO
+			return lastValue;
+		}
+
+		public void setLastValue(long lastValue) {
+			this.lastValue = lastValue;
 		}
 		
 	}
@@ -73,8 +80,6 @@ public class Scratch {
 	public static class SensorClass extends AbstractSensor {
 		
 		private List<Sensor> children;
-		
-		private long total; // Same for avg, median, etc.
 		
 		public Collection<Sensor> getChildren() {
 			return children;
