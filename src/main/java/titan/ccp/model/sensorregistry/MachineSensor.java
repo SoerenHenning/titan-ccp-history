@@ -7,18 +7,18 @@ import java.util.Optional;
 public class MachineSensor extends AbstractSensor {
 
 	private long lastValue;
-	
+
 	protected MachineSensor() {
 		super();
 	}
-	
+
 	protected MachineSensor(final AggregatedSensor parent) {
 		super(parent);
 	}
-	
+
 	public List<AggregatedSensor> getParents() {
 		Optional<AggregatedSensor> parent = this.getParent();
-		List<AggregatedSensor> parents = new ArrayList<>();
+		final List<AggregatedSensor> parents = new ArrayList<>();
 		while (parent.isPresent()) {
 			parents.add(parent.get());
 			parent = parent.get().getParent();
@@ -33,5 +33,5 @@ public class MachineSensor extends AbstractSensor {
 	public void setLastValue(long lastValue) {
 		this.lastValue = lastValue;
 	}
-	
+
 }
