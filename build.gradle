@@ -17,6 +17,8 @@ dependencies {
     // This dependencies are used internally, and not exposed to consumers on their own compile classpath.
     implementation 'org.apache.kafka:kafka-clients:1.0.0'
     implementation 'com.google.guava:guava:20.0'
+    
+    implementation 'com.google.code.gson:gson:2.8.2'
 
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
