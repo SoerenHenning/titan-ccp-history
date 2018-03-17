@@ -2,24 +2,30 @@ package titan.ccp.aggregation;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.LongSummaryStatistics;
+import java.util.function.Consumer;
 
 import com.google.common.primitives.Longs;
 
 import titan.ccp.model.PowerConsumptionRecord;
 import titan.ccp.model.sensorregistry.AggregatedSensor;
 import titan.ccp.model.sensorregistry.MachineSensor;
-import titan.ccp.model.sensorregistry.MutableSensorRegistry;
 import titan.ccp.model.sensorregistry.SensorRegistry;
 
-public class Scratch {
+public class Aggregator {
 
 	// Create SensorRegistry by querying it from corresponding server
-	private final SensorRegistry sensorRegistry = MutableSensorRegistry.load(); // TODO
+	private final SensorRegistry sensorRegistry; // TODO
 
-	private final SensorHistory lastValues = new LastValueSensorHistory();
+	private final SensorHistory sensorHistory; // TODO fill map of last values (by async call to other service)
 
-	public Scratch() {
-		// TODO fill map of last values (by async call to other service)
+	private final Consumer<AggregationResult> resultHandler;
+
+	public Aggregator(final SensorRegistry sensorRegistry, final SensorHistory sensorHistory,
+			final Consumer<AggregationResult> resultHandler) {
+		this.sensorRegistry = sensorRegistry;
+		this.sensorHistory = sensorHistory;
+		this.resultHandler = resultHandler;
 	}
 
 	public void process(final PowerConsumptionRecord record) {
@@ -31,17 +37,18 @@ public class Scratch {
 		// Update last sensor value
 		final long powerConsumption = record.getPowerConsumptionInWh();
 		final Instant time = Instant.ofEpochMilli(record.getTimestamp()); // TODO
-		this.lastValues.update(sensor, powerConsumption, time);
+		this.sensorHistory.update(sensor, powerConsumption, time);
 
 		// Get all affected sensor classes
 		final List<AggregatedSensor> affectedSensors = sensor.getParents();
-
+		// Recalculate affected sensor class
 		for (final AggregatedSensor affectedSensor : affectedSensors) {
-			// Recalculate affected sensor class
-			affectedSensor.getAllChildren().stream().mapToLong(s -> this.lastValues.getOrZero(s))
-					.summaryStatistics();
+			final LongSummaryStatistics statistics = affectedSensor.getAllChildren().stream()
+					.mapToLong(s -> this.sensorHistory.getOrZero(s)).summaryStatistics();
 
-			// TODO update store
+			final AggregationResult aggregationResult = new AggregationResult(affectedSensor, time, statistics);
+
+			this.resultHandler.accept(aggregationResult);
 		}
 
 	}
