@@ -11,7 +11,10 @@ public class TestFactory {
 	public static void main(final String[] args) {
 
 		final AggregatedSensor aggregatedSensor = new AggregatedSensor();
-		final MachineSensor machineSensor = new MachineSensor(aggregatedSensor);
+		final MachineSensor machineSensor = new MachineSensor(1l, aggregatedSensor);
+		final SensorRegistry sensorRegistry = new MutableSensorRegistry();
+
+		//
 
 		final Gson gson = new Gson();
 		// String json = gson.toJson(machineSensor);

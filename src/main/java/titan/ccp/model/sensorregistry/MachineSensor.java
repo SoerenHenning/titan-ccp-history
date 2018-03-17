@@ -6,16 +6,19 @@ import java.util.Optional;
 
 public class MachineSensor extends AbstractSensor {
 
-	private long lastValue;
+	private final long identifier;
 
-	protected MachineSensor() {
+	protected MachineSensor(final long identifier) {
 		super();
+		this.identifier = identifier;
 	}
 
-	protected MachineSensor(final AggregatedSensor parent) {
+	protected MachineSensor(final long identifier, final AggregatedSensor parent) {
 		super(parent);
+		this.identifier = identifier;
 	}
 
+	// TODO in interface default implementation
 	public List<AggregatedSensor> getParents() {
 		Optional<AggregatedSensor> parent = this.getParent();
 		final List<AggregatedSensor> parents = new ArrayList<>();
@@ -26,12 +29,8 @@ public class MachineSensor extends AbstractSensor {
 		return parents;
 	}
 
-	public long getLastValue() {
-		return lastValue;
-	}
-
-	public void setLastValue(long lastValue) {
-		this.lastValue = lastValue;
+	public long getIdentifier() {
+		return identifier;
 	}
 
 }

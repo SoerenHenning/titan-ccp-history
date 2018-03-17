@@ -2,9 +2,9 @@ package titan.ccp.model.sensorregistry;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
-import java.util.LongSummaryStatistics;
+import java.util.Queue;
 
 public class AggregatedSensor extends AbstractSensor {
 
@@ -26,28 +26,19 @@ public class AggregatedSensor extends AbstractSensor {
 		this.children.add(sensor);
 	}
 
+	// TODO in interface default implementation
 	public Collection<MachineSensor> getAllChildren() {
 		final List<MachineSensor> sensors = new ArrayList<>();
-		final ListIterator<Sensor> untraversedSensorClasses = this.children.listIterator();
-		while (untraversedSensorClasses.hasNext()) {
-			final Sensor sensor = untraversedSensorClasses.next();
+		final Queue<Sensor> untraversedSensorClasses = new LinkedList<>(sensors);
+		while (untraversedSensorClasses.isEmpty()) {
+			final Sensor sensor = untraversedSensorClasses.poll();
 			if (sensor instanceof MachineSensor) {
 				sensors.add((MachineSensor) sensor);
 			} else if (sensor instanceof AggregatedSensor) {
-				untraversedSensorClasses.add(sensor);
+				untraversedSensorClasses.offer(sensor);
 			}
 		}
 		return sensors;
-	}
-
-	// TODO not required
-	public long getTotal() {
-		return this.getAllChildren().stream().mapToLong(s -> s.getLastValue()).sum();
-	}
-
-	// TODO remove form here
-	public LongSummaryStatistics getStatistics() {
-		return this.getAllChildren().stream().mapToLong(s -> s.getLastValue()).summaryStatistics();
 	}
 
 }

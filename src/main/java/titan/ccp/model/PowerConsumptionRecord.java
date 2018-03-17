@@ -11,7 +11,7 @@ import kieker.common.util.registry.IRegistry;
 
 
 /**
- * @author Sören Henning
+ * @author SÃ¶ren Henning
  * API compatibility: Kieker 1.13.0
  * 
  * @since 1.13
