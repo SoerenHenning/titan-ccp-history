@@ -16,6 +16,7 @@ public class KafkaReaderStage extends AbstractProducerStage<IMonitoringRecord> {
 	@Override
 	protected void execute() throws Exception {
 		this.kafkaReader.run();
+		super.workCompleted();
 	}
 
 	public CompletableFuture<Void> requestTermination() {

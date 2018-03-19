@@ -3,14 +3,16 @@ package titan.ccp.aggregation;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import titan.ccp.model.sensorregistry.MachineSensor;
 
 public class LastValueSensorHistory implements SensorHistory {
 
-	private final Map<Long, LastValue> lastValues = new HashMap<>();
+	private final Map<Long, LastValue> lastValues;
 
-	public LastValueSensorHistory() {
+	private LastValueSensorHistory(final Map<Long, LastValue> backingMap) {
+		this.lastValues = backingMap;
 	}
 
 	@Override
@@ -26,10 +28,10 @@ public class LastValueSensorHistory implements SensorHistory {
 
 	@Override
 	public void update(final MachineSensor machineSensor, final long value, final Instant time) {
-		final LastValue lastValue = this.lastValues.get(machineSensor.getIdentifier());
-		if (lastValue == null || !lastValue.time.isAfter(time)) {
-			this.lastValues.put(machineSensor.getIdentifier(), new LastValue(value, time));
-		}
+		// update value for sensor iff sensor has current value or passed value is newer
+		// (or equal new)
+		this.lastValues.compute(machineSensor.getIdentifier(),
+				(key, old) -> old == null || !old.time.isAfter(time) ? new LastValue(value, time) : null);
 	}
 
 	private static class LastValue {
@@ -42,6 +44,14 @@ public class LastValueSensorHistory implements SensorHistory {
 			this.value = value;
 			this.time = time;
 		}
+	}
+
+	public static LastValueSensorHistory createForSingleThread() {
+		return new LastValueSensorHistory(new HashMap<>());
+	}
+
+	public static LastValueSensorHistory createForMultipleThreads() {
+		return new LastValueSensorHistory(new ConcurrentHashMap<>());
 	}
 
 }
