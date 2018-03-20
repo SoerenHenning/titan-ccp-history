@@ -1,6 +1,5 @@
 package titan.ccp.aggregation;
 
-import teetime.framework.Configuration;
 import teetime.framework.Execution;
 import titan.ccp.model.sensorregistry.ProxySensorRegistry;
 
@@ -8,7 +7,7 @@ public class AggregationService {
 
 	final ProxySensorRegistry sensorRegistry = new ProxySensorRegistry();
 	final SensorHistory sensorHistory = LastValueSensorHistory.createForMultipleThreads();
-	final Execution<Configuration> execution;
+	final Execution<AggregationConfiguration> execution;
 
 	public AggregationService() {
 		final AggregationConfiguration configuration = new AggregationConfiguration(this.sensorRegistry,

@@ -48,6 +48,7 @@ public class Aggregator {
 		for (final AggregatedSensor affectedSensor : affectedSensors) {
 			final LongSummaryStatistics statistics = affectedSensor.getAllChildren().stream()
 					.mapToLong(s -> this.sensorHistory.getOrZero(s)).summaryStatistics();
+			// .mapToLong(s -> this.sensorHistory.getOrNull(s)).filter(Objects::nonNull)
 
 			final AggregationResult aggregationResult = new AggregationResult(affectedSensor, time, statistics);
 
