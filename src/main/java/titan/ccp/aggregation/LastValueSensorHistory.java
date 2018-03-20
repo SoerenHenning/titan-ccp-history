@@ -9,9 +9,9 @@ import titan.ccp.model.sensorregistry.MachineSensor;
 
 public class LastValueSensorHistory implements SensorHistory {
 
-	private final Map<Long, LastValue> lastValues;
+	private final Map<String, LastValue> lastValues;
 
-	private LastValueSensorHistory(final Map<Long, LastValue> backingMap) {
+	private LastValueSensorHistory(final Map<String, LastValue> backingMap) {
 		this.lastValues = backingMap;
 	}
 
@@ -30,7 +30,7 @@ public class LastValueSensorHistory implements SensorHistory {
 	public void update(final MachineSensor machineSensor, final long value, final Instant time) {
 		// update value for sensor iff sensor has current value or passed value is newer
 		// (or equal new)
-		final long identifier = machineSensor.getIdentifier();
+		final String identifier = machineSensor.getIdentifier();
 		this.lastValues.compute(identifier,
 				(k, old) -> old == null || !old.time.isAfter(time) ? new LastValue(value, time) : null);
 	}

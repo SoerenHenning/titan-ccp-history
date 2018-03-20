@@ -10,8 +10,8 @@ public class TestFactory {
 
 	public static void main(final String[] args) {
 
-		final AggregatedSensor aggregatedSensor = new AggregatedSensor();
-		final MachineSensor machineSensor = new MachineSensor(1l, aggregatedSensor);
+		final AggregatedSensorImpl aggregatedSensor = new AggregatedSensorImpl("");
+		final MachineSensor machineSensor = new MachineSensorImpl("", aggregatedSensor);
 		final SensorRegistry sensorRegistry = new MutableSensorRegistry();
 
 		//

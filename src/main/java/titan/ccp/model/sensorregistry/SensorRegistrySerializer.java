@@ -24,10 +24,10 @@ public class SensorRegistrySerializer implements JsonSerializer<MutableSensorReg
 	}
 
 	private JsonElement serializeSensor(final Sensor sensor, final JsonSerializationContext context) {
-		if (sensor instanceof AggregatedSensor) {
-			return context.serialize(sensor, AggregatedSensor.class);
-		} else if (sensor instanceof MachineSensor) {
-			return context.serialize(sensor, MachineSensor.class);
+		if (sensor instanceof AggregatedSensorImpl) {
+			return context.serialize(sensor, AggregatedSensorImpl.class);
+		} else if (sensor instanceof MachineSensorImpl) {
+			return context.serialize(sensor, MachineSensorImpl.class);
 		} else {
 			return null;
 		}

@@ -2,12 +2,12 @@ package titan.ccp.aggregation;
 
 import teetime.framework.Configuration;
 import teetime.framework.Execution;
-import titan.ccp.model.sensorregistry.SensorRegistry;
+import titan.ccp.model.sensorregistry.ProxySensorRegistry;
 
 public class AggregationService {
 
-	final SensorRegistry sensorRegistry = null; // TODO
-	final SensorHistory sensorHistory = LastValueSensorHistory.createForMultipleThreads(); // TODO
+	final ProxySensorRegistry sensorRegistry = new ProxySensorRegistry();
+	final SensorHistory sensorHistory = LastValueSensorHistory.createForMultipleThreads();
 	final Execution<Configuration> execution;
 
 	public AggregationService() {
@@ -20,6 +20,7 @@ public class AggregationService {
 		// TODO request sensorRegistry
 		// TODO request history for all sensors
 		this.execution.executeNonBlocking();
+		// TODO create Rest API
 	}
 
 	public static void main(final String[] args) {

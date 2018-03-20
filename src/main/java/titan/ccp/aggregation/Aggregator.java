@@ -9,6 +9,7 @@ import com.google.common.primitives.Longs;
 
 import titan.ccp.model.PowerConsumptionRecord;
 import titan.ccp.model.sensorregistry.AggregatedSensor;
+import titan.ccp.model.sensorregistry.AggregatedSensorImpl;
 import titan.ccp.model.sensorregistry.MachineSensor;
 import titan.ccp.model.sensorregistry.SensorRegistry;
 
@@ -30,8 +31,10 @@ public class Aggregator {
 
 	public void process(final PowerConsumptionRecord record) {
 
+		// TODO rework this
 		final byte[] identifierAsBytes = record.getIdentifier();
-		final Long identifier = Longs.fromByteArray(identifierAsBytes);
+		final Long identifierAsLong = Longs.fromByteArray(identifierAsBytes);
+		final String identifier = identifierAsLong.toString();
 		final MachineSensor sensor = this.sensorRegistry.getSensorForIdentifier(identifier).get(); // TODO bad
 
 		// Update last sensor value
@@ -40,7 +43,7 @@ public class Aggregator {
 		this.sensorHistory.update(sensor, powerConsumption, time);
 
 		// Get all affected sensor classes
-		final List<AggregatedSensor> affectedSensors = sensor.getParents();
+		final List<AggregatedSensorImpl> affectedSensors = sensor.getParents();
 		// Recalculate affected sensor class
 		for (final AggregatedSensor affectedSensor : affectedSensors) {
 			final LongSummaryStatistics statistics = affectedSensor.getAllChildren().stream()

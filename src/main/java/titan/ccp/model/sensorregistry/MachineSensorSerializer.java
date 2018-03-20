@@ -7,10 +7,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-public class MachineSensorSerializer implements JsonSerializer<MachineSensor> {
+public class MachineSensorSerializer implements JsonSerializer<MachineSensorImpl> {
 
 	@Override
-	public JsonElement serialize(final MachineSensor sensor, final Type type, final JsonSerializationContext context) {
+	public JsonElement serialize(final MachineSensorImpl sensor, final Type type, final JsonSerializationContext context) {
 		final JsonObject jsonSensorObject = new JsonObject();
 		// TODO map properties
 		return jsonSensorObject;

@@ -7,16 +7,14 @@ import java.util.Optional;
 public class MutableSensorRegistry implements SensorRegistry {
 
 	// TODO HashMap for efficient access to machine sensors
-	private final Map<Long, MachineSensor> machineSensors = new HashMap<>();
+	private final Map<String, MachineSensorImpl> machineSensors = new HashMap<>();
 
 	// TODO maybe access to root
-	private final AggregatedSensor topLevelSensor = new AggregatedSensor();
+	private final AggregatedSensor topLevelSensor = new AggregatedSensorImpl(""); // TODO perhaps own class
 
 	@Override
-	public Optional<MachineSensor> getSensorForIdentifier(final Long identifier) {
-		// TODO
+	public Optional<MachineSensor> getSensorForIdentifier(final String identifier) {
 		return Optional.ofNullable(this.machineSensors.get(identifier));
-		// return this.machineSensors.get(identifier);
 	}
 
 	// TODO return read only
@@ -26,7 +24,7 @@ public class MutableSensorRegistry implements SensorRegistry {
 	}
 
 	// TODO remove
-	Map<Long, MachineSensor> getMap() { // default
+	Map<String, MachineSensorImpl> getMap() { // default
 		return this.machineSensors;
 	}
 
