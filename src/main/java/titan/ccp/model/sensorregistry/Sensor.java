@@ -4,7 +4,7 @@ import java.util.Optional;
 
 public interface Sensor {
 
-	public Optional<AggregatedSensorImpl> getParent();
+	public Optional<AggregatedSensor> getParent();
 
 	public String getIdentifier();
 }

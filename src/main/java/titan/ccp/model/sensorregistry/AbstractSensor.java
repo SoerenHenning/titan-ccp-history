@@ -4,7 +4,7 @@ import java.util.Optional;
 
 public abstract class AbstractSensor implements Sensor {
 
-	private final Optional<AggregatedSensorImpl> parent;
+	private final Optional<AggregatedSensor> parent;
 
 	private final String identifier;
 
@@ -20,7 +20,7 @@ public abstract class AbstractSensor implements Sensor {
 	}
 
 	@Override
-	public Optional<AggregatedSensorImpl> getParent() {
+	public Optional<AggregatedSensor> getParent() {
 		return this.parent;
 	}
 

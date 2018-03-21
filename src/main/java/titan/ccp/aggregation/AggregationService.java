@@ -17,7 +17,9 @@ public class AggregationService {
 
 	public void run() {
 		// TODO request sensorRegistry
+		// sensorRegistry.setBackingSensorRegisty(backingSensorRegisty);
 		// TODO request history for all sensors
+		// sensorHistory.update(, );
 		this.execution.executeNonBlocking();
 		// TODO create Rest API
 	}

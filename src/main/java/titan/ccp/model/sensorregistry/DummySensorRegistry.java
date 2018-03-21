@@ -29,7 +29,7 @@ public class DummySensorRegistry implements SensorRegistry {
 		}
 
 		@Override
-		public Optional<AggregatedSensorImpl> getParent() {
+		public Optional<AggregatedSensor> getParent() {
 			return Optional.empty();
 		}
 

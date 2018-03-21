@@ -37,7 +37,7 @@ public class KafkaReader {
 
 	private final Consumer<IMonitoringRecord> recordHandler;
 
-	private boolean terminationRequested = false;
+	private volatile boolean terminationRequested = false;
 
 	private final CompletableFuture<Void> terminationRequestResult = new CompletableFuture<>();
 
