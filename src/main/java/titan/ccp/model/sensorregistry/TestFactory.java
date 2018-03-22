@@ -2,11 +2,8 @@ package titan.ccp.model.sensorregistry;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
+import titan.ccp.model.sensorregistry.serialization.AggregatedSensorSerializer;
 import titan.ccp.model.sensorregistry.serialization.SensorRegistrySerializer;
 
 public class TestFactory {
@@ -30,7 +27,12 @@ public class TestFactory {
 
 		final ImmutableSensorRegistry immutableSensorRegistry = ImmutableSensorRegistry.copyOf(sensorRegistry);
 
-		final Gson gson = new GsonBuilder().registerTypeAdapter(SensorRegistry.class, new SensorRegistrySerializer())
+		final Gson gson = new GsonBuilder()
+				.registerTypeAdapter(ImmutableSensorRegistry.class, new SensorRegistrySerializer())
+				.registerTypeAdapter(ImmutableSensorRegistry.ImmutableAggregatatedSensor.class,
+						new AggregatedSensorSerializer())
+				.registerTypeAdapter(ImmutableSensorRegistry.ImmutableMachineSensor.class,
+						new MachineSensorSerializer())
 				.create();
 
 		final String json1 = gson.toJson(immutableSensorRegistry);
@@ -40,23 +42,25 @@ public class TestFactory {
 		// String json = gson.toJson(machineSensor);
 		// System.out.println(json);
 
-		final String json = "[{\"id\": \"abc\", \"name\": \"My Name\", \"children\": [{},{}]},{}]";
-
-		final JsonParser parser = new JsonParser();
-		final JsonArray array = parser.parse(json).getAsJsonArray();
-		for (final JsonElement jsonElement : array) {
-			System.out.println(jsonElement);
-			if (jsonElement.isJsonObject()) {
-				final JsonObject jsonObject = jsonElement.getAsJsonObject();
-				final JsonElement identifier = jsonObject.get("identifier");
-				if (identifier != null && identifier.isJsonPrimitive()) {
-					final String identifierAsPrimitiv = identifier.getAsString();
-
-				}
-			}
-		}
-
-		// parsed.toString();
+		//
+		// final String json = "[{\"id\": \"abc\", \"name\": \"My Name\", \"children\":
+		// [{},{}]},{}]";
+		//
+		// final JsonParser parser = new JsonParser();
+		// final JsonArray array = parser.parse(json).getAsJsonArray();
+		// for (final JsonElement jsonElement : array) {
+		// System.out.println(jsonElement);
+		// if (jsonElement.isJsonObject()) {
+		// final JsonObject jsonObject = jsonElement.getAsJsonObject();
+		// final JsonElement identifier = jsonObject.get("identifier");
+		// if (identifier != null && identifier.isJsonPrimitive()) {
+		// final String identifierAsPrimitiv = identifier.getAsString();
+		//
+		// }
+		// }
+		// }
+		//
+		// // parsed.toString();
 
 	}
 

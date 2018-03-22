@@ -54,7 +54,8 @@ public final class ImmutableSensorRegistry implements SensorRegistry {
 
 	}
 
-	private static final class ImmutableAggregatatedSensor extends AbstractImmutableSensor implements AggregatedSensor {
+	// TODO visibility
+	public static final class ImmutableAggregatatedSensor extends AbstractImmutableSensor implements AggregatedSensor {
 
 		private final ImmutableList<Sensor> children;
 
@@ -83,7 +84,8 @@ public final class ImmutableSensorRegistry implements SensorRegistry {
 
 	}
 
-	private static final class ImmutableMachineSensor extends AbstractImmutableSensor implements MachineSensor {
+	// TODO visibility
+	public static final class ImmutableMachineSensor extends AbstractImmutableSensor implements MachineSensor {
 
 		private ImmutableMachineSensor(final AggregatedSensor newParent, final MachineSensor SensorToCopy) {
 			super(newParent, SensorToCopy);
