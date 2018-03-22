@@ -10,14 +10,14 @@ public interface AggregatedSensor extends Sensor {
 
 	public Collection<Sensor> getChildren();
 
-	public default Collection<MachineSensorImpl> getAllChildren() {
-		final List<MachineSensorImpl> sensors = new ArrayList<>();
+	public default Collection<MutableMachineSensor> getAllChildren() {
+		final List<MutableMachineSensor> sensors = new ArrayList<>();
 		final Queue<Sensor> untraversedSensorClasses = new LinkedList<>(sensors);
 		while (untraversedSensorClasses.isEmpty()) {
 			final Sensor sensor = untraversedSensorClasses.poll();
-			if (sensor instanceof MachineSensorImpl) {
-				sensors.add((MachineSensorImpl) sensor);
-			} else if (sensor instanceof AggregatedSensorImpl) {
+			if (sensor instanceof MutableMachineSensor) {
+				sensors.add((MutableMachineSensor) sensor);
+			} else if (sensor instanceof MutableAggregatedSensor) {
 				untraversedSensorClasses.offer(sensor);
 			}
 		}

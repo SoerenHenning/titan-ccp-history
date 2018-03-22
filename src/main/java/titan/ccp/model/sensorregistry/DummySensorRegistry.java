@@ -1,5 +1,7 @@
 package titan.ccp.model.sensorregistry;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -14,11 +16,34 @@ public class DummySensorRegistry implements SensorRegistry {
 	}
 
 	@Override
-	public AggregatedSensor getTopLevelSensors() {
+	public AggregatedSensor getTopLevelSensor() {
 		return EMPTY_TOP_LEVEL_SENSOR;
 	}
 
-	private static final AggregatedSensor EMPTY_TOP_LEVEL_SENSOR = new AggregatedSensorImpl(""); // TODO move
+	private static final AggregatedSensor EMPTY_TOP_LEVEL_SENSOR = new EmptyTopLevelSensor();
+
+	// TODO move
+	private static class EmptyTopLevelSensor implements AggregatedSensor {
+
+		private EmptyTopLevelSensor() {
+		}
+
+		@Override
+		public Optional<AggregatedSensor> getParent() {
+			return Optional.empty();
+		}
+
+		@Override
+		public String getIdentifier() {
+			return "";
+		}
+
+		@Override
+		public Collection<Sensor> getChildren() {
+			return Collections.emptyList();
+		}
+
+	}
 
 	private static class DummyMachineSensor implements MachineSensor {
 

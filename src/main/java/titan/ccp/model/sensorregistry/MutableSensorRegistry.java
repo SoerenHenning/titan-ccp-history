@@ -7,30 +7,26 @@ import java.util.Optional;
 public class MutableSensorRegistry implements SensorRegistry {
 
 	// TODO HashMap for efficient access to machine sensors
-	private final Map<String, MachineSensorImpl> machineSensors = new HashMap<>();
+	private final Map<String, MutableMachineSensor> machineSensors = new HashMap<>();
 
 	// TODO maybe access to root
-	private final AggregatedSensor topLevelSensor = new AggregatedSensorImpl(""); // TODO perhaps own class
+	private final MutableAggregatedSensor topLevelSensor = new MutableAggregatedSensor(this, ""); // TODO perhaps
+																									// own class
 
 	@Override
 	public Optional<MachineSensor> getSensorForIdentifier(final String identifier) {
 		return Optional.ofNullable(this.machineSensors.get(identifier));
 	}
 
-	// TODO return read only
 	@Override
-	public AggregatedSensor getTopLevelSensors() {
+	public MutableAggregatedSensor getTopLevelSensor() {
 		return this.topLevelSensor;
 	}
 
-	// TODO remove
-	Map<String, MachineSensorImpl> getMap() { // default
-		return this.machineSensors;
-	}
+	protected boolean register(final MutableMachineSensor machineSensor) {
+		final Object oldValue = this.machineSensors.putIfAbsent(machineSensor.getIdentifier(), machineSensor);
+		return oldValue == null;
 
-	public static SensorRegistry load() {
-		// TODO load and parse from json etc.
-		return new MutableSensorRegistry();
 	}
 
 }

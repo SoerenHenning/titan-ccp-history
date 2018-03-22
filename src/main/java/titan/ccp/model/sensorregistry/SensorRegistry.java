@@ -6,7 +6,6 @@ public interface SensorRegistry {
 
 	public Optional<MachineSensor> getSensorForIdentifier(final String identifier);
 
-	// TODO return read only
-	public AggregatedSensor getTopLevelSensors();
+	public AggregatedSensor getTopLevelSensor();
 
 }

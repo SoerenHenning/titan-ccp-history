@@ -21,8 +21,8 @@ public class ProxySensorRegistry implements SensorRegistry {
 	}
 
 	@Override
-	public AggregatedSensor getTopLevelSensors() {
-		return this.backingSensorRegisty.getTopLevelSensors();
+	public AggregatedSensor getTopLevelSensor() {
+		return this.backingSensorRegisty.getTopLevelSensor();
 	}
 
 	public void setBackingSensorRegisty(final SensorRegistry backingSensorRegisty) {

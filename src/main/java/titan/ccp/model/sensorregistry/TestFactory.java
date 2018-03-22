@@ -1,22 +1,42 @@
 package titan.ccp.model.sensorregistry;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import titan.ccp.model.sensorregistry.serialization.SensorRegistrySerializer;
+
 public class TestFactory {
 
 	public static void main(final String[] args) {
 
-		final AggregatedSensorImpl aggregatedSensor = new AggregatedSensorImpl("");
-		final MachineSensor machineSensor = new MachineSensorImpl("", aggregatedSensor);
-		final SensorRegistry sensorRegistry = new MutableSensorRegistry();
+		final MutableSensorRegistry sensorRegistry = new MutableSensorRegistry();
+		final MutableAggregatedSensor topLevel = sensorRegistry.getTopLevelSensor();
+		final MutableAggregatedSensor comcent = topLevel.addChildAggregatedSensor("comcent");
+		final MutableAggregatedSensor server1 = comcent.addChildAggregatedSensor("comcent.server1");
+		final MachineSensor server1pw1 = server1.addChildMachineSensor("comcent.server1.pw1");
+		final MachineSensor server1pw2 = server1.addChildMachineSensor("comcent.server1.pw2");
+		final MachineSensor server1pw3 = server1.addChildMachineSensor("comcent.server1.pw3");
+		final MutableAggregatedSensor server2 = comcent.addChildAggregatedSensor("comcent.server2");
+		final MachineSensor server2pw1 = server2.addChildMachineSensor("comcent.server2.pw1");
+		final MachineSensor server2pw2 = server2.addChildMachineSensor("comcent.server2.pw2");
 
 		//
 
-		final Gson gson = new Gson();
+		sensorRegistry.toString();
+
+		final ImmutableSensorRegistry immutableSensorRegistry = ImmutableSensorRegistry.copyOf(sensorRegistry);
+
+		final Gson gson = new GsonBuilder().registerTypeAdapter(SensorRegistry.class, new SensorRegistrySerializer())
+				.create();
+
+		final String json1 = gson.toJson(immutableSensorRegistry);
+
+		System.out.println(json1);
+
 		// String json = gson.toJson(machineSensor);
 		// System.out.println(json);
 
