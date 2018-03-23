@@ -10,8 +10,11 @@ public class MutableSensorRegistry implements SensorRegistry {
 	private final Map<String, MutableMachineSensor> machineSensors = new HashMap<>();
 
 	// TODO maybe access to root
-	private final MutableAggregatedSensor topLevelSensor = new MutableAggregatedSensor(this, ""); // TODO perhaps
-																									// own class
+	private final MutableAggregatedSensor topLevelSensor;
+
+	public MutableSensorRegistry(final String topLevelSensorIdentifier) {
+		this.topLevelSensor = new MutableAggregatedSensor(this, topLevelSensorIdentifier);
+	}
 
 	@Override
 	public Optional<MachineSensor> getSensorForIdentifier(final String identifier) {

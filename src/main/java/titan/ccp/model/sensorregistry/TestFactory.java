@@ -10,7 +10,7 @@ public class TestFactory {
 
 	public static void main(final String[] args) {
 
-		final MutableSensorRegistry sensorRegistry = new MutableSensorRegistry();
+		final MutableSensorRegistry sensorRegistry = new MutableSensorRegistry("");
 		final MutableAggregatedSensor topLevel = sensorRegistry.getTopLevelSensor();
 		final MutableAggregatedSensor comcent = topLevel.addChildAggregatedSensor("comcent");
 		final MutableAggregatedSensor server1 = comcent.addChildAggregatedSensor("comcent.server1");
