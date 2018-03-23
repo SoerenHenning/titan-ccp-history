@@ -1,6 +1,7 @@
 package titan.ccp.model.sensorregistry.serialization;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -16,7 +17,6 @@ import com.google.gson.GsonBuilder;
 
 import titan.ccp.model.sensorregistry.AggregatedSensor;
 import titan.ccp.model.sensorregistry.MachineSensor;
-import titan.ccp.model.sensorregistry.MutableSensorRegistry;
 import titan.ccp.model.sensorregistry.Sensor;
 import titan.ccp.model.sensorregistry.SensorRegistry;
 
@@ -26,7 +26,7 @@ public class SensorRegistryDeserializerTest {
 
 	@Before
 	public void setUp() throws Exception {
-		this.gson = new GsonBuilder().registerTypeAdapter(MutableSensorRegistry.class, new SensorRegistryDeserializer())
+		this.gson = new GsonBuilder().registerTypeAdapter(SensorRegistry.class, new SensorRegistryDeserializer())
 				.create();
 	}
 
@@ -39,8 +39,7 @@ public class SensorRegistryDeserializerTest {
 	public void testEmptyRegistry() {
 		final String json = "";
 		final SensorRegistry registry = this.gson.fromJson(json, SensorRegistry.class);
-		assertEquals(registry.getTopLevelSensor().getIdentifier(), "");
-		assertTrue(registry.getTopLevelSensor().getChildren().isEmpty());
+		assertNull(registry);
 	}
 
 	@Test
@@ -134,7 +133,7 @@ public class SensorRegistryDeserializerTest {
 
 	@Test
 	public void testRegistryWithTwoGenerationChildren() {
-		final String json = "{\"identifier\": \"my-root-id\", \"children\": [{\"identifier\": \"child-id-1\", \"children\": [{\"identifier\\: \"child-id-1-1\"}, {\"identifier\": \\\"child-id-1-2\"}, {\"identifier\": \"child-id-1-3\"}]}, {\"identifier\": \"child-id-2\"}]}";
+		final String json = "{\"identifier\": \"my-root-id\", \"children\": [{\"identifier\": \"child-id-1\", \"children\": [{\"identifier\": \"child-id-1-1\"}, {\"identifier\": \"child-id-1-2\"}, {\"identifier\": \"child-id-1-3\"}]}, {\"identifier\": \"child-id-2\"}]}";
 		final List<String> childIdentifiers = List.of("child-id-1", "child-id-2");
 		final List<String> grandChildIdentifiers = List.of("child-id-1-1", "child-id-1-2", "child-id-1-3");
 		final List<String> machineSensorIdentifiers = List.of("child-id-2", "child-id-1-1", "child-id-1-2",
@@ -157,7 +156,7 @@ public class SensorRegistryDeserializerTest {
 					assertEquals(grandChildSensors.size(), 3);
 					for (final Sensor grandChildSensor : grandChildSensors) {
 						assertTrue(grandChildIdentifiers.contains(grandChildSensor.getIdentifier()));
-						assertTrue(sensor instanceof MachineSensor);
+						assertTrue(grandChildSensor instanceof MachineSensor);
 					}
 				} else {
 					fail(); // Should never happen because of asserTrue check before
