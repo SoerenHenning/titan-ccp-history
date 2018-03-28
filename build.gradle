@@ -18,10 +18,12 @@ dependencies {
     api 'net.sourceforge.teetime:teetime:3.0-SNAPSHOT'
 
     // These dependencies are used internally, and not exposed to consumers on their own compile classpath.
-    implementation 'org.apache.kafka:kafka-clients:1.0.0'
+    implementation 'org.apache.kafka:kafka-clients:1.0.1'
     implementation 'com.google.guava:guava:20.0'
     
     implementation 'com.google.code.gson:gson:2.8.2'
+    
+    implementation 'org.apache.kafka:kafka-streams:1.0.1' // Experimental
 
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
