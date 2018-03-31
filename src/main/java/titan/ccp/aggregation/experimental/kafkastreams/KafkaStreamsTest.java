@@ -1,11 +1,13 @@
 package titan.ccp.aggregation.experimental.kafkastreams;
 
+import java.util.List;
 import java.util.Properties;
 
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.Consumed;
 import org.apache.kafka.streams.KafkaStreams;
+import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
@@ -27,23 +29,34 @@ public class KafkaStreamsTest {
 
 		final StreamsBuilder builder = new StreamsBuilder(); // when using the DSL
 
-		final KStream<String, String> wordCounts = builder.stream("input-topic-2", /* input topic */
+		final KStream<String, String> wordCounts = builder.stream("partition-topic", /* input topic */
 				Consumed.with(Serdes.String(), /* key serde */
 						Serdes.String() /* value serde */
 				));
-		final KGroupedStream<String, String> groupedStream = wordCounts.groupByKey();
+
+		final KStream<String, String> printMapped = wordCounts.map((key, value) -> {
+			System.out.println("Raw: " + key + ":" + value);
+			return KeyValue.pair(key, value);
+		});
+
+		final KStream<String, String> flatMapped = wordCounts
+				.flatMap((key, value) -> List.of(KeyValue.pair("key-group1", value), KeyValue.pair("key-group2", value),
+						KeyValue.pair("key-group3", value)));
+
+		final KGroupedStream<String, String> groupedStream = flatMapped.groupByKey();
 
 		final KTable<String, Long> aggregated = groupedStream.aggregate(() -> null, /* initializer */
 				(aggKey, newValue, aggValue) -> {
 					try {
-						System.out.println(aggKey + ":" + newValue);
+						System.out.println("Agg: " + aggKey + ":" + newValue);
 						return Long.parseLong(newValue);
 					} catch (final NumberFormatException e) {
 						return -1l;
 					}
 				}, /* adder */
-				Materialized.<String, Long, KeyValueStore<Bytes, byte[]>>as("aggregated-stream-store-2") // state store
-																											// name
+				Materialized.<String, Long, KeyValueStore<Bytes, byte[]>>as("aggregated-stream-store-for-partition") // state
+																														// store
+						// name
 						.withKeySerde(Serdes.String()) /* key serde */
 						.withValueSerde(Serdes.Long())); /* serde for aggregate value */
 
@@ -55,8 +68,10 @@ public class KafkaStreamsTest {
 		// and so on.
 		final Properties settings = new Properties();
 		// Set a few key parameters
-		settings.put(StreamsConfig.APPLICATION_ID_CONFIG, "my-first-streams-application-0.0.1");
+		settings.put(StreamsConfig.APPLICATION_ID_CONFIG, "my-first-streams-application-0.0.2");
 		settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+		settings.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
+		settings.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
 		// Any further settings
 		// settings.put(... , ...);
 		final StreamsConfig config = new StreamsConfig(settings);
