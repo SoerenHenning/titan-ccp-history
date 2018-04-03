@@ -148,10 +148,9 @@ public class KafkaStreamsFactory {
 		public byte[] serialize(final String topic, final PowerConsumptionRecord record) {
 			final ByteBuffer buffer = ByteBuffer.allocateDirect(BYTE_BUFFER_CAPACITY);
 
-			final String identifier = record.getIdentifier();
-			final byte[] stringBytes = identifier.getBytes(DEFAULT_CHARSET);
-			buffer.putInt(stringBytes.length);
-			buffer.put(stringBytes);
+			final byte[] identifierBytes = record.getIdentifier().getBytes(DEFAULT_CHARSET);
+			buffer.putInt(identifierBytes.length);
+			buffer.put(identifierBytes);
 			buffer.putLong(record.getTimestamp());
 			buffer.putInt(record.getPowerConsumptionInWh());
 
