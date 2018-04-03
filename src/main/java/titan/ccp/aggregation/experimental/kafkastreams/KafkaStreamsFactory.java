@@ -3,7 +3,9 @@ package titan.ccp.aggregation.experimental.kafkastreams;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.HashMap;
+import java.util.LongSummaryStatistics;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -27,8 +29,6 @@ import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.state.KeyValueStore;
 
-import kieker.common.record.io.BinaryValueDeserializer;
-import kieker.common.record.io.BinaryValueSerializer;
 import titan.ccp.model.PowerConsumptionRecord;
 import titan.ccp.model.sensorregistry.MachineSensor;
 import titan.ccp.model.sensorregistry.SensorRegistry;
@@ -44,23 +44,26 @@ public class KafkaStreamsFactory {
 		final KStream<String, PowerConsumptionRecord> flatMapped = wordCounts
 				.flatMap((key, value) -> this.flatMap(value));
 
-		final KGroupedStream<String, PowerConsumptionRecord> groupedStream = flatMapped.groupByKey();
+		final KGroupedStream<String, PowerConsumptionRecord> groupedStream = flatMapped.groupByKey(); // TODO set serdes
 
-		final KTable<String, Long> aggregated = groupedStream.aggregate(() -> {
-			// new AggregatedSensorHistory();
-			return null;
-		}, /* initializer */
-				(aggKey, newValue, aggValue) -> {
-					System.out.println("Agg: " + aggKey + ":" + newValue);
-					// AggregatedSensorHistory aggValue2;
-					// aggValue2.update(aggKey, newValue.getPowerConsumptionInWh());
-					return (long) newValue.getPowerConsumptionInWh();
-				}, /* adder */
-				Materialized.<String, Long, KeyValueStore<Bytes, byte[]>>as("aggregated-stream-store-for-partition") // state
-																														// store
+		final KTable<String, AggregatedSensorHistory> aggregated = groupedStream.aggregate(() -> {
+			return new AggregatedSensorHistory();
+		}, (aggKey, newValue, aggValue2) -> {
+			// System.out.println("Agg: " + aggKey + ":" + newValue);
+			// AggregatedSensorHistory aggValue2;
+			aggValue2.update(aggKey, newValue.getPowerConsumptionInWh());
+			return aggValue2;
+			// return (long) newValue.getPowerConsumptionInWh();
+		}, /* adder */
+				Materialized
+						.<String, AggregatedSensorHistory, KeyValueStore<Bytes, byte[]>>as(
+								"aggregated-stream-store-for-partition") // state
+						// store
 						// name
 						.withKeySerde(Serdes.String()) /* key serde */
-						.withValueSerde(Serdes.Long())); /* serde for aggregate value */
+						.withValueSerde(createAggregatedSensorHistorySerde())); /* serde for aggregate value */
+
+		// aggregated.toStream().to("", Produced.with(null, null));
 
 		final Topology topology = builder.build();
 
@@ -82,7 +85,7 @@ public class KafkaStreamsFactory {
 	}
 
 	private Iterable<KeyValue<String, PowerConsumptionRecord>> flatMap(final PowerConsumptionRecord record) {
-		final SensorRegistry sensorRegistry = null;
+		final SensorRegistry sensorRegistry = null; // TODO
 		final Optional<MachineSensor> sensor = sensorRegistry.getSensorForIdentifier(record.getIdentifier().toString()); // TODO
 																															// temp
 		return sensor.stream().flatMap(s -> s.getParents().stream()).map(s -> s.getIdentifier())
@@ -93,9 +96,12 @@ public class KafkaStreamsFactory {
 		return Serdes.serdeFrom(new PowerConsumptionRecordSerializer(), new PowerConsumptionRecordDeserializer());
 	}
 
+	// PowerConsumption Serdes
+
 	private static class PowerConsumptionRecordDeserializer implements Deserializer<PowerConsumptionRecord> {
 
 		private final ByteBufferDeserializer byteBufferDeserializer = new ByteBufferDeserializer();
+		private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
 
 		@Override
 		public void configure(final Map<String, ?> configs, final boolean isKey) {
@@ -109,12 +115,13 @@ public class KafkaStreamsFactory {
 			final int stringLength = buffer.getInt();
 			final byte[] stringBytes = new byte[stringLength];
 			buffer.get(stringBytes);
-			final String identifier = buffer.toString(); // TODO this is wrong and just temp
+			final String identifier = new String(stringBytes, DEFAULT_CHARSET);
 			final long timestamp = buffer.getLong();
 			final int powerConsumption = buffer.getInt();
 
-			return new PowerConsumptionRecord(identifier.getBytes(Charset.forName("UTF-8")), timestamp,
-					powerConsumption);
+			return new PowerConsumptionRecord(identifier.getBytes(), timestamp, powerConsumption); // TODO temp
+																									// converserion to
+																									// bytes
 		}
 
 		@Override
@@ -125,6 +132,9 @@ public class KafkaStreamsFactory {
 	}
 
 	private static class PowerConsumptionRecordSerializer implements Serializer<PowerConsumptionRecord> {
+
+		private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
+		private static final int BYTE_BUFFER_CAPACITY = 65536; // Is only virtual memory
 
 		private final ByteBufferSerializer byteBufferSerializer = new ByteBufferSerializer();
 
@@ -137,8 +147,8 @@ public class KafkaStreamsFactory {
 		public byte[] serialize(final String topic, final PowerConsumptionRecord record) {
 			final String identifier = record.getIdentifier().toString(); // TODO Identifier will be String
 
-			final ByteBuffer buffer = ByteBuffer.allocateDirect(65536); // TODO
-			final byte[] stringBytes = identifier.getBytes(Charset.forName("UTF-8")); // TODO do this more effiently
+			final ByteBuffer buffer = ByteBuffer.allocateDirect(BYTE_BUFFER_CAPACITY);
+			final byte[] stringBytes = identifier.getBytes(DEFAULT_CHARSET);
 			buffer.putInt(stringBytes.length);
 			buffer.put(stringBytes);
 			buffer.putLong(record.getTimestamp());
@@ -154,46 +164,108 @@ public class KafkaStreamsFactory {
 
 	}
 
-	private static class RegistrylessBinaryValueDeserializer extends BinaryValueDeserializer {
+	public static class AggregatedSensorHistory { // TODO
 
-		protected RegistrylessBinaryValueDeserializer(final ByteBuffer buffer) {
-			super(buffer, null);
+		private final Map<String, Long> lastValues;
+
+		public AggregatedSensorHistory() {
+			this.lastValues = new HashMap<>();
 		}
 
-	}
-
-	private static class RegistrylessBinaryValueSerializer extends BinaryValueSerializer {
-
-		private final ByteBuffer buffer;
-
-		private RegistrylessBinaryValueSerializer(final ByteBuffer buffer) {
-			super(buffer, null);
-			this.buffer = buffer;
+		// TODO except read only copy of key value pairs
+		public AggregatedSensorHistory(final Map<String, Long> lastValues) {
+			this.lastValues = lastValues;
 		}
-
-		public static RegistrylessBinaryValueSerializer create() {
-			return new RegistrylessBinaryValueSerializer(ByteBuffer.allocateDirect(65536));
-		}
-
-		@Override
-		public void putString(final String value) {
-			final byte[] bytes = value.getBytes(Charset.forName("UTF-8")); // TODO do this more effiently
-			this.buffer.putInt(bytes.length);
-			this.buffer.put(bytes);
-		}
-
-		public ByteBuffer getByteBuffer() {
-			return this.buffer;
-		}
-
-	}
-
-	private static class AggregatedSensorHistory {
-
-		private final Map<String, Long> lastValues = new HashMap<>();
 
 		public void update(final String identifier, final long newValue) {
 			this.lastValues.put(identifier, newValue);
+		}
+
+		// TODO return read only copy of key value pairs
+		public Map<String, Long> getLastValues() {
+			return this.lastValues;
+		}
+
+		public LongSummaryStatistics getSummaryStatistics() {
+			return this.lastValues.values().stream().mapToLong(v -> v).summaryStatistics();
+		}
+
+	}
+
+	// AggregatedSensorHistorySerdes
+
+	private static final Serde<AggregatedSensorHistory> createAggregatedSensorHistorySerde() {
+		return Serdes.serdeFrom(new AggregatedSensorHistorySerializer(), new AggregatedSensorHistoryDeserializer());
+	}
+
+	private static class AggregatedSensorHistorySerializer implements Serializer<AggregatedSensorHistory> {
+
+		private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
+		private static final int BYTE_BUFFER_CAPACITY = 65536; // Is only virtual memory
+
+		private final ByteBufferSerializer byteBufferSerializer = new ByteBufferSerializer();
+
+		@Override
+		public void configure(final Map<String, ?> configs, final boolean isKey) {
+			this.byteBufferSerializer.configure(configs, isKey);
+		}
+
+		@Override
+		public byte[] serialize(final String topic, final AggregatedSensorHistory data) {
+			final ByteBuffer buffer = ByteBuffer.allocateDirect(BYTE_BUFFER_CAPACITY);
+
+			buffer.putInt(data.getLastValues().size());
+			for (final Entry<String, Long> entry : data.getLastValues().entrySet()) {
+				final byte[] key = entry.getKey().getBytes(DEFAULT_CHARSET);
+				buffer.putInt(key.length);
+				buffer.put(key);
+				buffer.putLong(entry.getValue());
+			}
+
+			return this.byteBufferSerializer.serialize(topic, buffer);
+		}
+
+		@Override
+		public void close() {
+			this.byteBufferSerializer.close();
+		}
+
+	}
+
+	private static class AggregatedSensorHistoryDeserializer implements Deserializer<AggregatedSensorHistory> {
+
+		private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
+
+		private final ByteBufferDeserializer byteBufferDeserializer = new ByteBufferDeserializer();
+
+		@Override
+		public void configure(final Map<String, ?> configs, final boolean isKey) {
+			this.byteBufferDeserializer.configure(configs, isKey);
+		}
+
+		@Override
+		public AggregatedSensorHistory deserialize(final String topic, final byte[] data) {
+			final ByteBuffer buffer = this.byteBufferDeserializer.deserialize(topic, data);
+
+			final Map<String, Long> map = new HashMap<>();
+
+			final int size = buffer.getInt();
+			for (int i = 0; i < size; i++) {
+				final int keyLength = buffer.getInt();
+				final byte[] keyBytes = new byte[keyLength];
+				buffer.get(keyBytes);
+				final String key = new String(keyBytes, DEFAULT_CHARSET);
+				final long value = buffer.getLong();
+
+				map.put(key, value);
+			}
+
+			return new AggregatedSensorHistory(map);
+		}
+
+		@Override
+		public void close() {
+			this.byteBufferDeserializer.close();
 		}
 
 	}
