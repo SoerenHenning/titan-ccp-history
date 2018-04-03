@@ -2,7 +2,6 @@ package titan.ccp.aggregation.experimental.kafkastreams;
 
 import org.apache.kafka.streams.KafkaStreams;
 
-import titan.ccp.aggregation.AggregationService;
 import titan.ccp.model.sensorregistry.ProxySensorRegistry;
 
 public class KafkaStreamsBasedAggregationService {
@@ -24,7 +23,7 @@ public class KafkaStreamsBasedAggregationService {
 	}
 
 	public static void main(final String[] args) {
-		new AggregationService().run();
+		new KafkaStreamsBasedAggregationService().run();
 	}
 
 }

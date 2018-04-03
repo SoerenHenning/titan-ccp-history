@@ -2,13 +2,13 @@ package titan.ccp.aggregation.experimental.kafkastreams;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
 import org.apache.kafka.common.serialization.ByteBufferDeserializer;
 import org.apache.kafka.common.serialization.ByteBufferSerializer;
@@ -27,41 +27,35 @@ import org.apache.kafka.streams.kstream.KGroupedStream;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
+import org.apache.kafka.streams.kstream.Serialized;
 import org.apache.kafka.streams.state.KeyValueStore;
 
 import titan.ccp.model.PowerConsumptionRecord;
-import titan.ccp.model.sensorregistry.MachineSensor;
-import titan.ccp.model.sensorregistry.SensorRegistry;
 
 public class KafkaStreamsFactory {
+
+	private static final String AGGREGATED_STREAM_STORE_TOPIC = "aggregated-stream-store-for-test-topic-180403";
+	private static final String INPUT_TOPIC = "test-topic-180403";
 
 	public KafkaStreams create() {
 		final StreamsBuilder builder = new StreamsBuilder(); // when using the DSL
 
-		final KStream<String, PowerConsumptionRecord> wordCounts = builder.stream("partition-topic", /* input topic */
+		final KStream<String, PowerConsumptionRecord> inputStream = builder.stream(INPUT_TOPIC,
 				Consumed.with(Serdes.String(), createPowerConsumptionSerde()));
 
-		final KStream<String, PowerConsumptionRecord> flatMapped = wordCounts
+		final KStream<String, PowerConsumptionRecord> flatMapped = inputStream
 				.flatMap((key, value) -> this.flatMap(value));
 
-		final KGroupedStream<String, PowerConsumptionRecord> groupedStream = flatMapped.groupByKey(); // TODO set serdes
+		final KGroupedStream<String, PowerConsumptionRecord> groupedStream = flatMapped
+				.groupByKey(Serialized.with(Serdes.String(), createPowerConsumptionSerde()));
 
 		final KTable<String, AggregatedSensorHistory> aggregated = groupedStream.aggregate(() -> {
 			return new AggregatedSensorHistory();
 		}, (aggKey, newValue, aggValue2) -> {
-			// System.out.println("Agg: " + aggKey + ":" + newValue);
-			// AggregatedSensorHistory aggValue2;
-			aggValue2.update(aggKey, newValue.getPowerConsumptionInWh());
-			return aggValue2;
-			// return (long) newValue.getPowerConsumptionInWh();
-		}, /* adder */
-				Materialized
-						.<String, AggregatedSensorHistory, KeyValueStore<Bytes, byte[]>>as(
-								"aggregated-stream-store-for-partition") // state
-						// store
-						// name
-						.withKeySerde(Serdes.String()) /* key serde */
-						.withValueSerde(createAggregatedSensorHistorySerde())); /* serde for aggregate value */
+			System.out.println(aggKey + ": " + aggValue2.getSummaryStatistics());
+			return aggValue2.update(newValue.getIdentifier().toString(), newValue.getPowerConsumptionInWh());
+		}, Materialized.<String, AggregatedSensorHistory, KeyValueStore<Bytes, byte[]>>as(AGGREGATED_STREAM_STORE_TOPIC)
+				.withKeySerde(Serdes.String()).withValueSerde(createAggregatedSensorHistorySerde()));
 
 		// aggregated.toStream().to("", Produced.with(null, null));
 
@@ -73,10 +67,11 @@ public class KafkaStreamsFactory {
 		// and so on.
 		final Properties settings = new Properties();
 		// Set a few key parameters
-		settings.put(StreamsConfig.APPLICATION_ID_CONFIG, "my-first-streams-application-0.0.2");
+		settings.put(StreamsConfig.APPLICATION_ID_CONFIG, "my-first-streams-application-0.0.3");
 		settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
-		settings.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
-		settings.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
+		// settings.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG,
+		// Serdes.String().getClass().getName());
+		// settings.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG,createPowerConsumptionSerde().getClass().getName());
 		// Any further settings
 		// settings.put(... , ...);
 		final StreamsConfig config = new StreamsConfig(settings);
@@ -85,11 +80,17 @@ public class KafkaStreamsFactory {
 	}
 
 	private Iterable<KeyValue<String, PowerConsumptionRecord>> flatMap(final PowerConsumptionRecord record) {
-		final SensorRegistry sensorRegistry = null; // TODO
-		final Optional<MachineSensor> sensor = sensorRegistry.getSensorForIdentifier(record.getIdentifier().toString()); // TODO
-																															// temp
-		return sensor.stream().flatMap(s -> s.getParents().stream()).map(s -> s.getIdentifier())
-				.map(i -> KeyValue.pair(i, record)).collect(Collectors.toList());
+		// final SensorRegistry sensorRegistry = null; // TODO
+		// final Optional<MachineSensor> sensor =
+		// sensorRegistry.getSensorForIdentifier(record.getIdentifier().toString()); //
+		// TODO
+		// // temp
+		// // TODO return this
+		// sensor.stream().flatMap(s -> s.getParents().stream()).map(s ->
+		// s.getIdentifier())
+		// .map(i -> KeyValue.pair(i, record)).collect(Collectors.toList());
+
+		return List.of(KeyValue.pair("agg-sensor-1", record), KeyValue.pair("agg-sensor-2", record));
 	}
 
 	private static final Serde<PowerConsumptionRecord> createPowerConsumptionSerde() {
@@ -98,7 +99,7 @@ public class KafkaStreamsFactory {
 
 	// PowerConsumption Serdes
 
-	private static class PowerConsumptionRecordDeserializer implements Deserializer<PowerConsumptionRecord> {
+	public static class PowerConsumptionRecordDeserializer implements Deserializer<PowerConsumptionRecord> {
 
 		private final ByteBufferDeserializer byteBufferDeserializer = new ByteBufferDeserializer();
 		private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
@@ -119,9 +120,9 @@ public class KafkaStreamsFactory {
 			final long timestamp = buffer.getLong();
 			final int powerConsumption = buffer.getInt();
 
-			return new PowerConsumptionRecord(identifier.getBytes(), timestamp, powerConsumption); // TODO temp
-																									// converserion to
-																									// bytes
+			return new PowerConsumptionRecord(identifier, timestamp, powerConsumption); // TODO temp
+																						// converserion to
+																						// bytes
 		}
 
 		@Override
@@ -131,7 +132,7 @@ public class KafkaStreamsFactory {
 
 	}
 
-	private static class PowerConsumptionRecordSerializer implements Serializer<PowerConsumptionRecord> {
+	public static class PowerConsumptionRecordSerializer implements Serializer<PowerConsumptionRecord> {
 
 		private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
 		private static final int BYTE_BUFFER_CAPACITY = 65536; // Is only virtual memory
@@ -145,9 +146,9 @@ public class KafkaStreamsFactory {
 
 		@Override
 		public byte[] serialize(final String topic, final PowerConsumptionRecord record) {
-			final String identifier = record.getIdentifier().toString(); // TODO Identifier will be String
-
 			final ByteBuffer buffer = ByteBuffer.allocateDirect(BYTE_BUFFER_CAPACITY);
+
+			final String identifier = record.getIdentifier();
 			final byte[] stringBytes = identifier.getBytes(DEFAULT_CHARSET);
 			buffer.putInt(stringBytes.length);
 			buffer.put(stringBytes);
@@ -174,16 +175,17 @@ public class KafkaStreamsFactory {
 
 		// TODO except read only copy of key value pairs
 		public AggregatedSensorHistory(final Map<String, Long> lastValues) {
-			this.lastValues = lastValues;
+			this.lastValues = new HashMap<>(lastValues);
 		}
 
-		public void update(final String identifier, final long newValue) {
+		public AggregatedSensorHistory update(final String identifier, final long newValue) {
 			this.lastValues.put(identifier, newValue);
+			return this;
 		}
 
 		// TODO return read only copy of key value pairs
 		public Map<String, Long> getLastValues() {
-			return this.lastValues;
+			return Collections.unmodifiableMap(this.lastValues);
 		}
 
 		public LongSummaryStatistics getSummaryStatistics() {
@@ -249,15 +251,19 @@ public class KafkaStreamsFactory {
 
 			final Map<String, Long> map = new HashMap<>();
 
-			final int size = buffer.getInt();
-			for (int i = 0; i < size; i++) {
-				final int keyLength = buffer.getInt();
-				final byte[] keyBytes = new byte[keyLength];
-				buffer.get(keyBytes);
-				final String key = new String(keyBytes, DEFAULT_CHARSET);
-				final long value = buffer.getLong();
+			if (data != null) { // Why can this happen?
+				final int size = buffer.getInt();
+				for (int i = 0; i < size; i++) {
+					final int keyLength = buffer.getInt();
+					final byte[] keyBytes = new byte[keyLength];
+					buffer.get(keyBytes);
+					final String key = new String(keyBytes, DEFAULT_CHARSET);
+					final long value = buffer.getLong();
 
-				map.put(key, value);
+					map.put(key, value);
+				}
+			} else {
+				System.out.println("Store has null"); // TODO
 			}
 
 			return new AggregatedSensorHistory(map);
