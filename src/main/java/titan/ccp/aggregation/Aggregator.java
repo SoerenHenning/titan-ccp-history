@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.LongSummaryStatistics;
 import java.util.function.Consumer;
 
-import com.google.common.primitives.Longs;
-
 import titan.ccp.model.PowerConsumptionRecord;
 import titan.ccp.model.sensorregistry.AggregatedSensor;
 import titan.ccp.model.sensorregistry.MachineSensor;
@@ -31,9 +29,7 @@ public class Aggregator {
 	public void process(final PowerConsumptionRecord record) {
 
 		// TODO rework this
-		final byte[] identifierAsBytes = record.getIdentifier();
-		final Long identifierAsLong = Longs.fromByteArray(identifierAsBytes);
-		final String identifier = identifierAsLong.toString();
+		final String identifier = record.getIdentifier();
 		final MachineSensor sensor = this.sensorRegistry.getSensorForIdentifier(identifier).get(); // TODO bad
 
 		// Update last sensor value
