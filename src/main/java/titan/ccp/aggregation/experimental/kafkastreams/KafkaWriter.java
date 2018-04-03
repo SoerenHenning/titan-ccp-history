@@ -19,7 +19,7 @@ public class KafkaWriter {
 
 	private final Producer<String, PowerConsumptionRecord> producer;
 	private static final String BOOTSRATP_SERVERS = "localhost:9092";
-	private static final String TOPIC = "test-topic-180403";
+	private static final String TOPIC = "test-topic-18040319";
 
 	public KafkaWriter() {
 		final Properties properties = new Properties();
@@ -41,7 +41,7 @@ public class KafkaWriter {
 
 	public void write(final PowerConsumptionRecord powerConsumptionRecord) {
 		final ProducerRecord<String, PowerConsumptionRecord> record = new ProducerRecord<>(TOPIC,
-				powerConsumptionRecord);
+				powerConsumptionRecord.getIdentifier(), powerConsumptionRecord);
 		this.producer.send(record);
 	}
 

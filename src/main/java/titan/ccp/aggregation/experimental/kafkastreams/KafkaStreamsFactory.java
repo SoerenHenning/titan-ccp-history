@@ -34,8 +34,8 @@ import titan.ccp.model.PowerConsumptionRecord;
 
 public class KafkaStreamsFactory {
 
-	private static final String AGGREGATED_STREAM_STORE_TOPIC = "aggregated-stream-store-for-test-topic-180403";
-	private static final String INPUT_TOPIC = "test-topic-180403";
+	private static final String AGGREGATED_STREAM_STORE_TOPIC = "aggregated-stream-store-for-test-topic-18040319";
+	private static final String INPUT_TOPIC = "test-topic-18040319";
 
 	public KafkaStreams create() {
 		final StreamsBuilder builder = new StreamsBuilder(); // when using the DSL
@@ -120,9 +120,7 @@ public class KafkaStreamsFactory {
 			final long timestamp = buffer.getLong();
 			final int powerConsumption = buffer.getInt();
 
-			return new PowerConsumptionRecord(identifier, timestamp, powerConsumption); // TODO temp
-																						// converserion to
-																						// bytes
+			return new PowerConsumptionRecord(identifier, timestamp, powerConsumption);
 		}
 
 		@Override
