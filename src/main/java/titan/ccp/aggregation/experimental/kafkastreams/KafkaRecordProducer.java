@@ -13,15 +13,15 @@ import org.slf4j.LoggerFactory;
 
 import titan.ccp.model.PowerConsumptionRecord;
 
-public class KafkaWriter {
+public class KafkaRecordProducer {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(KafkaWriter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(KafkaRecordProducer.class);
 
 	private final Producer<String, PowerConsumptionRecord> producer;
 	private static final String BOOTSRATP_SERVERS = "localhost:9092";
 	private static final String TOPIC = "test-topic-18040319";
 
-	public KafkaWriter() {
+	public KafkaRecordProducer() {
 		final Properties properties = new Properties();
 
 		properties.put("bootstrap.servers", BOOTSRATP_SERVERS);
@@ -49,7 +49,7 @@ public class KafkaWriter {
 		LOGGER.info("Start producing records");
 
 		final Random random = new Random();
-		final KafkaWriter kafkaWriter = new KafkaWriter();
+		final KafkaRecordProducer kafkaWriter = new KafkaRecordProducer();
 
 		final List<String> identifiers = List.of("sensor-1", "sensor-2", "sensor-3");
 

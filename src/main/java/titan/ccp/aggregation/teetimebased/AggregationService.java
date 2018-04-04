@@ -1,4 +1,4 @@
-package titan.ccp.aggregation;
+package titan.ccp.aggregation.teetimebased;
 
 import teetime.framework.Execution;
 import titan.ccp.model.sensorregistry.ProxySensorRegistry;

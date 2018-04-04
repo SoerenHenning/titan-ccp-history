@@ -1,4 +1,4 @@
-package titan.ccp.aggregation;
+package titan.ccp.aggregation.teetimebased;
 
 import java.time.Instant;
 

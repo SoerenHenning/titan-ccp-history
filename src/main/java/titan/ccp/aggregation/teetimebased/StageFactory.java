@@ -1,4 +1,4 @@
-package titan.ccp.aggregation;
+package titan.ccp.aggregation.teetimebased;
 
 import java.io.PrintWriter;
 import java.util.function.Consumer;

@@ -52,6 +52,7 @@ public class KafkaStreamsFactory {
 		final KTable<String, AggregatedSensorHistory> aggregated = groupedStream.aggregate(() -> {
 			return new AggregatedSensorHistory();
 		}, (aggKey, newValue, aggValue2) -> {
+			System.out.println("new: " + newValue);
 			System.out.println(aggKey + ": " + aggValue2.getSummaryStatistics());
 			return aggValue2.update(newValue.getIdentifier().toString(), newValue.getPowerConsumptionInWh());
 		}, Materialized.<String, AggregatedSensorHistory, KeyValueStore<Bytes, byte[]>>as(AGGREGATED_STREAM_STORE_TOPIC)
@@ -67,7 +68,7 @@ public class KafkaStreamsFactory {
 		// and so on.
 		final Properties settings = new Properties();
 		// Set a few key parameters
-		settings.put(StreamsConfig.APPLICATION_ID_CONFIG, "my-first-streams-application-0.0.3");
+		settings.put(StreamsConfig.APPLICATION_ID_CONFIG, "my-first-streams-application-0.0.4");
 		settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
 		// settings.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG,
 		// Serdes.String().getClass().getName());
