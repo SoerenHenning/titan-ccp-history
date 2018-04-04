@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import titan.ccp.model.sensorregistry.serialization.AggregatedSensorSerializer;
+import titan.ccp.model.sensorregistry.serialization.MachineSensorSerializer;
 import titan.ccp.model.sensorregistry.serialization.SensorRegistrySerializer;
 
 public class TestFactory {

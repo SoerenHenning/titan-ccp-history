@@ -8,7 +8,7 @@ public class ProxySensorRegistry implements SensorRegistry {
 	private SensorRegistry backingSensorRegisty;
 
 	public ProxySensorRegistry() {
-		this.backingSensorRegisty = new DummySensorRegistry();
+		this.backingSensorRegisty = new DummySensorRegistry(); // TODO remove
 	}
 
 	public ProxySensorRegistry(final SensorRegistry backingSensorRegisty) {

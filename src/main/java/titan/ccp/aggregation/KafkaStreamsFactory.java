@@ -62,6 +62,7 @@ public class KafkaStreamsFactory {
 		}, Materialized.<String, AggregationHistory, KeyValueStore<Bytes, byte[]>>as(AGGREGATED_STREAM_STORE_TOPIC)
 				.withKeySerde(Serdes.String()).withValueSerde(AggregationHistorySerde.create()));
 
+		aggregated.toStream().foreach((key, value) -> System.out.println(key + ": " + value.getSummaryStatistics())); // TODO
 		// aggregated.toStream().to("", Produced.with(null, null));
 
 		final Topology topology = builder.build();

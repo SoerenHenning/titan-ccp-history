@@ -9,7 +9,6 @@ import org.junit.Test;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import titan.ccp.model.sensorregistry.MachineSensorSerializer;
 import titan.ccp.model.sensorregistry.MutableAggregatedSensor;
 import titan.ccp.model.sensorregistry.MutableMachineSensor;
 import titan.ccp.model.sensorregistry.MutableSensorRegistry;
