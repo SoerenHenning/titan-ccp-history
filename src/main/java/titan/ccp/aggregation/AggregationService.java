@@ -1,4 +1,4 @@
-package titan.ccp.aggregation.experimental.kafkastreams;
+package titan.ccp.aggregation;
 
 import org.apache.kafka.streams.KafkaStreams;
 

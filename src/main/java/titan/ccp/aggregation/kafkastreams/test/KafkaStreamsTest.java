@@ -1,4 +1,4 @@
-package titan.ccp.aggregation.experimental.kafkastreams;
+package titan.ccp.aggregation.kafkastreams.test;
 
 import java.util.List;
 import java.util.Properties;

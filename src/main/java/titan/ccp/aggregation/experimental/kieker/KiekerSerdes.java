@@ -1,4 +1,4 @@
-package titan.ccp.aggregation.experimental.kafkastreams;
+package titan.ccp.aggregation.experimental.kieker;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

@@ -1,4 +1,4 @@
-package titan.ccp.aggregation.teetimebased;
+package titan.ccp.aggregation.experimental.teetimebased;
 
 import kieker.common.record.IMonitoringRecord;
 import kieker.common.record.io.IValueSerializer;

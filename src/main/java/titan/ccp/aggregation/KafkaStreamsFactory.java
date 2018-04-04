@@ -1,12 +1,8 @@
-package titan.ccp.aggregation.experimental.kafkastreams;
+package titan.ccp.aggregation;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LongSummaryStatistics;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -51,21 +47,20 @@ public class KafkaStreamsFactory {
 		final KGroupedStream<String, PowerConsumptionRecord> groupedStream = flatMapped
 				.groupByKey(Serialized.with(Serdes.String(), createPowerConsumptionSerde()));
 
-		final KTable<String, AggregatedSensorHistory> aggregated = groupedStream.aggregate(() -> {
-			return new AggregatedSensorHistory();
+		final KTable<String, AggregationHistory> aggregated = groupedStream.aggregate(() -> {
+			return new AggregationHistory();
 		}, (aggKey, newValue, aggValue2) -> {
 			System.out.println("__");
 			System.out.println("O: " + aggKey + ": " + aggValue2.getLastValues());
 			System.out.println("O: " + aggKey + ": " + aggValue2.getSummaryStatistics());
 			System.out.println("new: " + newValue.getIdentifier() + ": " + newValue.getPowerConsumptionInWh());
-			aggValue2.update(newValue.getIdentifier().toString(), newValue.getPowerConsumptionInWh());
+			aggValue2.update(newValue);
 			System.out.println("N: " + aggKey + ": " + aggValue2.getLastValues());
 			System.out.println("N: " + aggKey + ": " + aggValue2.getSummaryStatistics());
 			return aggValue2;
-			// return aggValue2.update(newValue.getIdentifier().toString(),
-			// newValue.getPowerConsumptionInWh());
-		}, Materialized.<String, AggregatedSensorHistory, KeyValueStore<Bytes, byte[]>>as(AGGREGATED_STREAM_STORE_TOPIC)
-				.withKeySerde(Serdes.String()).withValueSerde(createAggregatedSensorHistorySerde()));
+			// return aggValue2.update(newValue);
+		}, Materialized.<String, AggregationHistory, KeyValueStore<Bytes, byte[]>>as(AGGREGATED_STREAM_STORE_TOPIC)
+				.withKeySerde(Serdes.String()).withValueSerde(AggregationHistorySerde.create()));
 
 		// aggregated.toStream().to("", Produced.with(null, null));
 
@@ -167,124 +162,6 @@ public class KafkaStreamsFactory {
 		@Override
 		public void close() {
 			this.byteBufferSerializer.close();
-		}
-
-	}
-
-	//
-	//
-	//
-	//
-	//
-	// Aggregated Sensor History
-
-	public static class AggregatedSensorHistory { // TODO
-
-		private final Map<String, Long> lastValues;
-
-		public AggregatedSensorHistory() {
-			this.lastValues = new HashMap<>();
-		}
-
-		// TODO except read only copy of key value pairs
-		public AggregatedSensorHistory(final Map<String, Long> lastValues) {
-			this.lastValues = new HashMap<>(lastValues);
-		}
-
-		public AggregatedSensorHistory update(final String identifier, final long newValue) {
-			this.lastValues.put(identifier, newValue);
-			return this;
-		}
-
-		// TODO return read only copy of key value pairs
-		public Map<String, Long> getLastValues() {
-			return Collections.unmodifiableMap(this.lastValues);
-		}
-
-		public LongSummaryStatistics getSummaryStatistics() {
-			return this.lastValues.values().stream().mapToLong(v -> v).summaryStatistics();
-		}
-
-	}
-
-	// AggregatedSensorHistorySerdes
-
-	private static final Serde<AggregatedSensorHistory> createAggregatedSensorHistorySerde() {
-		return Serdes.serdeFrom(new AggregatedSensorHistorySerializer(), new AggregatedSensorHistoryDeserializer());
-	}
-
-	private static class AggregatedSensorHistorySerializer implements Serializer<AggregatedSensorHistory> {
-
-		private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
-		private static final int BYTE_BUFFER_CAPACITY = 65536; // Is only virtual memory
-
-		private final ByteBufferSerializer byteBufferSerializer = new ByteBufferSerializer();
-
-		@Override
-		public void configure(final Map<String, ?> configs, final boolean isKey) {
-			this.byteBufferSerializer.configure(configs, isKey);
-		}
-
-		@Override
-		public byte[] serialize(final String topic, final AggregatedSensorHistory data) {
-			final ByteBuffer buffer = ByteBuffer.allocateDirect(BYTE_BUFFER_CAPACITY);
-
-			buffer.putInt(data.getLastValues().size());
-			for (final Entry<String, Long> entry : data.getLastValues().entrySet()) {
-				final byte[] key = entry.getKey().getBytes(DEFAULT_CHARSET);
-				buffer.putInt(key.length);
-				buffer.put(key);
-				buffer.putLong(entry.getValue());
-			}
-
-			return this.byteBufferSerializer.serialize(topic, buffer);
-		}
-
-		@Override
-		public void close() {
-			this.byteBufferSerializer.close();
-		}
-
-	}
-
-	private static class AggregatedSensorHistoryDeserializer implements Deserializer<AggregatedSensorHistory> {
-
-		private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
-
-		private final ByteBufferDeserializer byteBufferDeserializer = new ByteBufferDeserializer();
-
-		@Override
-		public void configure(final Map<String, ?> configs, final boolean isKey) {
-			this.byteBufferDeserializer.configure(configs, isKey);
-		}
-
-		@Override
-		public AggregatedSensorHistory deserialize(final String topic, final byte[] data) {
-			final ByteBuffer buffer = this.byteBufferDeserializer.deserialize(topic, data);
-
-			final Map<String, Long> map = new HashMap<>();
-
-			if (data != null) { // How can this happen?
-				final int size = buffer.getInt();
-				for (int i = 0; i < size; i++) {
-					final int keyLength = buffer.getInt();
-					final byte[] keyBytes = new byte[keyLength];
-					buffer.get(keyBytes);
-					final String key = new String(keyBytes, DEFAULT_CHARSET);
-					final long value = buffer.getLong();
-
-					map.put(key, value);
-				}
-			} else {
-				System.out.println("Store has null"); // TODO
-			}
-
-			return new AggregatedSensorHistory(map);
-		}
-
-		@Override
-		public void close() {
-			this.byteBufferDeserializer.close();
 		}
 
 	}
