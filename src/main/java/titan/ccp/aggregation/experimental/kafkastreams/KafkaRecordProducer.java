@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import titan.ccp.model.PowerConsumptionRecord;
+import titan.ccp.model.sensorregistry.ExampleSensors;
 
 public class KafkaRecordProducer {
 
@@ -51,7 +52,8 @@ public class KafkaRecordProducer {
 		final Random random = new Random();
 		final KafkaRecordProducer kafkaWriter = new KafkaRecordProducer();
 
-		final List<String> identifiers = List.of("sensor-1", "sensor-2", "sensor-3");
+		// final List<String> identifiers = List.of("sensor-1", "sensor-2", "sensor-3");
+		final List<String> identifiers = ExampleSensors.machineSensorNames();
 
 		while (true) {
 			final String identifier = identifiers.get(random.nextInt(identifiers.size()));

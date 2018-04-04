@@ -54,9 +54,16 @@ public class KafkaStreamsFactory {
 		final KTable<String, AggregatedSensorHistory> aggregated = groupedStream.aggregate(() -> {
 			return new AggregatedSensorHistory();
 		}, (aggKey, newValue, aggValue2) -> {
-			System.out.println("new: " + newValue);
-			System.out.println(aggKey + ": " + aggValue2.getSummaryStatistics());
-			return aggValue2.update(newValue.getIdentifier().toString(), newValue.getPowerConsumptionInWh());
+			System.out.println("__");
+			System.out.println("O: " + aggKey + ": " + aggValue2.getLastValues());
+			System.out.println("O: " + aggKey + ": " + aggValue2.getSummaryStatistics());
+			System.out.println("new: " + newValue.getIdentifier() + ": " + newValue.getPowerConsumptionInWh());
+			aggValue2.update(newValue.getIdentifier().toString(), newValue.getPowerConsumptionInWh());
+			System.out.println("N: " + aggKey + ": " + aggValue2.getLastValues());
+			System.out.println("N: " + aggKey + ": " + aggValue2.getSummaryStatistics());
+			return aggValue2;
+			// return aggValue2.update(newValue.getIdentifier().toString(),
+			// newValue.getPowerConsumptionInWh());
 		}, Materialized.<String, AggregatedSensorHistory, KeyValueStore<Bytes, byte[]>>as(AGGREGATED_STREAM_STORE_TOPIC)
 				.withKeySerde(Serdes.String()).withValueSerde(createAggregatedSensorHistorySerde()));
 
