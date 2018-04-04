@@ -4,11 +4,11 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import org.apache.kafka.common.serialization.ByteBufferDeserializer;
 import org.apache.kafka.common.serialization.ByteBufferSerializer;
@@ -31,6 +31,8 @@ import org.apache.kafka.streams.kstream.Serialized;
 import org.apache.kafka.streams.state.KeyValueStore;
 
 import titan.ccp.model.PowerConsumptionRecord;
+import titan.ccp.model.sensorregistry.ExampleSensors;
+import titan.ccp.model.sensorregistry.SensorRegistry;
 
 public class KafkaStreamsFactory {
 
@@ -81,24 +83,23 @@ public class KafkaStreamsFactory {
 	}
 
 	private Iterable<KeyValue<String, PowerConsumptionRecord>> flatMap(final PowerConsumptionRecord record) {
-		// final SensorRegistry sensorRegistry = null; // TODO
-		// final Optional<MachineSensor> sensor =
-		// sensorRegistry.getSensorForIdentifier(record.getIdentifier().toString()); //
-		// TODO
-		// // temp
-		// // TODO return this
-		// sensor.stream().flatMap(s -> s.getParents().stream()).map(s ->
-		// s.getIdentifier())
-		// .map(i -> KeyValue.pair(i, record)).collect(Collectors.toList());
+		final SensorRegistry sensorRegistry = ExampleSensors.registry(); // TODO
 
-		return List.of(KeyValue.pair("agg-sensor-1", record), KeyValue.pair("agg-sensor-2", record));
+		return sensorRegistry.getSensorForIdentifier(record.getIdentifier()).stream()
+				.flatMap(s -> s.getParents().stream()).map(s -> s.getIdentifier()).map(i -> KeyValue.pair(i, record))
+				.collect(Collectors.toList());
 	}
+
+	//
+	//
+	//
+	//
+	//
+	// PowerConsumption Serdes
 
 	private static final Serde<PowerConsumptionRecord> createPowerConsumptionSerde() {
 		return Serdes.serdeFrom(new PowerConsumptionRecordSerializer(), new PowerConsumptionRecordDeserializer());
 	}
-
-	// PowerConsumption Serdes
 
 	public static class PowerConsumptionRecordDeserializer implements Deserializer<PowerConsumptionRecord> {
 
@@ -162,6 +163,13 @@ public class KafkaStreamsFactory {
 		}
 
 	}
+
+	//
+	//
+	//
+	//
+	//
+	// Aggregated Sensor History
 
 	public static class AggregatedSensorHistory { // TODO
 
@@ -249,7 +257,7 @@ public class KafkaStreamsFactory {
 
 			final Map<String, Long> map = new HashMap<>();
 
-			if (data != null) { // Why can this happen?
+			if (data != null) { // How can this happen?
 				final int size = buffer.getInt();
 				for (int i = 0; i < size; i++) {
 					final int keyLength = buffer.getInt();

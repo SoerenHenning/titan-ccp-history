@@ -4,12 +4,12 @@ import org.apache.kafka.streams.KafkaStreams;
 
 import titan.ccp.model.sensorregistry.ProxySensorRegistry;
 
-public class KafkaStreamsBasedAggregationService {
+public class AggregationService {
 
 	final ProxySensorRegistry sensorRegistry = new ProxySensorRegistry();
 	final KafkaStreams kafkaStreams = new KafkaStreamsFactory().create();
 
-	public KafkaStreamsBasedAggregationService() {
+	public AggregationService() {
 
 	}
 
@@ -23,7 +23,7 @@ public class KafkaStreamsBasedAggregationService {
 	}
 
 	public static void main(final String[] args) {
-		new KafkaStreamsBasedAggregationService().run();
+		new AggregationService().run();
 	}
 
 }
