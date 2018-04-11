@@ -26,9 +26,9 @@ import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Serialized;
 import org.apache.kafka.streams.state.KeyValueStore;
 
-import titan.ccp.model.PowerConsumptionRecord;
 import titan.ccp.model.sensorregistry.ExampleSensors;
 import titan.ccp.model.sensorregistry.SensorRegistry;
+import titan.ccp.models.records.PowerConsumptionRecord;
 
 public class KafkaStreamsFactory {
 
@@ -38,8 +38,7 @@ public class KafkaStreamsFactory {
 	public KafkaStreams create() {
 		final StreamsBuilder builder = new StreamsBuilder(); // when using the DSL
 
-		final KStream<String, PowerConsumptionRecord> inputStream = builder.stream(INPUT_TOPIC,
-				Consumed.with(Serdes.String(), createPowerConsumptionSerde()));
+		final KStream<String, PowerConsumptionRecord> inputStream = builder.stream(INPUT_TOPIC, Consumed.with(Serdes.String(), createPowerConsumptionSerde()));
 
 		final KStream<String, PowerConsumptionRecord> flatMapped = inputStream
 				.flatMap((key, value) -> this.flatMap(value));
@@ -50,15 +49,16 @@ public class KafkaStreamsFactory {
 		final KTable<String, AggregationHistory> aggregated = groupedStream.aggregate(() -> {
 			return new AggregationHistory();
 		}, (aggKey, newValue, aggValue2) -> {
-			System.out.println("__");
-			System.out.println("O: " + aggKey + ": " + aggValue2.getLastValues());
-			System.out.println("O: " + aggKey + ": " + aggValue2.getSummaryStatistics());
-			System.out.println("new: " + newValue.getIdentifier() + ": " + newValue.getPowerConsumptionInWh());
-			aggValue2.update(newValue);
-			System.out.println("N: " + aggKey + ": " + aggValue2.getLastValues());
-			System.out.println("N: " + aggKey + ": " + aggValue2.getSummaryStatistics());
-			return aggValue2;
-			// return aggValue2.update(newValue);
+			// System.out.println("__");
+			// System.out.println("O: " + aggKey + ": " + aggValue2.getLastValues());
+			// System.out.println("O: " + aggKey + ": " + aggValue2.getSummaryStatistics());
+			// System.out.println("new: " + newValue.getIdentifier() + ": " +
+			// newValue.getPowerConsumptionInWh());
+			// aggValue2.update(newValue);
+			// System.out.println("N: " + aggKey + ": " + aggValue2.getLastValues());
+			// System.out.println("N: " + aggKey + ": " + aggValue2.getSummaryStatistics());
+			// return aggValue2;
+			return aggValue2.update(newValue);
 		}, Materialized.<String, AggregationHistory, KeyValueStore<Bytes, byte[]>>as(AGGREGATED_STREAM_STORE_TOPIC)
 				.withKeySerde(Serdes.String()).withValueSerde(AggregationHistorySerde.create()));
 
@@ -88,8 +88,12 @@ public class KafkaStreamsFactory {
 	private Iterable<KeyValue<String, PowerConsumptionRecord>> flatMap(final PowerConsumptionRecord record) {
 		final SensorRegistry sensorRegistry = ExampleSensors.registry(); // TODO
 
-		return sensorRegistry.getSensorForIdentifier(record.getIdentifier()).stream()
-				.flatMap(s -> s.getParents().stream()).map(s -> s.getIdentifier()).map(i -> KeyValue.pair(i, record))
+		return sensorRegistry
+				.getSensorForIdentifier(record.getIdentifier())
+				.stream()
+				.flatMap(s -> s.getParents().stream())
+				.map(s -> s.getIdentifier())
+				.map(i -> KeyValue.pair(i, record))
 				.collect(Collectors.toList());
 	}
 

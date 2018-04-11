@@ -7,13 +7,13 @@ import java.util.function.Function;
 import teetime.framework.AbstractConsumerStage;
 import teetime.framework.AbstractProducerStage;
 import teetime.stage.basic.AbstractTransformation;
-import titan.ccp.model.PowerConsumptionRecord;
+import titan.ccp.models.records.PowerConsumptionRecord;
 
 public class StageFactory {
 
 	public static <T, O> AbstractProducerStage<O> producer(final Function<Consumer<O>, T> logicFactory,
 			final Function<T, Procedure> method) {
-		return new AbstractProducerStage<O>() {
+		return new AbstractProducerStage<>() {
 
 			T logic = logicFactory.apply(this.getOutputPort()::send);
 
@@ -25,7 +25,7 @@ public class StageFactory {
 	}
 
 	public static <T, I> AbstractConsumerStage<I> consumer(final T logic, final Function<T, Consumer<I>> method) {
-		return new AbstractConsumerStage<I>() {
+		return new AbstractConsumerStage<>() {
 			@Override
 			protected void execute(final I element) throws Exception {
 				method.apply(logic).accept(element);
@@ -35,7 +35,7 @@ public class StageFactory {
 
 	public static <T, I, O> AbstractTransformation<I, O> transformation(final Function<Consumer<O>, T> logicFactory,
 			final Function<T, Consumer<I>> method) {
-		return new AbstractTransformation<I, O>() {
+		return new AbstractTransformation<>() {
 
 			T logic = logicFactory.apply(this.getOutputPort()::send);
 

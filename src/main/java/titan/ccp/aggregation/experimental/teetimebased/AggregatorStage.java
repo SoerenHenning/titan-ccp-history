@@ -1,8 +1,8 @@
 package titan.ccp.aggregation.experimental.teetimebased;
 
 import teetime.stage.basic.AbstractTransformation;
-import titan.ccp.model.PowerConsumptionRecord;
 import titan.ccp.model.sensorregistry.SensorRegistry;
+import titan.ccp.models.records.PowerConsumptionRecord;
 
 public class AggregatorStage extends AbstractTransformation<PowerConsumptionRecord, AggregationResult> {
 

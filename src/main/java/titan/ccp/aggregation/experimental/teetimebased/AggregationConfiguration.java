@@ -5,8 +5,8 @@ import java.util.concurrent.CompletableFuture;
 import kieker.common.record.IMonitoringRecord;
 import teetime.framework.Configuration;
 import teetime.stage.InstanceOfFilter;
-import titan.ccp.model.PowerConsumptionRecord;
 import titan.ccp.model.sensorregistry.SensorRegistry;
+import titan.ccp.models.records.PowerConsumptionRecord;
 
 public class AggregationConfiguration extends Configuration {
 

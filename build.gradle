@@ -14,8 +14,9 @@ repositories {
 
 dependencies {
     // These dependencies is exported to consumers, that is to say found on their compile classpath.
+    api 'org.industrial-devops:titan.ccp.model:0.0.1-SNAPSHOT'
     api 'net.kieker-monitoring:kieker:1.14-SNAPSHOT'
-    api 'net.sourceforge.teetime:teetime:3.0-SNAPSHOT'
+    api 'net.sourceforge.teetime:teetime:3.0'
 
     // These dependencies are used internally, and not exposed to consumers on their own compile classpath.
     implementation 'org.apache.kafka:kafka-clients:1.0.1'

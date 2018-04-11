@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.IntSummaryStatistics;
 import java.util.Map;
 
-import titan.ccp.model.PowerConsumptionRecord;
+import titan.ccp.models.records.PowerConsumptionRecord;
 
 public class AggregationHistory {
 	private final Map<String, Integer> lastValues;

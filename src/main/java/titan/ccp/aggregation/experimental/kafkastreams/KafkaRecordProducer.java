@@ -12,8 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import titan.ccp.aggregation.KafkaStreamsFactory;
-import titan.ccp.model.PowerConsumptionRecord;
 import titan.ccp.model.sensorregistry.ExampleSensors;
+import titan.ccp.models.records.PowerConsumptionRecord;
 
 public class KafkaRecordProducer {
 

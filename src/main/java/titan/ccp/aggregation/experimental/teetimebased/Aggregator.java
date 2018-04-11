@@ -5,10 +5,10 @@ import java.util.List;
 import java.util.LongSummaryStatistics;
 import java.util.function.Consumer;
 
-import titan.ccp.model.PowerConsumptionRecord;
 import titan.ccp.model.sensorregistry.AggregatedSensor;
 import titan.ccp.model.sensorregistry.MachineSensor;
 import titan.ccp.model.sensorregistry.SensorRegistry;
+import titan.ccp.models.records.PowerConsumptionRecord;
 
 public class Aggregator {
 
