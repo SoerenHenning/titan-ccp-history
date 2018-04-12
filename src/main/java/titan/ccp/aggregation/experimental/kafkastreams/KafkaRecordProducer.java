@@ -11,9 +11,9 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import titan.ccp.aggregation.KafkaStreamsFactory;
 import titan.ccp.model.sensorregistry.ExampleSensors;
 import titan.ccp.models.records.PowerConsumptionRecord;
+import titan.ccp.models.records.serialization.kafka.PowerConsumptionRecordSerializer;
 
 public class KafkaRecordProducer {
 
@@ -37,8 +37,7 @@ public class KafkaRecordProducer {
 		// properties.put("value.serializer",
 		// "org.apache.kafka.common.serialization.ByteArraySerializer");
 
-		this.producer = new KafkaProducer<>(properties, new StringSerializer(),
-				new KafkaStreamsFactory.PowerConsumptionRecordSerializer());
+		this.producer = new KafkaProducer<>(properties, new StringSerializer(), new PowerConsumptionRecordSerializer());
 	}
 
 	public void write(final PowerConsumptionRecord powerConsumptionRecord) {

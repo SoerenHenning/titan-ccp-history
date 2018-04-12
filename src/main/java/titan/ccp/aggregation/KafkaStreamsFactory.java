@@ -1,17 +1,10 @@
 package titan.ccp.aggregation;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import org.apache.kafka.common.serialization.ByteBufferDeserializer;
-import org.apache.kafka.common.serialization.ByteBufferSerializer;
-import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.Consumed;
 import org.apache.kafka.streams.KafkaStreams;
@@ -29,6 +22,8 @@ import org.apache.kafka.streams.state.KeyValueStore;
 import titan.ccp.model.sensorregistry.ExampleSensors;
 import titan.ccp.model.sensorregistry.SensorRegistry;
 import titan.ccp.models.records.PowerConsumptionRecord;
+import titan.ccp.models.records.serialization.kafka.PowerConsumptionRecordDeserializer;
+import titan.ccp.models.records.serialization.kafka.PowerConsumptionRecordSerializer;
 
 public class KafkaStreamsFactory {
 
@@ -104,71 +99,10 @@ public class KafkaStreamsFactory {
 	//
 	// PowerConsumption Serdes
 
+	// TODO move to model project
+	@Deprecated
 	private static final Serde<PowerConsumptionRecord> createPowerConsumptionSerde() {
 		return Serdes.serdeFrom(new PowerConsumptionRecordSerializer(), new PowerConsumptionRecordDeserializer());
-	}
-
-	public static class PowerConsumptionRecordDeserializer implements Deserializer<PowerConsumptionRecord> {
-
-		private final ByteBufferDeserializer byteBufferDeserializer = new ByteBufferDeserializer();
-		private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
-
-		@Override
-		public void configure(final Map<String, ?> configs, final boolean isKey) {
-			this.byteBufferDeserializer.configure(configs, isKey);
-		}
-
-		@Override
-		public PowerConsumptionRecord deserialize(final String topic, final byte[] data) {
-			final ByteBuffer buffer = this.byteBufferDeserializer.deserialize(topic, data);
-
-			final int stringLength = buffer.getInt();
-			final byte[] stringBytes = new byte[stringLength];
-			buffer.get(stringBytes);
-			final String identifier = new String(stringBytes, DEFAULT_CHARSET);
-			final long timestamp = buffer.getLong();
-			final int powerConsumption = buffer.getInt();
-
-			return new PowerConsumptionRecord(identifier, timestamp, powerConsumption);
-		}
-
-		@Override
-		public void close() {
-			this.byteBufferDeserializer.close();
-		}
-
-	}
-
-	public static class PowerConsumptionRecordSerializer implements Serializer<PowerConsumptionRecord> {
-
-		private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
-		private static final int BYTE_BUFFER_CAPACITY = 65536; // Is only virtual memory
-
-		private final ByteBufferSerializer byteBufferSerializer = new ByteBufferSerializer();
-
-		@Override
-		public void configure(final Map<String, ?> configs, final boolean isKey) {
-			this.byteBufferSerializer.configure(configs, isKey);
-		}
-
-		@Override
-		public byte[] serialize(final String topic, final PowerConsumptionRecord record) {
-			final ByteBuffer buffer = ByteBuffer.allocateDirect(BYTE_BUFFER_CAPACITY);
-
-			final byte[] identifierBytes = record.getIdentifier().getBytes(DEFAULT_CHARSET);
-			buffer.putInt(identifierBytes.length);
-			buffer.put(identifierBytes);
-			buffer.putLong(record.getTimestamp());
-			buffer.putInt(record.getPowerConsumptionInWh());
-
-			return this.byteBufferSerializer.serialize(topic, buffer);
-		}
-
-		@Override
-		public void close() {
-			this.byteBufferSerializer.close();
-		}
-
 	}
 
 }
