@@ -3,7 +3,6 @@ package titan.ccp.aggregation;
 import org.apache.kafka.streams.KafkaStreams;
 
 import titan.ccp.model.sensorregistry.ProxySensorRegistry;
-import titan.ccp.model.sensorregistry.SensorRegistry;
 
 public class AggregationService {
 
@@ -19,8 +18,9 @@ public class AggregationService {
 		// TODO request sensorRegistry
 		// sensorRegistry.setBackingSensorRegisty(backingSensorRegisty);
 		// TODO handle unavailability
-		final SensorRegistry sensorRegistry = this.sensorRegistryRequester.request().join();
-		this.sensorRegistry.setBackingSensorRegisty(sensorRegistry);
+		// final SensorRegistry sensorRegistry =
+		// this.sensorRegistryRequester.request().join();
+		// this.sensorRegistry.setBackingSensorRegisty(sensorRegistry);
 
 		// TODO request history for all sensors
 		// sensorHistory.update(, );
