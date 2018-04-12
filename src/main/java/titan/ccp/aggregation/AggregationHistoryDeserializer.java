@@ -27,8 +27,9 @@ public class AggregationHistoryDeserializer implements Deserializer<AggregationH
 			return new AggregationHistory();
 		}
 
-		final Map<String, Integer> map = new HashMap<>();
+		final long timestamp = buffer.getLong();
 
+		final Map<String, Integer> map = new HashMap<>();
 		final int size = buffer.getInt();
 		for (int i = 0; i < size; i++) {
 			final int keyLength = buffer.getInt();
@@ -40,7 +41,7 @@ public class AggregationHistoryDeserializer implements Deserializer<AggregationH
 			map.put(key, value);
 		}
 
-		return new AggregationHistory(map);
+		return new AggregationHistory(map, timestamp);
 	}
 
 	@Override

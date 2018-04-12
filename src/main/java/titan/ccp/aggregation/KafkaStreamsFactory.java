@@ -16,6 +16,7 @@ import org.apache.kafka.streams.kstream.KGroupedStream;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
+import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.kstream.Serialized;
 import org.apache.kafka.streams.state.KeyValueStore;
 
@@ -57,8 +58,9 @@ public class KafkaStreamsFactory {
 		}, Materialized.<String, AggregationHistory, KeyValueStore<Bytes, byte[]>>as(AGGREGATED_STREAM_STORE_TOPIC)
 				.withKeySerde(Serdes.String()).withValueSerde(AggregationHistorySerde.create()));
 
-		aggregated.toStream().foreach((key, value) -> System.out.println(key + ": " + value.getSummaryStatistics())); // TODO
-		// aggregated.toStream().to("", Produced.with(null, null));
+		// aggregated.toStream().foreach((key, value) -> System.out.println(key + ": " +
+		// value.getSummaryStatistics())); // TODO
+		aggregated.toStream().to("", Produced.with(null, null));
 
 		final Topology topology = builder.build();
 

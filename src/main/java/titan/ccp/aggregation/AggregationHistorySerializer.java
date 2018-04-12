@@ -24,6 +24,7 @@ public class AggregationHistorySerializer implements Serializer<AggregationHisto
 	public byte[] serialize(final String topic, final AggregationHistory data) {
 		final ByteBuffer buffer = ByteBuffer.allocateDirect(BYTE_BUFFER_CAPACITY);
 
+		buffer.putLong(data.getTimestamp());
 		buffer.putInt(data.getLastValues().size());
 		for (final Entry<String, Integer> entry : data.getLastValues().entrySet()) {
 			final byte[] key = entry.getKey().getBytes(DEFAULT_CHARSET);
