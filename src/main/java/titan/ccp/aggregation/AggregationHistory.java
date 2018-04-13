@@ -18,6 +18,7 @@ public class AggregationHistory {
 
 	public AggregationHistory(final Map<String, Integer> lastValues, final long timestamp) {
 		this.lastValues = new HashMap<>(lastValues);
+		this.timestamp = timestamp;
 	}
 
 	public AggregationHistory update(final PowerConsumptionRecord powerConsumptionRecord) {

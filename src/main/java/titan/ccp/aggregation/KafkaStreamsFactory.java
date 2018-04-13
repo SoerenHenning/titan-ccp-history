@@ -50,21 +50,26 @@ public class KafkaStreamsFactory {
 		final KTable<String, AggregationHistory> aggregated = groupedStream.aggregate(() -> {
 			return new AggregationHistory();
 		}, (aggKey, newValue, aggValue2) -> {
+			// System.out.println(".");
 			// System.out.println("__");
 			// System.out.println("O: " + aggKey + ": " + aggValue2.getLastValues());
 			// System.out.println("O: " + aggKey + ": " + aggValue2.getSummaryStatistics());
 			// System.out.println("new: " + newValue.getIdentifier() + ": " +
 			// newValue.getPowerConsumptionInWh());
-			// aggValue2.update(newValue);
+			aggValue2.update(newValue);
 			// System.out.println("N: " + aggKey + ": " + aggValue2.getLastValues());
 			// System.out.println("N: " + aggKey + ": " + aggValue2.getSummaryStatistics());
-			// return aggValue2;
-			return aggValue2.update(newValue);
+			// System.out.println("P: " + aggValue2.getTimestamp());
+			return aggValue2;
+			// return aggValue2.update(newValue);
 		}, Materialized.<String, AggregationHistory, KeyValueStore<Bytes, byte[]>>as(aggregatedStreamStoreTopic)
 				.withKeySerde(Serdes.String()).withValueSerde(AggregationHistorySerde.create()));
 
-		// aggregated.toStream().foreach((key, value) -> System.out.println(key + ": " +
-		// value.getSummaryStatistics())); // TODO
+		// aggregated.toStream().foreach((key, value) -> {
+		// System.out.println("A: " + value.getTimestamp());
+		// System.out.println("A: " + key + ": " + value.getSummaryStatistics());
+		// }); // TODO
+
 		aggregated.toStream()
 				.map((key, value) -> KeyValue.pair(key, value.toRecord(key)))
 				.to(outputTopic, Produced.with(Serdes.String(), RecordSerdes.forAggregatedPowerConsumptionRecord()));
@@ -95,31 +100,39 @@ public class KafkaStreamsFactory {
 		final String username = System.getenv("CLOUDKARAFKA_USERNAME");
 		final String password = System.getenv("CLOUDKARAFKA_PASSWORD");
 		final Properties kafkaProperties = new Properties();
-		final String jaasTemplate = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"%s\" password=\"%s\";";
-		final String jaasCfg = String.format(jaasTemplate, username, password);
-		kafkaProperties.put("security.protocol", "SASL_SSL");
-		kafkaProperties.put("sasl.mechanism", "SCRAM-SHA-256");
-		kafkaProperties.put("sasl.jaas.config", jaasCfg);
+		// final String jaasTemplate =
+		// "org.apache.kafka.common.security.scram.ScramLoginModule required
+		// username=\"%s\" password=\"%s\";";
+		// final String jaasCfg = String.format(jaasTemplate, username, password);
+		// kafkaProperties.put("security.protocol", "SASL_SSL");
+		// kafkaProperties.put("sasl.mechanism", "SCRAM-SHA-256");
+		// kafkaProperties.put("sasl.jaas.config", jaasCfg);
 
-		kafkaProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, "my-first-streams-application-0.0.4");
-		kafkaProperties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrapServer);
+		kafkaProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, "my-first-streams-application-0.0.5");
+		kafkaProperties.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 1000); // TODO
+		// kafkaProperties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
+		// kafkaBootstrapServer);
+		kafkaProperties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
 
 		return kafkaProperties;
 	}
 
 	private static String loadInputTopicName() {
-		final String username = System.getenv("CLOUDKARAFKA_USERNAME");
-		return username + "-default";
+		return "input";
+		// final String username = System.getenv("CLOUDKARAFKA_USERNAME");
+		// return username + "-default";
 	}
 
 	private static String loadOutputTopicName() {
-		final String username = System.getenv("CLOUDKARAFKA_USERNAME");
-		return username + "-aggregated";
+		return "output";
+		// final String username = System.getenv("CLOUDKARAFKA_USERNAME");
+		// return username + "-aggregated";
 	}
 
 	private static String loadAggregatedStreamStoreTopicName() {
-		final String username = System.getenv("CLOUDKARAFKA_USERNAME");
-		return username + "-stream-store";
+		return "stream-store";
+		// final String username = System.getenv("CLOUDKARAFKA_USERNAME");
+		// return username + "-stream-store";
 	}
 
 }

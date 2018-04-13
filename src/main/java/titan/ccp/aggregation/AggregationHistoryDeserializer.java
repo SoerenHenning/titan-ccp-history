@@ -23,7 +23,7 @@ public class AggregationHistoryDeserializer implements Deserializer<AggregationH
 	public AggregationHistory deserialize(final String topic, final byte[] data) {
 		final ByteBuffer buffer = this.byteBufferDeserializer.deserialize(topic, data);
 
-		if (data == null) {
+		if (buffer == null) {
 			return new AggregationHistory();
 		}
 
