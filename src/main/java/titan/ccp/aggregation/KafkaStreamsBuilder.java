@@ -19,28 +19,34 @@ import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.kstream.Serialized;
 import org.apache.kafka.streams.state.KeyValueStore;
 
-import titan.ccp.model.sensorregistry.ExampleSensors;
 import titan.ccp.model.sensorregistry.SensorRegistry;
 import titan.ccp.models.records.PowerConsumptionRecord;
 import titan.ccp.models.records.serialization.kafka.RecordSerdes;
 
-//TODO remove in one of the next commits
-@Deprecated
-public class KafkaStreamsFactory {
+public class KafkaStreamsBuilder {
 
-	private static final String AGGREGATED_STREAM_STORE_TOPIC = "aggregated-stream-store-for-test-topic-18040319";
-	private static final String INPUT_TOPIC = "test-topic-18040319";
-	private static final String OUTPUT_TOPIC = "test-out-topic-18040319";
+	private final String inputTopicName = "input"; // TODO
+	private final String outputTopicName = "output"; // TODO
+	private final String aggregationStoreName = "stream-store"; // TODO
 
-	public KafkaStreams create() {
+	private SensorRegistry sensorRegistry;
 
-		final String inputTopic = loadInputTopicName();
-		final String aggregatedStreamStoreTopic = loadAggregatedStreamStoreTopicName(); // is not a topic
-		final String outputTopic = loadOutputTopicName();
+	public KafkaStreamsBuilder() {
+	}
 
-		final StreamsBuilder builder = new StreamsBuilder(); // when using the DSL
+	public KafkaStreamsBuilder sensorRegistry(final SensorRegistry sensorRegistry) {
+		this.sensorRegistry = sensorRegistry;
+		return this;
+	}
 
-		final KStream<String, PowerConsumptionRecord> inputStream = builder.stream(inputTopic,
+	public KafkaStreams build() {
+		return new KafkaStreams(this.buildTopology(), this.buildStreamConfig());
+	}
+
+	private Topology buildTopology() {
+		final StreamsBuilder builder = new StreamsBuilder();
+
+		final KStream<String, PowerConsumptionRecord> inputStream = builder.stream(this.inputTopicName,
 				Consumed.with(Serdes.String(), RecordSerdes.forPowerConsumptionRecord()));
 
 		final KStream<String, PowerConsumptionRecord> flatMapped = inputStream
@@ -64,7 +70,7 @@ public class KafkaStreamsFactory {
 			// System.out.println("P: " + aggValue2.getTimestamp());
 			return aggValue2;
 			// return aggValue2.update(newValue);
-		}, Materialized.<String, AggregationHistory, KeyValueStore<Bytes, byte[]>>as(aggregatedStreamStoreTopic)
+		}, Materialized.<String, AggregationHistory, KeyValueStore<Bytes, byte[]>>as(this.aggregationStoreName)
 				.withKeySerde(Serdes.String()).withValueSerde(AggregationHistorySerde.create()));
 
 		// aggregated.toStream().foreach((key, value) -> {
@@ -74,20 +80,18 @@ public class KafkaStreamsFactory {
 
 		aggregated.toStream()
 				.map((key, value) -> KeyValue.pair(key, value.toRecord(key)))
-				.to(outputTopic, Produced.with(Serdes.String(), RecordSerdes.forAggregatedPowerConsumptionRecord()));
+				.to(this.outputTopicName, Produced.with(Serdes.String(), RecordSerdes.forAggregatedPowerConsumptionRecord()));
 
-		final Topology topology = builder.build();
+		return builder.build();
+	}
 
+	private StreamsConfig buildStreamConfig() {
 		final Properties settings = loadProperties();
-		final StreamsConfig config = new StreamsConfig(settings);
-
-		return new KafkaStreams(topology, config);
+		return new StreamsConfig(settings);
 	}
 
 	private Iterable<KeyValue<String, PowerConsumptionRecord>> flatMap(final PowerConsumptionRecord record) {
-		final SensorRegistry sensorRegistry = ExampleSensors.registry(); // TODO
-
-		return sensorRegistry
+		return this.sensorRegistry
 				.getSensorForIdentifier(record.getIdentifier())
 				.stream()
 				.flatMap(s -> s.getParents().stream())
