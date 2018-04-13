@@ -16,15 +16,17 @@ dependencies {
     // These dependencies is exported to consumers, that is to say found on their compile classpath.
     api 'org.industrial-devops:titan.ccp.model:0.0.1-SNAPSHOT'
     api 'net.kieker-monitoring:kieker:1.14-SNAPSHOT'
-    api 'net.sourceforge.teetime:teetime:3.0'
+    api 'net.sourceforge.teetime:teetime:3.0' //TODO remove
 
     // These dependencies are used internally, and not exposed to consumers on their own compile classpath.
-    implementation 'org.apache.kafka:kafka-clients:1.0.1'
+    implementation 'org.apache.kafka:kafka-clients:1.0.1' //TODO remove
     implementation 'com.google.guava:guava:20.0'
     
     implementation 'com.google.code.gson:gson:2.8.2'
     
-    implementation 'org.apache.kafka:kafka-streams:1.0.1' // Experimental
+    implementation 'com.datastax.cassandra:cassandra-driver-core:3.4.0'
+    
+    implementation 'org.apache.kafka:kafka-streams:1.0.1'
     api 'org.slf4j:slf4j-simple:1.6.1'
 
     // Use JUnit test framework

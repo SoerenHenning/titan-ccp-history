@@ -86,11 +86,11 @@ public class ArrayValueSerializer implements IValueSerializer {
 	}
 
 	public void putAny(final Object value) {
-		if (this.nextIndex < this.array.length) {
-			this.array[this.nextIndex] = value;
-			this.nextIndex++;
+		if (this.nextIndex >= this.array.length) {
+			throw new IllegalArgumentException("The given array is not large enough to serialize all fields of this record.");
 		}
-		throw new IllegalArgumentException("The given array is not large enough to serialize all fields of this record.");
+		this.array[this.nextIndex] = value;
+		this.nextIndex++;
 	}
 
 	public static final class EnumStrategies {
