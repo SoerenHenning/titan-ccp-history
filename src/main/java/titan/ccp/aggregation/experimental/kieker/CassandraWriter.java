@@ -168,14 +168,6 @@ public class CassandraWriter {
 			}
 		}; // TODO
 
-		public void registerPartitionKey(final String tableName, final String partitionKey) {
-
-		}
-
-		public void registerClusteringColumn(final String tableName, final String... clusteringColumns) {
-
-		}
-
 	}
 
 	public static class JavaTypeMapper {
