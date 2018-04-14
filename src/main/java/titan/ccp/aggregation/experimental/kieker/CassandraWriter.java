@@ -1,7 +1,9 @@
 package titan.ccp.aggregation.experimental.kieker;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -11,6 +13,7 @@ import org.apache.commons.math3.util.Pair;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.schemabuilder.Create;
 import com.datastax.driver.core.schemabuilder.SchemaBuilder;
@@ -20,6 +23,12 @@ import kieker.common.record.IMonitoringRecord;
 import titan.ccp.models.records.PowerConsumptionRecord;
 
 public class CassandraWriter {
+
+	private static final String RECORD_TYPE_NAME = "recordType";
+	private static final Class<?> RECORD_TYPE_TYPE = String.class;
+
+	private static final String LOGGING_TIMESTAMP_NAME = "loggingTimestamp";
+	private static final Class<?> LOGGING_TIMESTAMP_TYPE = long.class;
 
 	private final Session session;
 
@@ -53,13 +62,15 @@ public class CassandraWriter {
 	}
 
 	private void createTable(final String tableName, final IMonitoringRecord record) {
-		final String partitionKey = this.tableMapper.partitionKeySelector.apply(tableName, record);
-		final Set<String> clusteringColumns = this.tableMapper.clusteringColumnSelector.apply(tableName, record);
+		final List<String> includedFields = this.getFields(record);
+		final List<Class<?>> includedFieldTypes = this.getFieldTypes(record);
+
+		final String partitionKey = this.tableMapper.primaryKeySelectionStrategy.selectPartitionKey(tableName, includedFields);
+		final Set<String> clusteringColumns = this.tableMapper.primaryKeySelectionStrategy.selectClusteringColumn(tableName, includedFields);
 
 		final Create createStatement = SchemaBuilder.createTable(tableName).ifNotExists();
 
-		// TODO append recordType, loggingTimestamp
-		Streams.zip(Arrays.stream(record.getValueNames()), Arrays.stream(record.getValueTypes()), (name, type) -> Pair.create(name, type))
+		Streams.zip(includedFields.stream(), includedFieldTypes.stream(), Pair::create)
 				.forEach(field -> {
 					if (partitionKey.equals(field.getKey())) {
 						createStatement.addPartitionKey(field.getKey(), JavaTypeMapper.map(field.getValue()));
@@ -78,10 +89,45 @@ public class CassandraWriter {
 		final Object[] values = new Object[valueNames.length];
 		record.serialize(new ArrayValueSerializer(values));
 
-		// TODO append recordType, loggingTimestamp
-		QueryBuilder.insertInto(table).values(valueNames, values);
+		final Insert insertStatement = QueryBuilder.insertInto(table);
+		if (this.tableMapper.includeRecordType) {
+			insertStatement.value(RECORD_TYPE_NAME, record.getClass().getName());
+		}
+		if (this.tableMapper.includeLoggingTimestamp) {
+			insertStatement.value(LOGGING_TIMESTAMP_NAME, record.getLoggingTimestamp());
+		}
+		insertStatement.values(valueNames, values);
 
 		// TODO execute
+		this.session.execute(insertStatement);
+	}
+
+	private List<String> getFields(final IMonitoringRecord record) {
+		final String[] valueNames = record.getValueNames();
+
+		final List<String> fields = new ArrayList<>(valueNames.length + 2);
+		if (this.tableMapper.includeRecordType) {
+			fields.add(RECORD_TYPE_NAME);
+		}
+		if (this.tableMapper.includeLoggingTimestamp) {
+			fields.add(LOGGING_TIMESTAMP_NAME);
+		}
+		Collections.addAll(fields, valueNames);
+		return fields;
+	}
+
+	private List<Class<?>> getFieldTypes(final IMonitoringRecord record) {
+		final Class<?>[] valueTypes = record.getValueTypes();
+
+		final List<Class<?>> fieldTypes = new ArrayList<>(valueTypes.length + 2);
+		if (this.tableMapper.includeRecordType) {
+			fieldTypes.add(RECORD_TYPE_TYPE);
+		}
+		if (this.tableMapper.includeLoggingTimestamp) {
+			fieldTypes.add(LOGGING_TIMESTAMP_TYPE);
+		}
+		Collections.addAll(fieldTypes, valueTypes);
+		return fieldTypes;
 	}
 
 	// Default behavior of PK selector: options:
@@ -92,9 +138,13 @@ public class CassandraWriter {
 
 		public Function<IMonitoringRecord, String> tableNameMapper = t -> t.getClass().getName();
 
-		public BiFunction<String, IMonitoringRecord, String> partitionKeySelector = null; // TODO
+		public PrimaryKeySelectionStrategy primaryKeySelectionStrategy = null; // TODO
 
-		public BiFunction<String, IMonitoringRecord, Set<String>> clusteringColumnSelector = null; // TODO
+		// public BiFunction<String, IMonitoringRecord, String> partitionKeySelector =
+		// null; // TODO
+
+		// public BiFunction<String, IMonitoringRecord, Set<String>>
+		// clusteringColumnSelector = null; // TODO
 
 		public boolean includeRecordType = false;
 
