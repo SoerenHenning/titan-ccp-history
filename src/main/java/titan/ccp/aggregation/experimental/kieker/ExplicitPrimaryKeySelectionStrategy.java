@@ -9,38 +9,44 @@ import java.util.Set;
 
 public class ExplicitPrimaryKeySelectionStrategy implements PrimaryKeySelectionStrategy {
 
-	private final Map<String, String> partionKeys = new HashMap<>();
+	private final Map<String, Set<String>> partitionKeys = new HashMap<>();
 
 	private final Map<String, Set<String>> clusteringColumns = new HashMap<>();
 
 	private final PrimaryKeySelectionStrategy fallbackStrategy;
 
-	public ExplicitPrimaryKeySelectionStrategy() {
-
+	public ExplicitPrimaryKeySelectionStrategy(final PrimaryKeySelectionStrategy fallbackStrategy) {
+		this.fallbackStrategy = fallbackStrategy;
 	}
 
 	@Override
-	public String selectPartitionKey(final String tableName, final List<String> possibleColumns) {
-		final String partionKey = this.partionKeys.get(tableName);
-		if (partionKey == null) {
-			return this.fallbackStrategy.selectPartitionKey(tableName, possibleColumns);
+	public Set<String> selectPartitionKeys(final String tableName, final List<String> possibleColumns) {
+		final Set<String> partionKeys = this.partitionKeys.get(tableName);
+		if (partionKeys == null) {
+			return this.fallbackStrategy.selectPartitionKeys(tableName, possibleColumns);
 		} else {
-			return partionKey;
+			return partionKeys;
 		}
 	}
 
 	@Override
-	public Set<String> selectClusteringColumn(final String tableName, final List<String> possibleColumns) {
+	public Set<String> selectClusteringColumns(final String tableName, final List<String> possibleColumns) {
 		final Set<String> clusteringColumns = this.clusteringColumns.get(tableName);
 		if (clusteringColumns == null) {
-			return this.fallbackStrategy.selectClusteringColumn(tableName, possibleColumns);
+			return this.fallbackStrategy.selectClusteringColumns(tableName, possibleColumns);
 		} else {
 			return clusteringColumns;
 		}
 	}
 
-	public void registerPartitionKey(final String tableName, final String partitionKey) {
-		this.partionKeys.put(tableName, partitionKey);
+	public void registerPartitionKeys(final String tableName, final String... partitionKeys) {
+		this.partitionKeys.put(tableName, Set.of(partitionKeys));
+	}
+
+	public void registerPartitionKeys(final String tableName, final Collection<String> partitionKeys) {
+		// this.partitionKeys.put(tableName, Set.copyOf(partitionKeys)); // Java
+		// 10
+		this.partitionKeys.put(tableName, new HashSet<>(partitionKeys));
 	}
 
 	public void registerClusteringColumns(final String tableName, final String... clusteringColumns) {

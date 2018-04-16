@@ -65,14 +65,14 @@ public class CassandraWriter {
 		final List<String> includedFields = this.getFields(record);
 		final List<Class<?>> includedFieldTypes = this.getFieldTypes(record);
 
-		final String partitionKey = this.tableMapper.primaryKeySelectionStrategy.selectPartitionKey(tableName, includedFields);
-		final Set<String> clusteringColumns = this.tableMapper.primaryKeySelectionStrategy.selectClusteringColumn(tableName, includedFields);
+		final Set<String> partitionKey = this.tableMapper.primaryKeySelectionStrategy.selectPartitionKeys(tableName, includedFields);
+		final Set<String> clusteringColumns = this.tableMapper.primaryKeySelectionStrategy.selectClusteringColumns(tableName, includedFields);
 
 		final Create createStatement = SchemaBuilder.createTable(tableName).ifNotExists();
 
 		Streams.zip(includedFields.stream(), includedFieldTypes.stream(), Pair::create)
 				.forEach(field -> {
-					if (partitionKey.equals(field.getKey())) {
+					if (partitionKey.contains(field.getKey())) {
 						createStatement.addPartitionKey(field.getKey(), JavaTypeMapper.map(field.getValue()));
 					} else if (clusteringColumns.contains(field.getKey())) {
 						createStatement.addClusteringColumn(field.getKey(), JavaTypeMapper.map(field.getValue()));
