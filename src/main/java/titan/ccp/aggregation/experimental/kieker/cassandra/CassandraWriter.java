@@ -1,18 +1,16 @@
-package titan.ccp.aggregation.experimental.kieker;
+package titan.ccp.aggregation.experimental.kieker.cassandra;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import org.apache.commons.math3.util.Pair;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.schemabuilder.Create;
@@ -20,6 +18,7 @@ import com.datastax.driver.core.schemabuilder.SchemaBuilder;
 import com.google.common.collect.Streams;
 
 import kieker.common.record.IMonitoringRecord;
+import titan.ccp.aggregation.experimental.kieker.ArrayValueSerializer;
 import titan.ccp.models.records.PowerConsumptionRecord;
 
 public class CassandraWriter {
@@ -32,18 +31,24 @@ public class CassandraWriter {
 
 	private final Session session;
 
+	private final boolean executeAsync;
+
 	private final TableMapper tableMapper = new TableMapper();
 
 	private final Set<String> existingTables = new HashSet<>();
 
-	public CassandraWriter() {
+	public CassandraWriter(final Session session) {
 		// TODO Auto-generated constructor stub
-		final String host = "";
-		final int port = 0;
-		final String keyspace = "";
+		// final String host = "";
+		// final int port = 0;
+		// final String keyspace = "";
+		//
+		// final Cluster cluster =
+		// Cluster.builder().addContactPoint(host).withPort(port).build();
+		// this.session = cluster.connect(keyspace);
+		this.session = session;
 
-		final Cluster cluster = Cluster.builder().addContactPoint(host).withPort(port).build();
-		this.session = cluster.connect(keyspace);
+		this.executeAsync = false; // TODO Temp
 	}
 
 	public void write(final IMonitoringRecord record) {
@@ -98,8 +103,7 @@ public class CassandraWriter {
 		}
 		insertStatement.values(valueNames, values);
 
-		// TODO execute
-		this.session.execute(insertStatement);
+		this.executeStatement(insertStatement);
 	}
 
 	private List<String> getFields(final IMonitoringRecord record) {
@@ -130,6 +134,15 @@ public class CassandraWriter {
 		return fieldTypes;
 	}
 
+	private void executeStatement(final Statement statement) {
+		if (this.executeAsync) {
+			this.session.executeAsync(statement);
+		} else {
+			this.session.execute(statement);
+		}
+
+	}
+
 	// Default behavior of PK selector: options:
 	// - Use loggingTimestamp
 	// - Use all fields
@@ -140,89 +153,17 @@ public class CassandraWriter {
 
 		public PrimaryKeySelectionStrategy primaryKeySelectionStrategy = null; // TODO
 
-		// public BiFunction<String, IMonitoringRecord, String> partitionKeySelector =
-		// null; // TODO
-
-		// public BiFunction<String, IMonitoringRecord, Set<String>>
-		// clusteringColumnSelector = null; // TODO
-
 		public boolean includeRecordType = false;
 
 		public boolean includeLoggingTimestamp = true;
 
 		public boolean myIncludeLoggingTimestamp = false;
 
-		public BiFunction<String, IMonitoringRecord, String> myPartitionKeySelector = (tableName, record) -> {
-			if (record instanceof PowerConsumptionRecord) {
-				return "identifier";
-			} else {
-				return ""; // TODO
-			}
-		}; // TODO
-
-		public BiFunction<String, IMonitoringRecord, Set<String>> myClusteringColumnSelector = (tableName, record) -> {
-			if (record instanceof PowerConsumptionRecord) {
-				return Set.of("timestamp");
-			} else {
-				return Set.of(); // TODO
-			}
-		}; // TODO
-
-	}
-
-	public static class JavaTypeMapper {
-
-		public static DataType map(final Class<?> type) {
-			if (type == boolean.class) {
-				return DataType.cboolean();
-			} else if (type == Boolean.class) {
-				return DataType.cboolean();
-			} else if (type == byte.class) {
-				return DataType.tinyint();
-			} else if (type == Byte.class) {
-				return DataType.tinyint();
-			} else if (type == char.class) {
-				return DataType.text();
-			} else if (type == Character.class) {
-				return DataType.text();
-			} else if (type == short.class) {
-				return DataType.smallint();
-			} else if (type == Short.class) {
-				return DataType.smallint();
-			} else if (type == int.class) {
-				return DataType.cint();
-			} else if (type == Integer.class) {
-				return DataType.cint();
-			} else if (type == long.class) {
-				return DataType.bigint();
-			} else if (type == Long.class) {
-				return DataType.bigint();
-			} else if (type == float.class) {
-				return DataType.cfloat();
-			} else if (type == Float.class) {
-				return DataType.cfloat();
-			} else if (type == double.class) {
-				return DataType.cdouble();
-			} else if (type == Double.class) {
-				return DataType.cdouble();
-			} else if (type == Enum.class) {
-				return DataType.cint(); // Depend on array serialization strategy
-			} else if (type == byte[].class) {
-				return DataType.blob();
-			} else if (type == Byte[].class) {
-				return DataType.blob();
-			} else if (type == String.class) {
-				return DataType.text();
-			} else {
-				return null; // TODO throw execption
-			}
-		}
-
 	}
 
 	public static void main(final String[] args) {
 		final PowerConsumptionRecord record = new PowerConsumptionRecord("my-sensor", 12345678, 42);
-		new CassandraWriter().write(record);
+		// new CassandraWriter().write(record);
 
 	}
 

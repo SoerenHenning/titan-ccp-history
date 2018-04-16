@@ -1,4 +1,4 @@
-package titan.ccp.aggregation.experimental.kieker;
+package titan.ccp.aggregation.experimental.kieker.cassandra;
 
 import java.util.Collection;
 import java.util.HashMap;
