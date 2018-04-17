@@ -19,7 +19,13 @@ import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.kstream.Serialized;
 import org.apache.kafka.streams.state.KeyValueStore;
 
+import titan.ccp.common.kieker.cassandra.CassandraWriter;
+import titan.ccp.common.kieker.cassandra.ExplicitPrimaryKeySelectionStrategy;
+import titan.ccp.common.kieker.cassandra.PredefinedTableNameMappers;
+import titan.ccp.common.kieker.cassandra.SessionBuilder;
+import titan.ccp.common.kieker.cassandra.SessionBuilder.ClusterSession;
 import titan.ccp.model.sensorregistry.SensorRegistry;
+import titan.ccp.models.records.AggregatedPowerConsumptionRecord;
 import titan.ccp.models.records.PowerConsumptionRecord;
 import titan.ccp.models.records.serialization.kafka.RecordSerdes;
 
@@ -82,7 +88,33 @@ public class KafkaStreamsBuilder {
 				.map((key, value) -> KeyValue.pair(key, value.toRecord(key)))
 				.to(this.outputTopicName, Produced.with(Serdes.String(), RecordSerdes.forAggregatedPowerConsumptionRecord()));
 
+		// Cassandra Writer
+		final CassandraWriter cassandraWriter = this.buildCassandraWriter();
+
+		builder.stream(this.outputTopicName, Consumed.with(Serdes.String(), RecordSerdes.forAggregatedPowerConsumptionRecord()))
+				.foreach((key, record) -> cassandraWriter.write(record));
+
+		// End Cassandra Writer
+
 		return builder.build();
+	}
+
+	private CassandraWriter buildCassandraWriter() {
+		final ClusterSession clusterSession = new SessionBuilder().contactPoint("localhost").port(9042).keyspace("titanccp").build();
+
+		final ExplicitPrimaryKeySelectionStrategy primaryKeySelectionStrategy = new ExplicitPrimaryKeySelectionStrategy();
+		primaryKeySelectionStrategy.registerPartitionKeys(AggregatedPowerConsumptionRecord.class.getSimpleName(), "identifier");
+		primaryKeySelectionStrategy.registerClusteringColumns(AggregatedPowerConsumptionRecord.class.getSimpleName(), "timestamp");
+
+		final CassandraWriter cassandraWriter = CassandraWriter.builder(clusterSession.getSession())
+				.excludeRecordType()
+				.excludeLoggingTimestamp()
+				.tableNameMapper(PredefinedTableNameMappers.SIMPLE_CLASS_NAME)
+				.primaryKeySelectionStrategy(primaryKeySelectionStrategy)
+				.build();
+
+		return cassandraWriter;
+		// TODO Cluster will never be closed
 	}
 
 	private StreamsConfig buildStreamConfig() {
