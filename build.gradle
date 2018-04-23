@@ -1,8 +1,8 @@
 apply plugin: 'application'
 apply plugin: 'eclipse'
 
-sourceCompatibility = "1.9"
-targetCompatibility = "1.9"
+sourceCompatibility = "1.10"
+targetCompatibility = "1.10"
 
 repositories {
     jcenter()
@@ -14,15 +14,12 @@ repositories {
 dependencies {
     compile 'org.industrial-devops:titan.ccp.model:0.0.1-SNAPSHOT'
     compile 'net.kieker-monitoring:kieker:1.14-SNAPSHOT'
-    compile 'net.sourceforge.teetime:teetime:3.0' //TODO remove
-
-    compile 'org.apache.kafka:kafka-clients:1.0.1' //TODO remove
-    compile 'com.google.guava:guava:20.0'
-    
-    compile 'com.google.code.gson:gson:2.8.2'
-    
     compile 'org.apache.kafka:kafka-streams:1.0.1'
+	compile 'com.google.code.gson:gson:2.8.2'
+    compile 'com.google.guava:guava:20.0'
     compile 'org.slf4j:slf4j-simple:1.6.1'
+    
+    compile 'net.sourceforge.teetime:teetime:3.0' //TODO remove
 
     // Use JUnit test framework
     testCompile 'junit:junit:4.12'
