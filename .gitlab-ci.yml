@@ -7,14 +7,13 @@ image: gradle:alpine
 variables:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 
-tags:
-  - dockerex
-
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle
 
 build:
   stage: build
+  tags:
+    - dockerex
   script: gradle --build-cache assemble
   cache:
     key: "$CI_COMMIT_REF_NAME"
@@ -26,6 +25,8 @@ build:
 
 test:
   stage: test
+  tags:
+    - dockerex
   script: gradle check
   cache:
     key: "$CI_COMMIT_REF_NAME"
