@@ -1,5 +1,4 @@
-// Apply the java-library plugin to add support for Java Library
-apply plugin: 'java-library' //TODO not a library
+apply plugin: 'application'
 apply plugin: 'eclipse'
 
 sourceCompatibility = "1.9"
@@ -13,23 +12,33 @@ repositories {
 }
 
 dependencies {
-    // These dependencies is exported to consumers, that is to say found on their compile classpath.
-    api 'org.industrial-devops:titan.ccp.model:0.0.1-SNAPSHOT'
-    api 'net.kieker-monitoring:kieker:1.14-SNAPSHOT'
-    api 'net.sourceforge.teetime:teetime:3.0' //TODO remove
+    compile 'org.industrial-devops:titan.ccp.model:0.0.1-SNAPSHOT'
+    compile 'net.kieker-monitoring:kieker:1.14-SNAPSHOT'
+    compile 'net.sourceforge.teetime:teetime:3.0' //TODO remove
 
-    // These dependencies are used internally, and not exposed to consumers on their own compile classpath.
-    implementation 'org.apache.kafka:kafka-clients:1.0.1' //TODO remove
-    implementation 'com.google.guava:guava:20.0'
+    compile 'org.apache.kafka:kafka-clients:1.0.1' //TODO remove
+    compile 'com.google.guava:guava:20.0'
     
-    implementation 'com.google.code.gson:gson:2.8.2'
+    compile 'com.google.code.gson:gson:2.8.2'
     
-    implementation 'org.apache.kafka:kafka-streams:1.0.1'
-    api 'org.slf4j:slf4j-simple:1.6.1'
+    compile 'org.apache.kafka:kafka-streams:1.0.1'
+    compile 'org.slf4j:slf4j-simple:1.6.1'
 
     // Use JUnit test framework
-    testImplementation 'junit:junit:4.12'
+    testCompile 'junit:junit:4.12'
 }
+
+tasks.withType(AbstractCompile) {
+  options.compilerArgs += ["--add-modules", "jdk.incubator.httpclient"]
+}
+
+tasks.withType(Test) {
+  jvmArgs += ["--add-modules", "jdk.incubator.httpclient"]
+}
+
+mainClassName = "titan.ccp.aggregation.AggregationService"
+
+applicationDefaultJvmArgs = ["--add-modules=jdk.incubator.httpclient"]
 
 eclipse {
     classpath {
