@@ -15,8 +15,10 @@ dependencies {
     compile 'org.industrial-devops:titan.ccp.model:0.0.1-SNAPSHOT'
     compile 'net.kieker-monitoring:kieker:1.14-SNAPSHOT'
     compile 'org.apache.kafka:kafka-streams:1.0.1'
+    compile 'com.sparkjava:spark-core:2.7.2'
 	compile 'com.google.code.gson:gson:2.8.2'
     compile 'com.google.guava:guava:20.0'
+    compile 'org.apache.commons:commons-lang3:3.7'
     compile 'org.slf4j:slf4j-simple:1.6.1'
     
     compile 'net.sourceforge.teetime:teetime:3.0' //TODO remove
