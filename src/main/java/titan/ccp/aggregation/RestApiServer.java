@@ -20,19 +20,14 @@ public class RestApiServer {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RestApiServer.class);
 
-	private static final int PORT = 80; // TODO as parameter
-
 	private final Session cassandraSession;
 
 	private final Service webService;
 
-	public RestApiServer(final Session session) {
-
-		this.cassandraSession = session;
+	public RestApiServer(final Session cassandraSession, final int port) {
+		this.cassandraSession = cassandraSession;
 		LOGGER.info("Instantiate API server.");
-		this.webService = Service.ignite().port(PORT);
-
-		this.webService.get("/hello", (req, res) -> "Hello World");
+		this.webService = Service.ignite().port(port);
 	}
 
 	public void start() {

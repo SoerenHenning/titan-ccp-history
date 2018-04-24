@@ -9,6 +9,12 @@ import titan.ccp.model.sensorregistry.ProxySensorRegistry;
 
 public class AggregationService {
 
+	private static final int WEBSERVER_PORT = 8080; // TODO as parameter
+
+	private static final String CASSANDRA_HOST = "localhost"; // TODO as parameter
+
+	private static final int CASSANDRA_PORT = 9042; // TODO as parameter
+
 	private final SensorRegistryRequester sensorRegistryRequester = new SensorRegistryRequester("");
 	private final ProxySensorRegistry sensorRegistry = new ProxySensorRegistry();
 	private final KafkaStreams kafkaStreams;
@@ -33,9 +39,9 @@ public class AggregationService {
 		this.kafkaStreams.start();
 
 		// Create Rest API
-		final ClusterSession clusterSession = new SessionBuilder().contactPoint("localhost").port(9042)
+		final ClusterSession clusterSession = new SessionBuilder().contactPoint(CASSANDRA_HOST).port(CASSANDRA_PORT)
 				.keyspace("titanccp").build();
-		final RestApiServer restApiServer = new RestApiServer(clusterSession.getSession());
+		final RestApiServer restApiServer = new RestApiServer(clusterSession.getSession(), WEBSERVER_PORT);
 		restApiServer.start();
 
 	}
