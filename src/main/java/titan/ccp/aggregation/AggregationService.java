@@ -54,6 +54,10 @@ public class AggregationService {
 		restApiServer.start();
 		// TODO stop missing
 
+		// CompletableFuture<Void> stop = new CompletableFuture<>();
+		// stop.thenRun(() -> clusterSession.getCluster().close());
+		// stop.complete(null);
+
 	}
 
 	public static void main(final String[] args) {
