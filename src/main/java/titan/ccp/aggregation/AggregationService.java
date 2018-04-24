@@ -17,11 +17,11 @@ public class AggregationService {
 
 	private final SensorRegistryRequester sensorRegistryRequester = new SensorRegistryRequester("");
 	private final ProxySensorRegistry sensorRegistry = new ProxySensorRegistry();
-	private final KafkaStreams kafkaStreams;
+	// private final KafkaStreams kafkaStreams;
 	// private final RestApiServer restApiServer;
 
 	public AggregationService() {
-		this.kafkaStreams = new KafkaStreamsBuilder().sensorRegistry(this.sensorRegistry).build();
+
 		// this.restApiServer = new RestApiServer(session);
 	}
 
@@ -36,13 +36,23 @@ public class AggregationService {
 
 		// TODO request history for all sensors
 		// sensorHistory.update(, );
-		this.kafkaStreams.start();
 
-		// Create Rest API
+		// Cassandra connect
 		final ClusterSession clusterSession = new SessionBuilder().contactPoint(CASSANDRA_HOST).port(CASSANDRA_PORT)
 				.keyspace("titanccp").build();
+		// CompletableFuture.supplyAsync(() -> ... )
+		// TODO stop missing
+
+		// Create Kafka Streams Application
+		final KafkaStreams kafkaStreams = new KafkaStreamsBuilder().sensorRegistry(this.sensorRegistry)
+				.cassandraSession(clusterSession.getSession()).build();
+		kafkaStreams.start();
+		// TODO stop missing
+
+		// Create Rest API
 		final RestApiServer restApiServer = new RestApiServer(clusterSession.getSession(), WEBSERVER_PORT);
 		restApiServer.start();
+		// TODO stop missing
 
 	}
 

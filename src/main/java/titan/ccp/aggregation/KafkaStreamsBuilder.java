@@ -19,11 +19,11 @@ import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.kstream.Serialized;
 import org.apache.kafka.streams.state.KeyValueStore;
 
+import com.datastax.driver.core.Session;
+
 import titan.ccp.common.kieker.cassandra.CassandraWriter;
 import titan.ccp.common.kieker.cassandra.ExplicitPrimaryKeySelectionStrategy;
 import titan.ccp.common.kieker.cassandra.PredefinedTableNameMappers;
-import titan.ccp.common.kieker.cassandra.SessionBuilder;
-import titan.ccp.common.kieker.cassandra.SessionBuilder.ClusterSession;
 import titan.ccp.model.sensorregistry.SensorRegistry;
 import titan.ccp.models.records.AggregatedPowerConsumptionRecord;
 import titan.ccp.models.records.PowerConsumptionRecord;
@@ -36,12 +36,18 @@ public class KafkaStreamsBuilder {
 	private final String aggregationStoreName = "stream-store"; // TODO
 
 	private SensorRegistry sensorRegistry;
+	private Session cassandraSession;
 
 	public KafkaStreamsBuilder() {
 	}
 
 	public KafkaStreamsBuilder sensorRegistry(final SensorRegistry sensorRegistry) {
 		this.sensorRegistry = sensorRegistry;
+		return this;
+	}
+
+	public KafkaStreamsBuilder cassandraSession(final Session cassandraSession) {
+		this.cassandraSession = cassandraSession;
 		return this;
 	}
 
@@ -84,14 +90,14 @@ public class KafkaStreamsBuilder {
 		// System.out.println("A: " + key + ": " + value.getSummaryStatistics());
 		// }); // TODO
 
-		aggregated.toStream()
-				.map((key, value) -> KeyValue.pair(key, value.toRecord(key)))
-				.to(this.outputTopicName, Produced.with(Serdes.String(), RecordSerdes.forAggregatedPowerConsumptionRecord()));
+		aggregated.toStream().map((key, value) -> KeyValue.pair(key, value.toRecord(key))).to(this.outputTopicName,
+				Produced.with(Serdes.String(), RecordSerdes.forAggregatedPowerConsumptionRecord()));
 
 		// Cassandra Writer
 		final CassandraWriter cassandraWriter = this.buildCassandraWriter();
 
-		builder.stream(this.outputTopicName, Consumed.with(Serdes.String(), RecordSerdes.forAggregatedPowerConsumptionRecord()))
+		builder.stream(this.outputTopicName,
+				Consumed.with(Serdes.String(), RecordSerdes.forAggregatedPowerConsumptionRecord()))
 				.foreach((key, record) -> cassandraWriter.write(record));
 
 		// End Cassandra Writer
@@ -100,18 +106,15 @@ public class KafkaStreamsBuilder {
 	}
 
 	private CassandraWriter buildCassandraWriter() {
-		final ClusterSession clusterSession = new SessionBuilder().contactPoint("localhost").port(9042).keyspace("titanccp").build();
-
 		final ExplicitPrimaryKeySelectionStrategy primaryKeySelectionStrategy = new ExplicitPrimaryKeySelectionStrategy();
-		primaryKeySelectionStrategy.registerPartitionKeys(AggregatedPowerConsumptionRecord.class.getSimpleName(), "identifier");
-		primaryKeySelectionStrategy.registerClusteringColumns(AggregatedPowerConsumptionRecord.class.getSimpleName(), "timestamp");
+		primaryKeySelectionStrategy.registerPartitionKeys(AggregatedPowerConsumptionRecord.class.getSimpleName(),
+				"identifier");
+		primaryKeySelectionStrategy.registerClusteringColumns(AggregatedPowerConsumptionRecord.class.getSimpleName(),
+				"timestamp");
 
-		final CassandraWriter cassandraWriter = CassandraWriter.builder(clusterSession.getSession())
-				.excludeRecordType()
-				.excludeLoggingTimestamp()
-				.tableNameMapper(PredefinedTableNameMappers.SIMPLE_CLASS_NAME)
-				.primaryKeySelectionStrategy(primaryKeySelectionStrategy)
-				.build();
+		final CassandraWriter cassandraWriter = CassandraWriter.builder(this.cassandraSession).excludeRecordType()
+				.excludeLoggingTimestamp().tableNameMapper(PredefinedTableNameMappers.SIMPLE_CLASS_NAME)
+				.primaryKeySelectionStrategy(primaryKeySelectionStrategy).build();
 
 		return cassandraWriter;
 		// TODO Cluster will never be closed
@@ -123,12 +126,8 @@ public class KafkaStreamsBuilder {
 	}
 
 	private Iterable<KeyValue<String, PowerConsumptionRecord>> flatMap(final PowerConsumptionRecord record) {
-		return this.sensorRegistry
-				.getSensorForIdentifier(record.getIdentifier())
-				.stream()
-				.flatMap(s -> s.getParents().stream())
-				.map(s -> s.getIdentifier())
-				.map(i -> KeyValue.pair(i, record))
+		return this.sensorRegistry.getSensorForIdentifier(record.getIdentifier()).stream()
+				.flatMap(s -> s.getParents().stream()).map(s -> s.getIdentifier()).map(i -> KeyValue.pair(i, record))
 				.collect(Collectors.toList());
 	}
 
