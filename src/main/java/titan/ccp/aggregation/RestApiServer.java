@@ -24,14 +24,38 @@ public class RestApiServer {
 
 	private final Service webService;
 
-	public RestApiServer(final Session cassandraSession, final int port) {
+	private final boolean enableCors;
+
+	public RestApiServer(final Session cassandraSession, final int port, final boolean enableCors) {
 		this.cassandraSession = cassandraSession;
 		LOGGER.info("Instantiate API server.");
 		this.webService = Service.ignite().port(port);
+		this.enableCors = enableCors;
 	}
 
 	public void start() {
 		LOGGER.info("Instantiate API routes.");
+
+		if (this.enableCors) {
+			this.webService.options("/*", (request, response) -> {
+
+				final String accessControlRequestHeaders = request.headers("Access-Control-Request-Headers");
+				if (accessControlRequestHeaders != null) {
+					response.header("Access-Control-Allow-Headers", accessControlRequestHeaders);
+				}
+
+				final String accessControlRequestMethod = request.headers("Access-Control-Request-Method");
+				if (accessControlRequestMethod != null) {
+					response.header("Access-Control-Allow-Methods", accessControlRequestMethod);
+				}
+
+				return "OK";
+			});
+
+			this.webService.before((request, response) -> {
+				response.header("Access-Control-Allow-Origin", "*");
+			});
+		}
 
 		this.webService.get("/aggregated-power-consumption/:identifier", (request, response) -> {
 			final String identifier = request.params("identifier");
@@ -42,6 +66,7 @@ public class RestApiServer {
 		this.webService.after((request, response) -> {
 			response.type("application/json");
 		});
+
 	}
 
 	private JsonElement getAggregatedPowerConsumption(final String identifier, final long after) {

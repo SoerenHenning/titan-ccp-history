@@ -10,6 +10,7 @@ import titan.ccp.model.sensorregistry.ProxySensorRegistry;
 public class AggregationService {
 
 	private static final int WEBSERVER_PORT = 8080; // TODO as parameter
+	private static final boolean WEBSERVER_ENABLE_CORS = true; // TODO as parameter
 
 	private static final String CASSANDRA_HOST = "localhost"; // TODO as parameter
 
@@ -50,7 +51,8 @@ public class AggregationService {
 		// TODO stop missing
 
 		// Create Rest API
-		final RestApiServer restApiServer = new RestApiServer(clusterSession.getSession(), WEBSERVER_PORT);
+		final RestApiServer restApiServer = new RestApiServer(clusterSession.getSession(), WEBSERVER_PORT,
+				WEBSERVER_ENABLE_CORS); // TODO
 		restApiServer.start();
 		// TODO stop missing
 
