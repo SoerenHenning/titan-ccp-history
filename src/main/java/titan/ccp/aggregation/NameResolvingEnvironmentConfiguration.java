@@ -4,10 +4,9 @@ import java.util.Locale;
 
 import org.apache.commons.configuration2.EnvironmentConfiguration;
 
-//TODO class name
-public class MyEnvironmentConfiguration extends EnvironmentConfiguration {
+public class NameResolvingEnvironmentConfiguration extends EnvironmentConfiguration {
 
-	public MyEnvironmentConfiguration() {
+	public NameResolvingEnvironmentConfiguration() {
 		super();
 	}
 

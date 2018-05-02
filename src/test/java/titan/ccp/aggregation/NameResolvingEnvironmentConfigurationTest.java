@@ -8,7 +8,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.EnvironmentVariables;
 
-public class MyEnvironmentConfigurationTest {
+public class NameResolvingEnvironmentConfigurationTest {
 
 	private static final String PROPERTY_FILES_KEY = "my.env.var";
 	private static final String ENV_VAR_KEY = "MY_ENV_VAR";
@@ -30,7 +30,7 @@ public class MyEnvironmentConfigurationTest {
 	public void testGetUsingEnvVarFormat() {
 		this.environmentVariables.clear(ENV_VAR_KEY);
 		this.environmentVariables.set(ENV_VAR_KEY, STRING_VALUE);
-		final Configuration config = new MyEnvironmentConfiguration();
+		final Configuration config = new NameResolvingEnvironmentConfiguration();
 		final String result = config.getString(ENV_VAR_KEY);
 		assertEquals(STRING_VALUE, result);
 	}
@@ -39,7 +39,7 @@ public class MyEnvironmentConfigurationTest {
 	public void testGetUsingPropertiesFormat() {
 		this.environmentVariables.clear(ENV_VAR_KEY);
 		this.environmentVariables.set(ENV_VAR_KEY, STRING_VALUE);
-		final Configuration config = new MyEnvironmentConfiguration();
+		final Configuration config = new NameResolvingEnvironmentConfiguration();
 		final String result = config.getString(PROPERTY_FILES_KEY);
 		assertEquals(STRING_VALUE, result);
 	}
@@ -48,7 +48,7 @@ public class MyEnvironmentConfigurationTest {
 	public void testGetOfNumber() {
 		this.environmentVariables.clear(ENV_VAR_KEY);
 		this.environmentVariables.set(ENV_VAR_KEY, String.valueOf(INT_VALUE));
-		final Configuration config = new MyEnvironmentConfiguration();
+		final Configuration config = new NameResolvingEnvironmentConfiguration();
 		final int result = config.getInt(PROPERTY_FILES_KEY);
 		assertEquals(INT_VALUE, result);
 	}
@@ -58,7 +58,7 @@ public class MyEnvironmentConfigurationTest {
 		this.environmentVariables.clear(ENV_VAR_KEY, PROPERTY_FILES_KEY);
 		this.environmentVariables.set(ENV_VAR_KEY, STRING_VALUE);
 		this.environmentVariables.set(PROPERTY_FILES_KEY, STRING_VALUE_2);
-		final Configuration config = new MyEnvironmentConfiguration();
+		final Configuration config = new NameResolvingEnvironmentConfiguration();
 		final String result = config.getString(PROPERTY_FILES_KEY);
 		assertEquals(STRING_VALUE_2, result);
 	}
@@ -66,7 +66,7 @@ public class MyEnvironmentConfigurationTest {
 	@Test
 	public void testGetNonExistingUsingEnvVarFormat() {
 		this.environmentVariables.clear(ENV_VAR_KEY);
-		final Configuration config = new MyEnvironmentConfiguration();
+		final Configuration config = new NameResolvingEnvironmentConfiguration();
 		final String result = config.getString(ENV_VAR_KEY);
 		assertNull(result);
 	}
@@ -74,14 +74,14 @@ public class MyEnvironmentConfigurationTest {
 	@Test
 	public void testGetNonExistingUsingPropertiesFormat() {
 		this.environmentVariables.clear(ENV_VAR_KEY);
-		final Configuration config = new MyEnvironmentConfiguration();
+		final Configuration config = new NameResolvingEnvironmentConfiguration();
 		final String result = config.getString(PROPERTY_FILES_KEY);
 		assertNull(result);
 	}
 
 	@Test
 	public void testFormatKeyAsEnvVariable() {
-		assertEquals(ENV_VAR_KEY, MyEnvironmentConfiguration.formatKeyAsEnvVariable(PROPERTY_FILES_KEY));
+		assertEquals(ENV_VAR_KEY, NameResolvingEnvironmentConfiguration.formatKeyAsEnvVariable(PROPERTY_FILES_KEY));
 	}
 
 }
