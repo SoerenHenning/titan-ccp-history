@@ -1,4 +1,4 @@
-package titan.ccp.aggregation;
+package titan.ccp.aggregation.configuration;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -7,6 +7,8 @@ import org.apache.commons.configuration2.Configuration;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.EnvironmentVariables;
+
+import titan.ccp.aggregation.configuration.NameResolvingEnvironmentConfiguration;
 
 public class NameResolvingEnvironmentConfigurationTest {
 
