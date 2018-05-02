@@ -19,6 +19,7 @@ dependencies {
 	compile 'com.google.code.gson:gson:2.8.2'
     compile 'com.google.guava:guava:20.0'
     compile 'org.apache.commons:commons-configuration2:2.2'
+    compile 'commons-beanutils:commons-beanutils:1.9.2' // for commons-configuration2
     compile 'org.apache.commons:commons-lang3:3.7'
     compile 'org.slf4j:slf4j-simple:1.6.1'
     

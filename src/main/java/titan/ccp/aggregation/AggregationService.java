@@ -1,28 +1,22 @@
 package titan.ccp.aggregation;
 
+import org.apache.commons.configuration2.Configuration;
 import org.apache.kafka.streams.KafkaStreams;
 
+import titan.ccp.aggregation.configuration.Configurations;
 import titan.ccp.common.kieker.cassandra.SessionBuilder;
 import titan.ccp.common.kieker.cassandra.SessionBuilder.ClusterSession;
 import titan.ccp.model.sensorregistry.ExampleSensors;
 import titan.ccp.model.sensorregistry.ProxySensorRegistry;
 
 public class AggregationService {
-
-	private static final int WEBSERVER_PORT = 8080; // TODO as parameter
-	private static final boolean WEBSERVER_ENABLE_CORS = true; // TODO as parameter
-
-	private static final String CASSANDRA_HOST = "localhost"; // TODO as parameter
-
-	private static final int CASSANDRA_PORT = 9042; // TODO as parameter
-
+	private final Configuration configuration = Configurations.create();
 	private final SensorRegistryRequester sensorRegistryRequester = new SensorRegistryRequester("");
 	private final ProxySensorRegistry sensorRegistry = new ProxySensorRegistry();
 	// private final KafkaStreams kafkaStreams;
 	// private final RestApiServer restApiServer;
 
 	public AggregationService() {
-
 		// this.restApiServer = new RestApiServer(session);
 	}
 
@@ -39,8 +33,10 @@ public class AggregationService {
 		// sensorHistory.update(, );
 
 		// Cassandra connect
-		final ClusterSession clusterSession = new SessionBuilder().contactPoint(CASSANDRA_HOST).port(CASSANDRA_PORT)
-				.keyspace("titanccp").build();
+		final ClusterSession clusterSession = new SessionBuilder()
+				.contactPoint(this.configuration.getString("cassandra.host"))
+				.port(this.configuration.getInt("cassandra.port"))
+				.keyspace(this.configuration.getString("cassandra.keyspace")).build();
 		// CompletableFuture.supplyAsync(() -> ... )
 		// TODO stop missing
 
@@ -51,8 +47,9 @@ public class AggregationService {
 		// TODO stop missing
 
 		// Create Rest API
-		final RestApiServer restApiServer = new RestApiServer(clusterSession.getSession(), WEBSERVER_PORT,
-				WEBSERVER_ENABLE_CORS); // TODO
+		// TODO use builder
+		final RestApiServer restApiServer = new RestApiServer(clusterSession.getSession(),
+				this.configuration.getInt("webserver.port"), this.configuration.getBoolean("webserver.cors"));
 		restApiServer.start();
 		// TODO stop missing
 

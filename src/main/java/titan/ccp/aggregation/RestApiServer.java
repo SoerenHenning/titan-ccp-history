@@ -16,6 +16,7 @@ import com.google.gson.JsonObject;
 import spark.Service;
 import titan.ccp.models.records.AggregatedPowerConsumptionRecord;
 
+//TODO make a builder that returns this server
 public class RestApiServer {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RestApiServer.class);

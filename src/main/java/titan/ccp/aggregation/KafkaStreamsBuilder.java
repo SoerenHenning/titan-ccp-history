@@ -117,7 +117,6 @@ public class KafkaStreamsBuilder {
 				.primaryKeySelectionStrategy(primaryKeySelectionStrategy).build();
 
 		return cassandraWriter;
-		// TODO Cluster will never be closed
 	}
 
 	private StreamsConfig buildStreamConfig() {
