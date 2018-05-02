@@ -1,4 +1,4 @@
-package titan.ccp.aggregation;
+package titan.ccp.aggregation.configuration;
 
 import java.util.Locale;
 
