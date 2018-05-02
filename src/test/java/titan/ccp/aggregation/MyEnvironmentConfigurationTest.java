@@ -13,6 +13,8 @@ public class MyEnvironmentConfigurationTest {
 	private static final String PROPERTY_FILES_KEY = "my.env.var";
 	private static final String ENV_VAR_KEY = "MY_ENV_VAR";
 	private static final String STRING_VALUE = "value";
+	private static final String STRING_VALUE_2 = "value2";
+	private static final int INT_VALUE = 7;
 
 	@Rule
 	public final EnvironmentVariables environmentVariables = new EnvironmentVariables();
@@ -43,6 +45,25 @@ public class MyEnvironmentConfigurationTest {
 	}
 
 	@Test
+	public void testGetOfNumber() {
+		this.environmentVariables.clear(ENV_VAR_KEY);
+		this.environmentVariables.set(ENV_VAR_KEY, String.valueOf(INT_VALUE));
+		final Configuration config = new MyEnvironmentConfiguration();
+		final int result = config.getInt(PROPERTY_FILES_KEY);
+		assertEquals(INT_VALUE, result);
+	}
+
+	@Test
+	public void testGetOfBothExisting() {
+		this.environmentVariables.clear(ENV_VAR_KEY, PROPERTY_FILES_KEY);
+		this.environmentVariables.set(ENV_VAR_KEY, STRING_VALUE);
+		this.environmentVariables.set(PROPERTY_FILES_KEY, STRING_VALUE_2);
+		final Configuration config = new MyEnvironmentConfiguration();
+		final String result = config.getString(PROPERTY_FILES_KEY);
+		assertEquals(STRING_VALUE_2, result);
+	}
+
+	@Test
 	public void testGetNonExistingUsingEnvVarFormat() {
 		this.environmentVariables.clear(ENV_VAR_KEY);
 		final Configuration config = new MyEnvironmentConfiguration();
@@ -51,7 +72,7 @@ public class MyEnvironmentConfigurationTest {
 	}
 
 	@Test
-	public void testGetNonExistingUsingPropertiesForma() {
+	public void testGetNonExistingUsingPropertiesFormat() {
 		this.environmentVariables.clear(ENV_VAR_KEY);
 		final Configuration config = new MyEnvironmentConfiguration();
 		final String result = config.getString(PROPERTY_FILES_KEY);
