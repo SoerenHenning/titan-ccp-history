@@ -7,6 +7,10 @@ image: openjdk:10-jdk
 variables:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 
+cache:
+  paths:
+    - .gradle
+
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle
 
@@ -15,11 +19,6 @@ build:
   tags:
     - dockerex
   script: ./gradlew --build-cache assemble
-  cache:
-    key: "$CI_COMMIT_REF_NAME"
-    policy: push
-    paths:
-      - .gradle
   artifacts:
     paths:
       - build/
@@ -30,9 +29,3 @@ test:
   tags:
     - dockerex
   script: ./gradlew check
-  cache:
-    key: "$CI_COMMIT_REF_NAME"
-    policy: pull
-    paths:
-      - .gradle
-
