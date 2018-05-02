@@ -7,10 +7,6 @@ image: openjdk:10-jdk
 variables:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
 
-artifacts:
-  paths:
-    - build/
-
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle
 
@@ -24,6 +20,9 @@ build:
     policy: push
     paths:
       - .gradle
+  artifacts:
+    paths:
+      - build/
 
 
 test:
