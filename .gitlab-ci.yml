@@ -29,3 +29,13 @@ test:
   tags:
     - dockerex
   script: ./gradlew check
+  
+deploy:
+  stage: deploy
+  tags:
+    - dockerex
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - docker build --pull -t titan-ccp-aggregation .
