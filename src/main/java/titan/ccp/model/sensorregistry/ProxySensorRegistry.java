@@ -1,5 +1,6 @@
 package titan.ccp.model.sensorregistry;
 
+import java.util.Collection;
 import java.util.Optional;
 
 //TODO need to handle synchronization?
@@ -23,6 +24,11 @@ public class ProxySensorRegistry implements SensorRegistry {
 	@Override
 	public AggregatedSensor getTopLevelSensor() {
 		return this.backingSensorRegisty.getTopLevelSensor();
+	}
+
+	@Override
+	public Collection<MachineSensor> getMachineSensors() {
+		return this.backingSensorRegisty.getMachineSensors();
 	}
 
 	public void setBackingSensorRegisty(final SensorRegistry backingSensorRegisty) {

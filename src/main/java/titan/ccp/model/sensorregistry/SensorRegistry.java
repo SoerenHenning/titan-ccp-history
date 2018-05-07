@@ -1,5 +1,6 @@
 package titan.ccp.model.sensorregistry;
 
+import java.util.Collection;
 import java.util.Optional;
 
 public interface SensorRegistry {
@@ -7,6 +8,8 @@ public interface SensorRegistry {
 	public Optional<MachineSensor> getSensorForIdentifier(final String identifier);
 
 	public AggregatedSensor getTopLevelSensor();
+
+	public Collection<MachineSensor> getMachineSensors();
 
 	/**
 	 * Converts this sensor registry into a json string.

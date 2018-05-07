@@ -1,5 +1,7 @@
 package titan.ccp.model.sensorregistry;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -36,6 +38,11 @@ public class MutableSensorRegistry implements SensorRegistry {
 	@Override
 	public MutableAggregatedSensor getTopLevelSensor() {
 		return this.topLevelSensor;
+	}
+
+	@Override
+	public Collection<MachineSensor> getMachineSensors() {
+		return Collections.unmodifiableCollection(this.machineSensors.values());
 	}
 
 	protected boolean register(final MutableMachineSensor machineSensor) {

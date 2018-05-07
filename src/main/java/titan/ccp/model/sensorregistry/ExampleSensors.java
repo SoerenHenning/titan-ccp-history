@@ -1,15 +1,13 @@
 package titan.ccp.model.sensorregistry;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public final class ExampleSensors {
 
-	public static List<String> machineSensorNames() {
-		return List.of("comcent.server1.pw1", "comcent.server1.pw2", "comcent.server1.pw3", "comcent.server2.pw1",
-				"comcent.server2.pw2");
-	}
+	private static SensorRegistry REGISTRY;
 
-	public static SensorRegistry registry() {
+	static {
 		final MutableSensorRegistry sensorRegistry = new MutableSensorRegistry("root");
 		final MutableAggregatedSensor topLevel = sensorRegistry.getTopLevelSensor();
 		final MutableAggregatedSensor comcent = topLevel.addChildAggregatedSensor("comcent");
@@ -21,7 +19,15 @@ public final class ExampleSensors {
 		final MachineSensor server2pw1 = server2.addChildMachineSensor("comcent.server2.pw1");
 		final MachineSensor server2pw2 = server2.addChildMachineSensor("comcent.server2.pw2");
 
-		return ImmutableSensorRegistry.copyOf(sensorRegistry);
+		REGISTRY = ImmutableSensorRegistry.copyOf(sensorRegistry);
+	}
+
+	public static List<String> machineSensorNames() {
+		return REGISTRY.getMachineSensors().stream().map(s -> s.getIdentifier()).collect(Collectors.toList());
+	}
+
+	public static SensorRegistry registry() {
+		return REGISTRY;
 	}
 
 }

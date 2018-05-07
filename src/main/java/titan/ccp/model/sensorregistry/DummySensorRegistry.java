@@ -20,6 +20,11 @@ public class DummySensorRegistry implements SensorRegistry {
 		return EMPTY_TOP_LEVEL_SENSOR;
 	}
 
+	@Override
+	public Collection<MachineSensor> getMachineSensors() {
+		return Collections.emptyList();
+	}
+
 	private static final AggregatedSensor EMPTY_TOP_LEVEL_SENSOR = new EmptyTopLevelSensor();
 
 	// TODO move
@@ -64,4 +69,5 @@ public class DummySensorRegistry implements SensorRegistry {
 		}
 
 	}
+
 }
