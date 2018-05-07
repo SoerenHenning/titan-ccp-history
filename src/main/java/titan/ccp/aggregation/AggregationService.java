@@ -8,6 +8,7 @@ import titan.ccp.common.kieker.cassandra.SessionBuilder;
 import titan.ccp.common.kieker.cassandra.SessionBuilder.ClusterSession;
 import titan.ccp.model.sensorregistry.ExampleSensors;
 import titan.ccp.model.sensorregistry.ProxySensorRegistry;
+import titan.ccp.model.sensorregistry.client.SensorRegistryRequester;
 
 public class AggregationService {
 	private final Configuration configuration = Configurations.create();

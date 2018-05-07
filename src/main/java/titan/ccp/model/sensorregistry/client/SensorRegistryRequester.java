@@ -1,4 +1,4 @@
-package titan.ccp.aggregation;
+package titan.ccp.model.sensorregistry.client;
 
 import java.net.URI;
 import java.net.URISyntaxException;
