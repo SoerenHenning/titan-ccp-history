@@ -4,7 +4,19 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import titan.ccp.model.sensorregistry.serialization.AggregatedSensorSerializer;
+import titan.ccp.model.sensorregistry.serialization.MachineSensorSerializer;
+import titan.ccp.model.sensorregistry.serialization.SensorRegistrySerializer;
+
 public class MutableSensorRegistry implements SensorRegistry {
+
+	private static final Gson GSON = new GsonBuilder()
+			.registerTypeAdapter(MutableSensorRegistry.class, new SensorRegistrySerializer())
+			.registerTypeAdapter(MutableAggregatedSensor.class, new AggregatedSensorSerializer())
+			.registerTypeAdapter(MutableMachineSensor.class, new MachineSensorSerializer()).create();
 
 	// TODO HashMap for efficient access to machine sensors
 	private final Map<String, MutableMachineSensor> machineSensors = new HashMap<>();
@@ -29,7 +41,11 @@ public class MutableSensorRegistry implements SensorRegistry {
 	protected boolean register(final MutableMachineSensor machineSensor) {
 		final Object oldValue = this.machineSensors.putIfAbsent(machineSensor.getIdentifier(), machineSensor);
 		return oldValue == null;
+	}
 
+	@Override
+	public String toJson() {
+		return GSON.toJson(this);
 	}
 
 }

@@ -7,4 +7,5 @@ public interface Sensor {
 	public Optional<AggregatedSensor> getParent();
 
 	public String getIdentifier();
+
 }

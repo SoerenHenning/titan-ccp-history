@@ -6,8 +6,22 @@ import java.util.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.ImmutableMap;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import titan.ccp.model.sensorregistry.serialization.AggregatedSensorSerializer;
+import titan.ccp.model.sensorregistry.serialization.MachineSensorSerializer;
+import titan.ccp.model.sensorregistry.serialization.SensorRegistryDeserializer;
+import titan.ccp.model.sensorregistry.serialization.SensorRegistrySerializer;
 
 public final class ImmutableSensorRegistry implements SensorRegistry {
+
+	private static final Gson GSON = new GsonBuilder()
+			.registerTypeAdapter(ImmutableSensorRegistry.class, new SensorRegistrySerializer())
+			.registerTypeAdapter(ImmutableSensorRegistry.ImmutableAggregatatedSensor.class,
+					new AggregatedSensorSerializer())
+			.registerTypeAdapter(ImmutableSensorRegistry.ImmutableMachineSensor.class, new MachineSensorSerializer())
+			.registerTypeAdapter(SensorRegistry.class, new SensorRegistryDeserializer()).create();
 
 	private final ImmutableMap<String, MachineSensor> machineSensors;
 	private final AggregatedSensor topLevelSensor;
@@ -28,8 +42,18 @@ public final class ImmutableSensorRegistry implements SensorRegistry {
 		return this.topLevelSensor;
 	}
 
+	@Override
+	public String toJson() {
+		// Necessary method. Deletion would cause SensorRegistry.toJson() to fail.
+		return GSON.toJson(this);
+	}
+
 	public static ImmutableSensorRegistry copyOf(final SensorRegistry sensorRegistry) {
 		return new ImmutableSensorRegistry(sensorRegistry);
+	}
+
+	public static SensorRegistry fromJson(final String json) {
+		return GSON.fromJson(json, SensorRegistry.class);
 	}
 
 	private static class AbstractImmutableSensor implements Sensor {
