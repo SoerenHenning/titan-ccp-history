@@ -33,8 +33,9 @@ public class SensorRegistryRequester {
 		final HttpRequest request = HttpRequest.newBuilder().uri(this.uri).GET().build();
 
 		// TODO handle errors
-		return this.client.sendAsync(request, HttpResponse.BodyHandler.asString())
-				.thenApply(r -> SensorRegistry.fromJson(r.body()));
+		return this.client.sendAsync(request, HttpResponse.BodyHandler.asString()).thenApply(r -> {
+			return SensorRegistry.fromJson(r.body());
+		});
 	}
 
 	private static final URI buildURI(final String host, final int port) {
