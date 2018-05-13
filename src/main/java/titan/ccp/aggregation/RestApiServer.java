@@ -69,6 +69,13 @@ public class RestApiServer {
 			return this.getAggregatedPowerConsumption(identifier, after).toString();
 		});
 
+		this.webService.get("/aggregated-power-consumption/:identifier/distribution", (request, response) -> {
+			final String identifier = request.params("identifier");
+			final long after = NumberUtils.toLong(request.queryParams("after"), 0);
+			final int buckets = NumberUtils.toInt(request.queryParams("buckets"), 4);
+			return this.getAggregatedPowerConsumptionDistribution(identifier, after, buckets);
+		});
+
 		this.webService.after((request, response) -> {
 			response.type("application/json");
 		});
@@ -99,7 +106,8 @@ public class RestApiServer {
 		return jsonArray; // TODO
 	}
 
-	private String getAggregatedPowerConsumptionDistribution(final String identifier, final long after) {
+	private String getAggregatedPowerConsumptionDistribution(final String identifier, final long after,
+			final int buckets) {
 		final Statement statement = QueryBuilder.select().all()
 				.from(AggregatedPowerConsumptionRecord.class.getSimpleName())
 				.where(QueryBuilder.eq("identifier", identifier)).and(QueryBuilder.gt("timestamp", after));
@@ -113,26 +121,25 @@ public class RestApiServer {
 		}
 
 		if (records.isEmpty()) {
-			return null; // TODO
+			return ""; // TODO
 		}
 
 		final long min = records.stream().mapToLong(r -> r.getSum()).min().getAsLong();
 		final long max = records.stream().mapToLong(r -> r.getSum()).max().getAsLong();
 
-		final int countSlices = 4;
-		final double sliceSize = (max - min) / (double) countSlices;
+		final double sliceSize = (max - min) / (double) buckets;
 
-		final double[] slicesBounds = new double[countSlices];
+		final double[] slicesBounds = new double[buckets];
 		double last = min;
-		for (int i = 0; i <= countSlices; i++) {
+		for (int i = 0; i <= buckets; i++) {
 			last += sliceSize;
 			slicesBounds[i] = last;
 		}
 
-		final int[] slices = new int[countSlices];
+		final int[] slices = new int[buckets];
 		for (final AggregatedPowerConsumptionRecord record : records) {
 			final long value = record.getSum();
-			final int index = Integer.min((int) ((value - min) / sliceSize), countSlices - 1);
+			final int index = Integer.min((int) ((value - min) / sliceSize), buckets - 1);
 			slices[index]++;
 		}
 
