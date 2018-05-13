@@ -1,5 +1,8 @@
 package titan.ccp.aggregation;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,6 +12,8 @@ import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -92,6 +97,47 @@ public class RestApiServer {
 		}
 
 		return jsonArray; // TODO
+	}
+
+	private String getAggregatedPowerConsumptionDistribution(final String identifier, final long after) {
+		final Statement statement = QueryBuilder.select().all()
+				.from(AggregatedPowerConsumptionRecord.class.getSimpleName())
+				.where(QueryBuilder.eq("identifier", identifier)).and(QueryBuilder.gt("timestamp", after));
+		final ResultSet resultSet = this.cassandraSession.execute(statement);
+
+		final List<AggregatedPowerConsumptionRecord> records = new ArrayList<>();
+		for (final Row row : resultSet) {
+			records.add(new AggregatedPowerConsumptionRecord(row.getString("identifier"), row.getLong("timestamp"),
+					row.getInt("min"), row.getInt("max"), row.getLong("count"), row.getLong("sum"),
+					row.getDouble("average")));
+		}
+
+		if (records.isEmpty()) {
+			return null; // TODO
+		}
+
+		final long min = records.stream().mapToLong(r -> r.getSum()).min().getAsLong();
+		final long max = records.stream().mapToLong(r -> r.getSum()).max().getAsLong();
+
+		final int countSlices = 4;
+		final double sliceSize = (max - min) / (double) countSlices;
+
+		final double[] slicesBounds = new double[countSlices];
+		double last = min;
+		for (int i = 0; i <= countSlices; i++) {
+			last += sliceSize;
+			slicesBounds[i] = last;
+		}
+
+		final int[] slices = new int[countSlices];
+		for (final AggregatedPowerConsumptionRecord record : records) {
+			final long value = record.getSum();
+			final int index = Integer.min((int) ((value - min) / sliceSize), countSlices - 1);
+			slices[index]++;
+		}
+
+		final Gson gson = new GsonBuilder().create();
+		return gson.toJson(slices);
 	}
 
 }

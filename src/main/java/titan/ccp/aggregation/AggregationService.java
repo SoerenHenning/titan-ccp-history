@@ -18,6 +18,8 @@ public class AggregationService {
 	// private final KafkaStreams kafkaStreams;
 	// private final RestApiServer restApiServer;
 
+	// private final CompletableFuture<Void> stopEvent = new CompletableFuture();
+
 	public AggregationService() {
 		this.sensorRegistryRequester = new RetryingSensorRegistryRequester(new SensorRegistryRequester(
 				this.configuration.getString("configuration.host"), this.configuration.getInt("configuration.port")));
@@ -45,6 +47,7 @@ public class AggregationService {
 				.cassandraSession(clusterSession.getSession()).build();
 		kafkaStreams.start();
 		// TODO stop missing
+		// this.stopEvent.thenRun(() -> kafkaStreams.close())
 
 		// Create Rest API
 		// TODO use builder
@@ -58,6 +61,10 @@ public class AggregationService {
 		// stop.complete(null);
 
 	}
+
+	// public void stop() {
+	// this.stopEvent.complete(null);
+	// }
 
 	public static void main(final String[] args) {
 		new AggregationService().run();
