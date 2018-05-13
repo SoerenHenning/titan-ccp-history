@@ -1,4 +1,4 @@
-package titan.ccp.aggregation;
+package titan.ccp.aggregation.api;
 
 import java.util.ArrayList;
 import java.util.List;

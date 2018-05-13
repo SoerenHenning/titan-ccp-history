@@ -3,6 +3,7 @@ package titan.ccp.aggregation;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.kafka.streams.KafkaStreams;
 
+import titan.ccp.aggregation.api.RestApiServer;
 import titan.ccp.common.configuration.Configurations;
 import titan.ccp.common.kieker.cassandra.SessionBuilder;
 import titan.ccp.common.kieker.cassandra.SessionBuilder.ClusterSession;
