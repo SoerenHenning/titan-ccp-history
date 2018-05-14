@@ -19,14 +19,11 @@ public class RestApiServer {
 
 	private final AggregatedPowerConsumptionRepository repository; // BETTER use PowerConsumptionRepositry<T>
 
-	private final Session cassandraSession;
-
 	private final Service webService;
 
 	private final boolean enableCors;
 
 	public RestApiServer(final Session cassandraSession, final int port, final boolean enableCors) {
-		this.cassandraSession = cassandraSession;
 		this.repository = new AggregatedPowerConsumptionRepository(cassandraSession);
 		LOGGER.info("Instantiate API server.");
 		this.webService = Service.ignite().port(port);

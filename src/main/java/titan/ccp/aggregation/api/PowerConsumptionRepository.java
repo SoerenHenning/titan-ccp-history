@@ -13,6 +13,7 @@ import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 
 import titan.ccp.models.records.AggregatedPowerConsumptionRecord;
+import titan.ccp.models.records.PowerConsumptionRecord;
 
 public class PowerConsumptionRepository<T> {
 
@@ -36,7 +37,6 @@ public class PowerConsumptionRepository<T> {
 
 		final List<T> records = new ArrayList<>();
 		for (final Row row : resultSet) {
-			// BETTER Use factory and deserializer
 			final T record = this.recordFactory.apply(row);
 			records.add(record);
 		}
@@ -77,10 +77,19 @@ public class PowerConsumptionRepository<T> {
 			final Session cassandraSession) {
 		return new PowerConsumptionRepository<>(cassandraSession,
 				AggregatedPowerConsumptionRecord.class.getSimpleName(),
+				// BETTER Use factory and deserializer
 				row -> new AggregatedPowerConsumptionRecord(row.getString("identifier"), row.getLong("timestamp"),
 						row.getInt("min"), row.getInt("max"), row.getLong("count"), row.getLong("sum"),
 						row.getDouble("average")),
 				record -> record.getSum());
+	}
+
+	public static PowerConsumptionRepository<PowerConsumptionRecord> forNormal(final Session cassandraSession) {
+		return new PowerConsumptionRepository<>(cassandraSession, PowerConsumptionRecord.class.getSimpleName(),
+				// BETTER Use factory and deserializer
+				row -> new PowerConsumptionRecord(row.getString("identifier"), row.getLong("timestamp"),
+						row.getInt("getPowerConsumptionInWh")),
+				record -> record.getPowerConsumptionInWh());
 	}
 
 }
