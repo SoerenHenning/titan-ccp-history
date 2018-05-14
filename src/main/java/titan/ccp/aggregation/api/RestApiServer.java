@@ -17,7 +17,7 @@ public class RestApiServer {
 
 	private final Gson gson = new GsonBuilder().create();
 
-	private final AggregatedPowerConsumptionRepository repository;
+	private final AggregatedPowerConsumptionRepository repository; // BETTER use PowerConsumptionRepositry<T>
 
 	private final Session cassandraSession;
 
