@@ -140,7 +140,7 @@ public class RestApiServer {
 		}
 
 		final List<DistributionBucket> buckets = new ArrayList<>(bucketsCount);
-		for (int i = 0; i <= bucketsCount; i++) {
+		for (int i = 0; i < bucketsCount; i++) {
 			final double lower = i > 0 ? buckets.get(i - 1).getUpper() : min;
 			final double upper = i < bucketsCount ? lower + sliceSize : max;
 			buckets.add(new DistributionBucket(lower, upper, distribution[i]));
