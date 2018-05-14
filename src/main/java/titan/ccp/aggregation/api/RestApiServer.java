@@ -1,6 +1,7 @@
 package titan.ccp.aggregation.api;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.lang3.math.NumberUtils;
@@ -25,6 +26,8 @@ import titan.ccp.models.records.AggregatedPowerConsumptionRecord;
 public class RestApiServer {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RestApiServer.class);
+
+	private final Gson gson = new GsonBuilder().create();
 
 	private final Session cassandraSession;
 
@@ -74,7 +77,7 @@ public class RestApiServer {
 			final long after = NumberUtils.toLong(request.queryParams("after"), 0);
 			final int buckets = NumberUtils.toInt(request.queryParams("buckets"), 4);
 			return this.getAggregatedPowerConsumptionDistribution(identifier, after, buckets);
-		});
+		}, this.gson::toJson);
 
 		this.webService.after((request, response) -> {
 			response.type("application/json");
@@ -106,8 +109,8 @@ public class RestApiServer {
 		return jsonArray; // TODO
 	}
 
-	private String getAggregatedPowerConsumptionDistribution(final String identifier, final long after,
-			final int buckets) {
+	private List<DistributionBucket> getAggregatedPowerConsumptionDistribution(final String identifier,
+			final long after, final int bucketsCount) {
 		final Statement statement = QueryBuilder.select().all()
 				.from(AggregatedPowerConsumptionRecord.class.getSimpleName())
 				.where(QueryBuilder.eq("identifier", identifier)).and(QueryBuilder.gt("timestamp", after));
@@ -121,30 +124,29 @@ public class RestApiServer {
 		}
 
 		if (records.isEmpty()) {
-			return ""; // TODO
+			return Collections.emptyList();
 		}
 
 		final long min = records.stream().mapToLong(r -> r.getSum()).min().getAsLong();
 		final long max = records.stream().mapToLong(r -> r.getSum()).max().getAsLong();
 
-		final double sliceSize = (max - min) / (double) buckets;
+		final double sliceSize = (max - min) / (double) bucketsCount;
 
-		final double[] slicesBounds = new double[buckets];
-		double last = min;
-		for (int i = 0; i <= buckets; i++) {
-			last += sliceSize;
-			slicesBounds[i] = last;
-		}
-
-		final int[] slices = new int[buckets];
+		final int[] distribution = new int[bucketsCount];
 		for (final AggregatedPowerConsumptionRecord record : records) {
 			final long value = record.getSum();
-			final int index = Integer.min((int) ((value - min) / sliceSize), buckets - 1);
-			slices[index]++;
+			final int index = Integer.min((int) ((value - min) / sliceSize), bucketsCount - 1);
+			distribution[index]++;
 		}
 
-		final Gson gson = new GsonBuilder().create();
-		return gson.toJson(slices);
+		final List<DistributionBucket> buckets = new ArrayList<>(bucketsCount);
+		for (int i = 0; i <= bucketsCount; i++) {
+			final double lower = i > 0 ? buckets.get(i - 1).getUpper() : min;
+			final double upper = i < bucketsCount ? lower + sliceSize : max;
+			buckets.add(new DistributionBucket(lower, upper, distribution[i]));
+		}
+
+		return buckets;
 	}
 
 }
