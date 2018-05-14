@@ -61,6 +61,8 @@ public class KafkaStreamsBuilder {
 		final KStream<String, PowerConsumptionRecord> inputStream = builder.stream(this.inputTopicName,
 				Consumed.with(Serdes.String(), RecordSerdes.forPowerConsumptionRecord()));
 
+		// inputStream.foreach((k, v) -> System.out.println(k + " : " + v));
+
 		final KStream<String, PowerConsumptionRecord> flatMapped = inputStream
 				.flatMap((key, value) -> this.flatMap(value));
 
@@ -76,6 +78,7 @@ public class KafkaStreamsBuilder {
 			// System.out.println("O: " + aggKey + ": " + aggValue2.getSummaryStatistics());
 			// System.out.println("new: " + newValue.getIdentifier() + ": " +
 			// newValue.getPowerConsumptionInWh());
+			// System.out.println("New record in aggregation."); // TODO
 			aggValue2.update(newValue);
 			// System.out.println("N: " + aggKey + ": " + aggValue2.getLastValues());
 			// System.out.println("N: " + aggKey + ": " + aggValue2.getSummaryStatistics());
@@ -98,7 +101,10 @@ public class KafkaStreamsBuilder {
 
 		builder.stream(this.outputTopicName,
 				Consumed.with(Serdes.String(), RecordSerdes.forAggregatedPowerConsumptionRecord()))
-				.foreach((key, record) -> cassandraWriter.write(record));
+				.foreach((key, record) -> {
+					cassandraWriter.write(record);
+					// System.out.println("New written"); // TODO
+				});
 
 		// End Cassandra Writer
 
@@ -144,7 +150,7 @@ public class KafkaStreamsBuilder {
 		// kafkaProperties.put("sasl.mechanism", "SCRAM-SHA-256");
 		// kafkaProperties.put("sasl.jaas.config", jaasCfg);
 
-		kafkaProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, "my-first-streams-application-0.0.5");
+		kafkaProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, "my-first-streams-application-0.0.6");
 		kafkaProperties.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 1000); // TODO
 		// kafkaProperties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
 		// kafkaBootstrapServer);
