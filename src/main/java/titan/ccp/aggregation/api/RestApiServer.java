@@ -10,6 +10,7 @@ import com.google.gson.GsonBuilder;
 
 import spark.Service;
 import titan.ccp.models.records.AggregatedPowerConsumptionRecord;
+import titan.ccp.models.records.PowerConsumptionRecord;
 
 //TODO make a builder that returns this server
 public class RestApiServer {
@@ -18,14 +19,16 @@ public class RestApiServer {
 
 	private final Gson gson = new GsonBuilder().create();
 
-	private final PowerConsumptionRepository<AggregatedPowerConsumptionRecord> repository;
+	private final PowerConsumptionRepository<AggregatedPowerConsumptionRecord> aggregatedRepository;
+	private final PowerConsumptionRepository<PowerConsumptionRecord> normalRepository;
 
 	private final Service webService;
 
 	private final boolean enableCors;
 
 	public RestApiServer(final Session cassandraSession, final int port, final boolean enableCors) {
-		this.repository = PowerConsumptionRepository.forAggregated(cassandraSession);
+		this.aggregatedRepository = PowerConsumptionRepository.forAggregated(cassandraSession);
+		this.normalRepository = PowerConsumptionRepository.forNormal(cassandraSession);
 		LOGGER.info("Instantiate API server.");
 		this.webService = Service.ignite().port(port);
 		this.enableCors = enableCors;
@@ -55,17 +58,30 @@ public class RestApiServer {
 			});
 		}
 
+		this.webService.get("/power-consumption/:identifier", (request, response) -> {
+			final String identifier = request.params("identifier");
+			final long after = NumberUtils.toLong(request.queryParams("after"), 0);
+			return this.normalRepository.get(identifier, after);
+		}, this.gson::toJson);
+
+		this.webService.get("/power-consumption/:identifier/distribution", (request, response) -> {
+			final String identifier = request.params("identifier");
+			final long after = NumberUtils.toLong(request.queryParams("after"), 0);
+			final int buckets = NumberUtils.toInt(request.queryParams("buckets"), 4);
+			return this.normalRepository.getDistribution(identifier, after, buckets);
+		}, this.gson::toJson);
+
 		this.webService.get("/aggregated-power-consumption/:identifier", (request, response) -> {
 			final String identifier = request.params("identifier");
 			final long after = NumberUtils.toLong(request.queryParams("after"), 0);
-			return this.repository.get(identifier, after);
+			return this.aggregatedRepository.get(identifier, after);
 		}, this.gson::toJson);
 
 		this.webService.get("/aggregated-power-consumption/:identifier/distribution", (request, response) -> {
 			final String identifier = request.params("identifier");
 			final long after = NumberUtils.toLong(request.queryParams("after"), 0);
 			final int buckets = NumberUtils.toInt(request.queryParams("buckets"), 4);
-			return this.repository.getDistribution(identifier, after, buckets);
+			return this.aggregatedRepository.getDistribution(identifier, after, buckets);
 		}, this.gson::toJson);
 
 		this.webService.after((request, response) -> {

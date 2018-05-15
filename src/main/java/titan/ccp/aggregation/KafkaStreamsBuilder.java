@@ -122,6 +122,14 @@ public class KafkaStreamsBuilder {
 				});
 		// End Cassandra Writer
 
+		// Cassandra Writer for PowerConsumptionRecords
+		final CassandraWriter cassandraWriterForNormal = this.buildCassandraWriterForNormal();
+		inputStream.foreach((key, record) -> {
+			cassandraWriterForNormal.write(record);
+			// System.out.println("New written"); // TODO
+		});
+		// End Cassandra Writer
+
 		return builder.build();
 	}
 
@@ -130,6 +138,20 @@ public class KafkaStreamsBuilder {
 		primaryKeySelectionStrategy.registerPartitionKeys(AggregatedPowerConsumptionRecord.class.getSimpleName(),
 				"identifier");
 		primaryKeySelectionStrategy.registerClusteringColumns(AggregatedPowerConsumptionRecord.class.getSimpleName(),
+				"timestamp");
+
+		final CassandraWriter cassandraWriter = CassandraWriter.builder(this.cassandraSession).excludeRecordType()
+				.excludeLoggingTimestamp().tableNameMapper(PredefinedTableNameMappers.SIMPLE_CLASS_NAME)
+				.primaryKeySelectionStrategy(primaryKeySelectionStrategy).build();
+
+		return cassandraWriter;
+	}
+
+	// BETTER refine name
+	private CassandraWriter buildCassandraWriterForNormal() {
+		final ExplicitPrimaryKeySelectionStrategy primaryKeySelectionStrategy = new ExplicitPrimaryKeySelectionStrategy();
+		primaryKeySelectionStrategy.registerPartitionKeys(PowerConsumptionRecord.class.getSimpleName(), "identifier");
+		primaryKeySelectionStrategy.registerClusteringColumns(PowerConsumptionRecord.class.getSimpleName(),
 				"timestamp");
 
 		final CassandraWriter cassandraWriter = CassandraWriter.builder(this.cassandraSession).excludeRecordType()

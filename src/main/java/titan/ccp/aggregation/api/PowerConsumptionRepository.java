@@ -88,7 +88,7 @@ public class PowerConsumptionRepository<T> {
 		return new PowerConsumptionRepository<>(cassandraSession, PowerConsumptionRecord.class.getSimpleName(),
 				// BETTER Use factory and deserializer
 				row -> new PowerConsumptionRecord(row.getString("identifier"), row.getLong("timestamp"),
-						row.getInt("getPowerConsumptionInWh")),
+						row.getInt("powerConsumptionInWh")),
 				record -> record.getPowerConsumptionInWh());
 	}
 
