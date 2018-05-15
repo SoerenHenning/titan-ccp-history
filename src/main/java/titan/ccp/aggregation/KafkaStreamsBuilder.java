@@ -31,9 +31,10 @@ import titan.ccp.models.records.serialization.kafka.RecordSerdes;
 
 public class KafkaStreamsBuilder {
 
-	private final String inputTopicName = "input"; // TODO
-	private final String outputTopicName = "output"; // TODO
+	private String inputTopic;
+	private String outputTopic;
 	private final String aggregationStoreName = "stream-store"; // TODO
+	private String bootstrapServers;
 
 	private SensorRegistry sensorRegistry;
 	private Session cassandraSession;
@@ -51,6 +52,21 @@ public class KafkaStreamsBuilder {
 		return this;
 	}
 
+	public KafkaStreamsBuilder inputTopic(final String inputTopic) {
+		this.inputTopic = inputTopic;
+		return this;
+	}
+
+	public KafkaStreamsBuilder outputTopic(final String outputTopic) {
+		this.outputTopic = outputTopic;
+		return this;
+	}
+
+	public KafkaStreamsBuilder bootstrapServers(final String bootstrapServers) {
+		this.bootstrapServers = bootstrapServers;
+		return this;
+	}
+
 	public KafkaStreams build() {
 		return new KafkaStreams(this.buildTopology(), this.buildStreamConfig());
 	}
@@ -58,7 +74,7 @@ public class KafkaStreamsBuilder {
 	private Topology buildTopology() {
 		final StreamsBuilder builder = new StreamsBuilder();
 
-		final KStream<String, PowerConsumptionRecord> inputStream = builder.stream(this.inputTopicName,
+		final KStream<String, PowerConsumptionRecord> inputStream = builder.stream(this.inputTopic,
 				Consumed.with(Serdes.String(), RecordSerdes.forPowerConsumptionRecord()));
 
 		// inputStream.foreach((k, v) -> System.out.println(k + " : " + v));
@@ -93,19 +109,17 @@ public class KafkaStreamsBuilder {
 		// System.out.println("A: " + key + ": " + value.getSummaryStatistics());
 		// }); // TODO
 
-		aggregated.toStream().map((key, value) -> KeyValue.pair(key, value.toRecord(key))).to(this.outputTopicName,
+		aggregated.toStream().map((key, value) -> KeyValue.pair(key, value.toRecord(key))).to(this.outputTopic,
 				Produced.with(Serdes.String(), RecordSerdes.forAggregatedPowerConsumptionRecord()));
 
 		// Cassandra Writer
 		final CassandraWriter cassandraWriter = this.buildCassandraWriter();
-
-		builder.stream(this.outputTopicName,
+		builder.stream(this.outputTopic,
 				Consumed.with(Serdes.String(), RecordSerdes.forAggregatedPowerConsumptionRecord()))
 				.foreach((key, record) -> {
 					cassandraWriter.write(record);
 					// System.out.println("New written"); // TODO
 				});
-
 		// End Cassandra Writer
 
 		return builder.build();
@@ -127,6 +141,9 @@ public class KafkaStreamsBuilder {
 
 	private StreamsConfig buildStreamConfig() {
 		final Properties settings = loadProperties();
+		settings.put(StreamsConfig.APPLICATION_ID_CONFIG, "titanccp-aggregation-0.0.6");
+		settings.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 1000); // TODO
+		settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, this.bootstrapServers);
 		return new StreamsConfig(settings);
 	}
 
@@ -154,27 +171,8 @@ public class KafkaStreamsBuilder {
 		kafkaProperties.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 1000); // TODO
 		// kafkaProperties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
 		// kafkaBootstrapServer);
-		kafkaProperties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
 
 		return kafkaProperties;
-	}
-
-	private static String loadInputTopicName() {
-		return "input";
-		// final String username = System.getenv("CLOUDKARAFKA_USERNAME");
-		// return username + "-default";
-	}
-
-	private static String loadOutputTopicName() {
-		return "output";
-		// final String username = System.getenv("CLOUDKARAFKA_USERNAME");
-		// return username + "-aggregated";
-	}
-
-	private static String loadAggregatedStreamStoreTopicName() {
-		return "stream-store";
-		// final String username = System.getenv("CLOUDKARAFKA_USERNAME");
-		// return username + "-stream-store";
 	}
 
 }

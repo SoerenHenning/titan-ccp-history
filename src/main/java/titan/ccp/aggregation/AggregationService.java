@@ -44,7 +44,10 @@ public class AggregationService {
 		// TODO stop missing
 
 		// Create Kafka Streams Application
-		final KafkaStreams kafkaStreams = new KafkaStreamsBuilder().sensorRegistry(this.sensorRegistry)
+		final KafkaStreams kafkaStreams = new KafkaStreamsBuilder()
+				.bootstrapServers(this.configuration.getString("kafka.bootstrap.servers"))
+				.inputTopic(this.configuration.getString("kafka.input.topic"))
+				.outputTopic(this.configuration.getString("kafka.output.topic")).sensorRegistry(this.sensorRegistry)
 				.cassandraSession(clusterSession.getSession()).build();
 		kafkaStreams.start();
 		// TODO stop missing
