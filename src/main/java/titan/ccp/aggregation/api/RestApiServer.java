@@ -9,6 +9,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import spark.Service;
+import titan.ccp.models.records.AggregatedPowerConsumptionRecord;
 
 //TODO make a builder that returns this server
 public class RestApiServer {
@@ -17,14 +18,14 @@ public class RestApiServer {
 
 	private final Gson gson = new GsonBuilder().create();
 
-	private final AggregatedPowerConsumptionRepository repository; // BETTER use PowerConsumptionRepositry<T>
+	private final PowerConsumptionRepository<AggregatedPowerConsumptionRecord> repository;
 
 	private final Service webService;
 
 	private final boolean enableCors;
 
 	public RestApiServer(final Session cassandraSession, final int port, final boolean enableCors) {
-		this.repository = new AggregatedPowerConsumptionRepository(cassandraSession);
+		this.repository = PowerConsumptionRepository.forAggregated(cassandraSession);
 		LOGGER.info("Instantiate API server.");
 		this.webService = Service.ignite().port(port);
 		this.enableCors = enableCors;
