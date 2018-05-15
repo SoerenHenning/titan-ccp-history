@@ -33,6 +33,11 @@ public class PowerConsumptionRepository<T> {
 	public List<T> get(final String identifier, final long after) {
 		final Statement statement = QueryBuilder.select().all().from(this.tableName)
 				.where(QueryBuilder.eq("identifier", identifier)).and(QueryBuilder.gt("timestamp", after));
+
+		return this.get(statement);
+	}
+
+	private List<T> get(final Statement statement) {
 		final ResultSet resultSet = this.cassandraSession.execute(statement);
 
 		final List<T> records = new ArrayList<>();
@@ -42,6 +47,13 @@ public class PowerConsumptionRepository<T> {
 		}
 
 		return records;
+	}
+
+	public List<T> getLatest(final String identifier, final int count) {
+		final Statement statement = QueryBuilder.select().all().from(this.tableName)
+				.where(QueryBuilder.eq("identifier", identifier)).orderBy(QueryBuilder.desc("timestamp")).limit(count);
+
+		return this.get(statement);
 	}
 
 	public List<DistributionBucket> getDistribution(final String identifier, final long after, final int bucketsCount) {

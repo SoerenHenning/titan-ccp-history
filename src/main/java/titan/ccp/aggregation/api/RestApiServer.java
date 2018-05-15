@@ -64,6 +64,12 @@ public class RestApiServer {
 			return this.normalRepository.get(identifier, after);
 		}, this.gson::toJson);
 
+		this.webService.get("/power-consumption/:identifier/latest", (request, response) -> {
+			final String identifier = request.params("identifier");
+			final int count = NumberUtils.toInt(request.queryParams("count"), 1);
+			return this.normalRepository.getLatest(identifier, count);
+		}, this.gson::toJson);
+
 		this.webService.get("/power-consumption/:identifier/distribution", (request, response) -> {
 			final String identifier = request.params("identifier");
 			final long after = NumberUtils.toLong(request.queryParams("after"), 0);
@@ -75,6 +81,12 @@ public class RestApiServer {
 			final String identifier = request.params("identifier");
 			final long after = NumberUtils.toLong(request.queryParams("after"), 0);
 			return this.aggregatedRepository.get(identifier, after);
+		}, this.gson::toJson);
+
+		this.webService.get("/aggregated-power-consumption/:identifier/latest", (request, response) -> {
+			final String identifier = request.params("identifier");
+			final int count = NumberUtils.toInt(request.queryParams("count"), 1);
+			return this.aggregatedRepository.getLatest(identifier, count);
 		}, this.gson::toJson);
 
 		this.webService.get("/aggregated-power-consumption/:identifier/distribution", (request, response) -> {
