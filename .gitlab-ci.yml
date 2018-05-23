@@ -40,6 +40,6 @@ deploy:
     - docker build --pull -t titan-ccp-aggregation .
     - docker tag titan-ccp-aggregation industrialdevops/titan-ccp-aggregation:latest
     - docker tag titan-ccp-aggregation industrialdevops/titan-ccp-aggregation:$CI_COMMIT_SHA
-    # - docker login -u ... -p ...
-    # - docker push industrialdevops/titan-ccp-aggregation:latest
-    # - docker push industrialdevops/titan-ccp-aggregation:$CI_COMMIT_SHA
+    - docker login -u $DOCKERHUB_ID -p $DOCKERHUB_PW
+    - docker push industrialdevops/titan-ccp-aggregation:latest
+    - docker push industrialdevops/titan-ccp-aggregation:$CI_COMMIT_SHA
