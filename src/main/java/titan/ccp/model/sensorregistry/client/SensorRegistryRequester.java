@@ -4,12 +4,17 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.CompletableFuture;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import jdk.incubator.http.HttpClient;
 import jdk.incubator.http.HttpRequest;
 import jdk.incubator.http.HttpResponse;
 import titan.ccp.model.sensorregistry.SensorRegistry;
 
 public class SensorRegistryRequester {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(SensorRegistryRequester.class);
 
 	private static final String DEFAULT_PATH = "/sensor-registry/";
 	private static final String DEFAULT_SCHEME = "http";
@@ -31,6 +36,8 @@ public class SensorRegistryRequester {
 
 	public CompletableFuture<SensorRegistry> request() {
 		final HttpRequest request = HttpRequest.newBuilder().uri(this.uri).GET().build();
+
+		LOGGER.info("Request sensor registry on GET: {}", this.uri);
 
 		// TODO handle errors
 		return this.client.sendAsync(request, HttpResponse.BodyHandler.asString()).thenApply(r -> {
