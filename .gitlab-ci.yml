@@ -39,7 +39,8 @@ deploy:
   script:
     - docker build --pull -t titan-ccp-aggregation .
     - docker tag titan-ccp-aggregation industrialdevops/titan-ccp-aggregation:latest
-    - docker tag titan-ccp-aggregation industrialdevops/titan-ccp-aggregation:$CI_COMMIT_SHA
+    - docker tag titan-ccp-aggregation industrialdevops/titan-ccp-aggregation:$(date +%Y%m%d%H%M%S)
     - echo $DOCKERHUB_PW | docker login -u $DOCKERHUB_ID --password-stdin
-    - docker push industrialdevops/titan-ccp-aggregation:latest
-    - docker push industrialdevops/titan-ccp-aggregation:$CI_COMMIT_SHA
+    - docker push industrialdevops/titan-ccp-aggregation
+  only:
+    - master
