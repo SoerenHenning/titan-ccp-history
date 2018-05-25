@@ -1,5 +1,6 @@
 package titan.ccp.aggregation;
 
+import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -18,6 +19,8 @@ import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.kstream.Serialized;
 import org.apache.kafka.streams.state.KeyValueStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.datastax.driver.core.Session;
 
@@ -30,6 +33,8 @@ import titan.ccp.models.records.PowerConsumptionRecord;
 import titan.ccp.models.records.serialization.kafka.RecordSerdes;
 
 public class KafkaStreamsBuilder {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStreamsBuilder.class);
 
 	private String inputTopic;
 	private String outputTopic;
@@ -77,7 +82,7 @@ public class KafkaStreamsBuilder {
 		final KStream<String, PowerConsumptionRecord> inputStream = builder.stream(this.inputTopic,
 				Consumed.with(Serdes.String(), RecordSerdes.forPowerConsumptionRecord()));
 
-		// inputStream.foreach((k, v) -> System.out.println(k + " : " + v));
+		inputStream.foreach((k, v) -> LOGGER.info("received record {}", v)); // TODO Temporary;
 
 		final KStream<String, PowerConsumptionRecord> flatMapped = inputStream
 				.flatMap((key, value) -> this.flatMap(value));
@@ -99,6 +104,7 @@ public class KafkaStreamsBuilder {
 			// System.out.println("N: " + aggKey + ": " + aggValue2.getLastValues());
 			// System.out.println("N: " + aggKey + ": " + aggValue2.getSummaryStatistics());
 			// System.out.println("P: " + aggValue2.getTimestamp());
+			LOGGER.info("update history {}", aggValue2);
 			return aggValue2;
 			// return aggValue2.update(newValue);
 		}, Materialized.<String, AggregationHistory, KeyValueStore<Bytes, byte[]>>as(this.aggregationStoreName)
@@ -117,6 +123,7 @@ public class KafkaStreamsBuilder {
 		builder.stream(this.outputTopic,
 				Consumed.with(Serdes.String(), RecordSerdes.forAggregatedPowerConsumptionRecord()))
 				.foreach((key, record) -> {
+					LOGGER.info("write to cassandra {}", record);
 					cassandraWriter.write(record);
 					// System.out.println("New written"); // TODO
 				});
@@ -170,9 +177,12 @@ public class KafkaStreamsBuilder {
 	}
 
 	private Iterable<KeyValue<String, PowerConsumptionRecord>> flatMap(final PowerConsumptionRecord record) {
-		return this.sensorRegistry.getSensorForIdentifier(record.getIdentifier()).stream()
-				.flatMap(s -> s.getParents().stream()).map(s -> s.getIdentifier()).map(i -> KeyValue.pair(i, record))
-				.collect(Collectors.toList());
+		LOGGER.info("Flat map record: {}", record); // TODO Temporary
+		final List<KeyValue<String, PowerConsumptionRecord>> result = this.sensorRegistry
+				.getSensorForIdentifier(record.getIdentifier()).stream().flatMap(s -> s.getParents().stream())
+				.map(s -> s.getIdentifier()).map(i -> KeyValue.pair(i, record)).collect(Collectors.toList());
+		LOGGER.info("Flat map result: {}", result); // TODO Temporary
+		return result; // TODO Temporary
 	}
 
 	private static Properties loadProperties() {
