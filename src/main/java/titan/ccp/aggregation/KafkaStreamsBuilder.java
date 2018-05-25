@@ -36,10 +36,10 @@ public class KafkaStreamsBuilder {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStreamsBuilder.class);
 
+	private String bootstrapServers;
 	private String inputTopic;
 	private String outputTopic;
 	private final String aggregationStoreName = "stream-store"; // TODO
-	private String bootstrapServers;
 
 	private SensorRegistry sensorRegistry;
 	private Session cassandraSession;
@@ -104,7 +104,7 @@ public class KafkaStreamsBuilder {
 			// System.out.println("N: " + aggKey + ": " + aggValue2.getLastValues());
 			// System.out.println("N: " + aggKey + ": " + aggValue2.getSummaryStatistics());
 			// System.out.println("P: " + aggValue2.getTimestamp());
-			LOGGER.info("update history {}", aggValue2);
+			LOGGER.info("update history {}", aggValue2); // TODO
 			return aggValue2;
 			// return aggValue2.update(newValue);
 		}, Materialized.<String, AggregationHistory, KeyValueStore<Bytes, byte[]>>as(this.aggregationStoreName)
@@ -169,9 +169,9 @@ public class KafkaStreamsBuilder {
 	}
 
 	private StreamsConfig buildStreamConfig() {
-		final Properties settings = loadProperties();
-		settings.put(StreamsConfig.APPLICATION_ID_CONFIG, "titanccp-aggregation-0.0.6");
-		settings.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 1000); // TODO
+		final Properties settings = new Properties();
+		settings.put(StreamsConfig.APPLICATION_ID_CONFIG, "titanccp-aggregation-0.0.6"); // TODO as parameter
+		settings.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 1000); // TODO as parameter
 		settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, this.bootstrapServers);
 		return new StreamsConfig(settings);
 	}
@@ -183,28 +183,6 @@ public class KafkaStreamsBuilder {
 				.map(s -> s.getIdentifier()).map(i -> KeyValue.pair(i, record)).collect(Collectors.toList());
 		LOGGER.info("Flat map result: {}", result); // TODO Temporary
 		return result; // TODO Temporary
-	}
-
-	private static Properties loadProperties() {
-		// Cloudkarafka configuration
-		final String kafkaBootstrapServer = System.getenv("CLOUDKARAFKA_BROKERS");
-		final String username = System.getenv("CLOUDKARAFKA_USERNAME");
-		final String password = System.getenv("CLOUDKARAFKA_PASSWORD");
-		final Properties kafkaProperties = new Properties();
-		// final String jaasTemplate =
-		// "org.apache.kafka.common.security.scram.ScramLoginModule required
-		// username=\"%s\" password=\"%s\";";
-		// final String jaasCfg = String.format(jaasTemplate, username, password);
-		// kafkaProperties.put("security.protocol", "SASL_SSL");
-		// kafkaProperties.put("sasl.mechanism", "SCRAM-SHA-256");
-		// kafkaProperties.put("sasl.jaas.config", jaasCfg);
-
-		kafkaProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, "my-first-streams-application-0.0.6");
-		kafkaProperties.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 1000); // TODO
-		// kafkaProperties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
-		// kafkaBootstrapServer);
-
-		return kafkaProperties;
 	}
 
 }
