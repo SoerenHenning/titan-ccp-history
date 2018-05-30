@@ -16,7 +16,7 @@ public class SensorRegistryRequester {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SensorRegistryRequester.class);
 
-	private static final String DEFAULT_PATH = "/sensor-registry/";
+	private static final String DEFAULT_PATH = "/sensor-registry";
 	private static final String DEFAULT_SCHEME = "http";
 
 	private final HttpClient client = HttpClient.newHttpClient();
