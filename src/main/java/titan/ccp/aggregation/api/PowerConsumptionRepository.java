@@ -15,9 +15,7 @@ import com.datastax.driver.core.querybuilder.QueryBuilder;
 import kieker.common.record.factory.IRecordFactory;
 import titan.ccp.common.kieker.cassandra.CassandraDeserializer;
 import titan.ccp.models.records.AggregatedPowerConsumptionRecord;
-import titan.ccp.models.records.AggregatedPowerConsumptionRecordFactory;
 import titan.ccp.models.records.PowerConsumptionRecord;
-import titan.ccp.models.records.PowerConsumptionRecordFactory;
 
 public class PowerConsumptionRepository<T> {
 
@@ -102,26 +100,24 @@ public class PowerConsumptionRepository<T> {
 		return new PowerConsumptionRepository<>(cassandraSession,
 				AggregatedPowerConsumptionRecord.class.getSimpleName(),
 				// BETTER Use factory and deserializer
-				// TODO check and remove comments
-				new AggregatedPowerConsumptionRecordFactory(),
+				// new AggregatedPowerConsumptionRecordFactory(),
+				// new AggregatedPowerConsumptionRecord("", 0, 0, 0, 0, 0, 0).getValueNames(),
+				// // BETTER enhance Kieker to
+				// support something better
+				row -> new AggregatedPowerConsumptionRecord(row.getString("identifier"), row.getLong("timestamp"),
+						row.getInt("min"), row.getInt("max"), row.getLong("count"), row.getLong("sum"),
+						row.getDouble("average")),
 				new AggregatedPowerConsumptionRecord("", 0, 0, 0, 0, 0, 0).getValueNames(), // BETTER enhance Kieker to
 																							// support something better
-				// row -> new AggregatedPowerConsumptionRecord(row.getString("identifier"),
-				// row.getLong("timestamp"),
-				// row.getInt("min"), row.getInt("max"), row.getLong("count"),
-				// row.getLong("sum"),
-				// row.getDouble("average")),
 				record -> record.getSum());
 	}
 
 	public static PowerConsumptionRepository<PowerConsumptionRecord> forNormal(final Session cassandraSession) {
 		return new PowerConsumptionRepository<>(cassandraSession, PowerConsumptionRecord.class.getSimpleName(),
 				// BETTER Use factory and deserializer
-				new PowerConsumptionRecordFactory(),
-				// TODO check and remove comments
-				// row -> new PowerConsumptionRecord(row.getString("identifier"),
-				// row.getLong("timestamp"),
-				// row.getInt("powerConsumptionInWh")),
+				// new PowerConsumptionRecordFactory(),
+				row -> new PowerConsumptionRecord(row.getString("identifier"), row.getLong("timestamp"),
+						row.getInt("powerConsumptionInWh")),
 				new PowerConsumptionRecord("", 0, 0).getValueNames(), // BETTER enhance Kieker to support something
 																		// better
 				record -> record.getPowerConsumptionInWh());
