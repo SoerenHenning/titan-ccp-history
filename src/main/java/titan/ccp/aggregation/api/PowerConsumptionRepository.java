@@ -24,23 +24,26 @@ public class PowerConsumptionRepository<T> {
 	private final Session cassandraSession;
 	private final String tableName;
 	private final Function<Row, T> recordFactory;
+	private final String[] recordFields; // BETTER access this
 	private final ToLongFunction<T> valueAccessor;
 
 	public PowerConsumptionRepository(final Session cassandraSession, final String tableName,
-			final Function<Row, T> recordFactory, final ToLongFunction<T> valueAccessor) {
+			final Function<Row, T> recordFactory, final String[] recordFields, final ToLongFunction<T> valueAccessor) {
 		this.cassandraSession = cassandraSession;
 		this.tableName = tableName;
 		this.recordFactory = recordFactory;
+		this.recordFields = recordFields;
 		this.valueAccessor = valueAccessor;
 	}
 
 	public PowerConsumptionRepository(final Session cassandraSession, final String tableName,
-			final IRecordFactory<T> recordFactory, final ToLongFunction<T> valueAccessor) {
-		this(cassandraSession, tableName, row -> recordFactory.create(new CassandraDeserializer(row)), valueAccessor);
+			final IRecordFactory<T> recordFactory, final String[] recordFields, final ToLongFunction<T> valueAccessor) {
+		this(cassandraSession, tableName, row -> recordFactory.create(new CassandraDeserializer(row)), recordFields,
+				valueAccessor);
 	}
 
 	public List<T> get(final String identifier, final long after) {
-		final Statement statement = QueryBuilder.select().all().from(this.tableName)
+		final Statement statement = QueryBuilder.select(this.recordFields).from(this.tableName)
 				.where(QueryBuilder.eq("identifier", identifier)).and(QueryBuilder.gt("timestamp", after));
 
 		return this.get(statement);
@@ -59,7 +62,7 @@ public class PowerConsumptionRepository<T> {
 	}
 
 	public List<T> getLatest(final String identifier, final int count) {
-		final Statement statement = QueryBuilder.select().all().from(this.tableName)
+		final Statement statement = QueryBuilder.select(this.recordFields).from(this.tableName)
 				.where(QueryBuilder.eq("identifier", identifier)).orderBy(QueryBuilder.desc("timestamp")).limit(count);
 
 		return this.get(statement);
@@ -101,6 +104,8 @@ public class PowerConsumptionRepository<T> {
 				// BETTER Use factory and deserializer
 				// TODO check and remove comments
 				new AggregatedPowerConsumptionRecordFactory(),
+				new AggregatedPowerConsumptionRecord("", 0, 0, 0, 0, 0, 0).getValueNames(), // BETTER enhance Kieker to
+																							// support something better
 				// row -> new AggregatedPowerConsumptionRecord(row.getString("identifier"),
 				// row.getLong("timestamp"),
 				// row.getInt("min"), row.getInt("max"), row.getLong("count"),
@@ -117,6 +122,8 @@ public class PowerConsumptionRepository<T> {
 				// row -> new PowerConsumptionRecord(row.getString("identifier"),
 				// row.getLong("timestamp"),
 				// row.getInt("powerConsumptionInWh")),
+				new PowerConsumptionRecord("", 0, 0).getValueNames(), // BETTER enhance Kieker to support something
+																		// better
 				record -> record.getPowerConsumptionInWh());
 	}
 
