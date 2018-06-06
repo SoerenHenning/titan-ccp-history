@@ -99,28 +99,16 @@ public class PowerConsumptionRepository<T> {
 	public static PowerConsumptionRepository<AggregatedPowerConsumptionRecord> forAggregated(
 			final Session cassandraSession) {
 		return new PowerConsumptionRepository<>(cassandraSession,
-				AggregatedPowerConsumptionRecord.class.getSimpleName(),
-				// row -> new AggregatedPowerConsumptionRecord(row.getString("identifier"),
-				// row.getLong("timestamp"),
-				// row.getInt("min"), row.getInt("max"), row.getLong("count"),
-				// row.getLong("sum"),
-				// row.getDouble("average")),
-				// BETTER Use factory and deserializer
-				new AggregatedPowerConsumptionRecordFactory(),
+				AggregatedPowerConsumptionRecord.class.getSimpleName(), new AggregatedPowerConsumptionRecordFactory(),
 				// BETTER enhance Kieker to support something better
 				new AggregatedPowerConsumptionRecord("", 0, 0, 0, 0, 0, 0).getValueNames(), record -> record.getSum());
 	}
 
 	public static PowerConsumptionRepository<PowerConsumptionRecord> forNormal(final Session cassandraSession) {
 		return new PowerConsumptionRepository<>(cassandraSession, PowerConsumptionRecord.class.getSimpleName(),
-				// BETTER Use factory and deserializer
 				new PowerConsumptionRecordFactory(),
-				// Kieker to support something better
-				new PowerConsumptionRecord("", 0, 0).getValueNames(), // BETTER enhance
-				// row -> new PowerConsumptionRecord(row.getString("identifier"),
-				// row.getLong("timestamp"),
-				// row.getInt("powerConsumptionInWh")),
-				record -> record.getPowerConsumptionInWh());
+				// // BETTER enhance Kieker to support something better
+				new PowerConsumptionRecord("", 0, 0).getValueNames(), record -> record.getPowerConsumptionInWh());
 	}
 
 }
