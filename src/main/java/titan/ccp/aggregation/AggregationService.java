@@ -2,17 +2,24 @@ package titan.ccp.aggregation;
 
 import org.apache.commons.configuration2.Configuration;
 import org.apache.kafka.streams.KafkaStreams;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import titan.ccp.aggregation.api.RestApiServer;
 import titan.ccp.common.configuration.Configurations;
 import titan.ccp.common.kieker.cassandra.SessionBuilder;
 import titan.ccp.common.kieker.cassandra.SessionBuilder.ClusterSession;
+import titan.ccp.configuration.events.Event;
+import titan.ccp.configuration.events.KafkaSubscriber;
 import titan.ccp.model.sensorregistry.ProxySensorRegistry;
 import titan.ccp.model.sensorregistry.SensorRegistry;
 import titan.ccp.model.sensorregistry.client.RetryingSensorRegistryRequester;
 import titan.ccp.model.sensorregistry.client.SensorRegistryRequester;
 
 public class AggregationService {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(AggregationService.class);
+
 	private final Configuration configuration = Configurations.create();
 	private final RetryingSensorRegistryRequester sensorRegistryRequester;
 	private final ProxySensorRegistry sensorRegistry = new ProxySensorRegistry();
@@ -28,12 +35,18 @@ public class AggregationService {
 	}
 
 	public void run() {
-		// TODO request sensorRegistry
 		// this.sensorRegistry.setBackingSensorRegisty(ExampleSensors.registry());
 		final SensorRegistry sensorRegistry = this.sensorRegistryRequester.request().join();
 		this.sensorRegistry.setBackingSensorRegisty(sensorRegistry);
 
-		// TODO perhaps request history for all sensors
+		final KafkaSubscriber configEventSubscriber = new KafkaSubscriber(
+				this.configuration.getString("kafka.bootstrap.servers"), "titan-ccp-aggregation",
+				this.configuration.getString("configuration.kafka.topic"));
+		configEventSubscriber.subscribe(Event.SENSOR_REGISTRY_CHANGED, data -> {
+			this.sensorRegistry.setBackingSensorRegisty(SensorRegistry.fromJson(data));
+			LOGGER.info("Received new sensor registry.");
+		});
+		configEventSubscriber.run();
 
 		// Cassandra connect
 		final ClusterSession clusterSession = new SessionBuilder()
