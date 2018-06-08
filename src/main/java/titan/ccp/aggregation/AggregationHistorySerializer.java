@@ -26,11 +26,11 @@ public class AggregationHistorySerializer implements Serializer<AggregationHisto
 
 		buffer.putLong(data.getTimestamp());
 		buffer.putInt(data.getLastValues().size());
-		for (final Entry<String, Integer> entry : data.getLastValues().entrySet()) {
+		for (final Entry<String, Double> entry : data.getLastValues().entrySet()) {
 			final byte[] key = entry.getKey().getBytes(DEFAULT_CHARSET);
 			buffer.putInt(key.length);
 			buffer.put(key);
-			buffer.putInt(entry.getValue());
+			buffer.putDouble(entry.getValue());
 		}
 
 		return this.byteBufferSerializer.serialize(topic, buffer);

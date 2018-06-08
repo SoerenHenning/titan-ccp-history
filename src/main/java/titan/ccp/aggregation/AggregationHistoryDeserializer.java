@@ -29,14 +29,14 @@ public class AggregationHistoryDeserializer implements Deserializer<AggregationH
 
 		final long timestamp = buffer.getLong();
 
-		final Map<String, Integer> map = new HashMap<>();
+		final Map<String, Double> map = new HashMap<>();
 		final int size = buffer.getInt();
 		for (int i = 0; i < size; i++) {
 			final int keyLength = buffer.getInt();
 			final byte[] keyBytes = new byte[keyLength];
 			buffer.get(keyBytes);
 			final String key = new String(keyBytes, DEFAULT_CHARSET);
-			final int value = buffer.getInt();
+			final double value = buffer.getDouble();
 
 			map.put(key, value);
 		}
