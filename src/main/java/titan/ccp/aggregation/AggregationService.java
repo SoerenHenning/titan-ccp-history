@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import titan.ccp.aggregation.api.RestApiServer;
+import titan.ccp.aggregation.streamprocessing.KafkaStreamsBuilder;
 import titan.ccp.common.configuration.Configurations;
 import titan.ccp.common.kieker.cassandra.SessionBuilder;
 import titan.ccp.common.kieker.cassandra.SessionBuilder.ClusterSession;

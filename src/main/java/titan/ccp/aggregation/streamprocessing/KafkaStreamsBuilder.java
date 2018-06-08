@@ -1,4 +1,4 @@
-package titan.ccp.aggregation;
+package titan.ccp.aggregation.streamprocessing;
 
 import java.util.List;
 import java.util.Properties;

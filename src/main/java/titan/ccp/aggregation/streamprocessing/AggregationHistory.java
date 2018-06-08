@@ -1,4 +1,4 @@
-package titan.ccp.aggregation;
+package titan.ccp.aggregation.streamprocessing;
 
 import java.util.Collections;
 import java.util.DoubleSummaryStatistics;
