@@ -40,7 +40,7 @@ public class AggregationService {
 		this.sensorRegistry.setBackingSensorRegisty(sensorRegistry);
 
 		final KafkaSubscriber configEventSubscriber = new KafkaSubscriber(
-				this.configuration.getString("kafka.bootstrap.servers"), "titan-ccp-aggregation",
+				this.configuration.getString("kafka.bootstrap.servers"), "titan-ccp-aggregation", // TODO group id
 				this.configuration.getString("configuration.kafka.topic"));
 		configEventSubscriber.subscribe(Event.SENSOR_REGISTRY_CHANGED, data -> {
 			this.sensorRegistry.setBackingSensorRegisty(SensorRegistry.fromJson(data));
