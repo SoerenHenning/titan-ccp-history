@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
-import java.util.function.ToLongFunction;
+import java.util.function.ToDoubleFunction;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
@@ -19,15 +19,15 @@ import titan.ccp.models.records.AggregatedPowerConsumptionRecordFactory;
 import titan.ccp.models.records.PowerConsumptionRecord;
 import titan.ccp.models.records.PowerConsumptionRecordFactory;
 
-public class PowerConsumptionRepository<T> {
+public class ActivePowerRepository<T> {
 
 	private final Session cassandraSession;
 	private final String tableName;
 	private final Function<Row, T> recordFactory;
-	private final ToLongFunction<T> valueAccessor;
+	private final ToDoubleFunction<T> valueAccessor;
 
-	public PowerConsumptionRepository(final Session cassandraSession, final String tableName,
-			final Function<Row, T> recordFactory, final ToLongFunction<T> valueAccessor) {
+	public ActivePowerRepository(final Session cassandraSession, final String tableName,
+			final Function<Row, T> recordFactory, final ToDoubleFunction<T> valueAccessor) {
 		this.cassandraSession = cassandraSession;
 		this.tableName = tableName;
 		this.recordFactory = recordFactory;
@@ -35,8 +35,9 @@ public class PowerConsumptionRepository<T> {
 	}
 
 	// BETTER access recordFields
-	public PowerConsumptionRepository(final Session cassandraSession, final String tableName,
-			final IRecordFactory<T> recordFactory, final String[] recordFields, final ToLongFunction<T> valueAccessor) {
+	public ActivePowerRepository(final Session cassandraSession, final String tableName,
+			final IRecordFactory<T> recordFactory, final String[] recordFields,
+			final ToDoubleFunction<T> valueAccessor) {
 		this(cassandraSession, tableName, row -> recordFactory.create(new CassandraDeserializer(row, recordFields)),
 				valueAccessor);
 	}
@@ -74,14 +75,14 @@ public class PowerConsumptionRepository<T> {
 			return Collections.emptyList();
 		}
 
-		final long min = records.stream().mapToLong(this.valueAccessor).min().getAsLong();
-		final long max = records.stream().mapToLong(this.valueAccessor).max().getAsLong();
+		final double min = records.stream().mapToDouble(this.valueAccessor).min().getAsDouble();
+		final double max = records.stream().mapToDouble(this.valueAccessor).max().getAsDouble();
 
-		final double sliceSize = (max - min) / (double) bucketsCount;
+		final double sliceSize = (max - min) / bucketsCount;
 
 		final int[] distribution = new int[bucketsCount];
 		for (final T record : records) {
-			final long value = this.valueAccessor.applyAsLong(record);
+			final double value = this.valueAccessor.applyAsDouble(record);
 			final int index = Integer.min((int) ((value - min) / sliceSize), bucketsCount - 1);
 			distribution[index]++;
 		}
@@ -96,16 +97,16 @@ public class PowerConsumptionRepository<T> {
 		return buckets;
 	}
 
-	public static PowerConsumptionRepository<AggregatedPowerConsumptionRecord> forAggregated(
+	public static ActivePowerRepository<AggregatedPowerConsumptionRecord> forAggregated(
 			final Session cassandraSession) {
-		return new PowerConsumptionRepository<>(cassandraSession,
-				AggregatedPowerConsumptionRecord.class.getSimpleName(), new AggregatedPowerConsumptionRecordFactory(),
+		return new ActivePowerRepository<>(cassandraSession, AggregatedPowerConsumptionRecord.class.getSimpleName(),
+				new AggregatedPowerConsumptionRecordFactory(),
 				// BETTER enhance Kieker to support something better
 				new AggregatedPowerConsumptionRecord("", 0, 0, 0, 0, 0, 0).getValueNames(), record -> record.getSum());
 	}
 
-	public static PowerConsumptionRepository<PowerConsumptionRecord> forNormal(final Session cassandraSession) {
-		return new PowerConsumptionRepository<>(cassandraSession, PowerConsumptionRecord.class.getSimpleName(),
+	public static ActivePowerRepository<PowerConsumptionRecord> forNormal(final Session cassandraSession) {
+		return new ActivePowerRepository<>(cassandraSession, PowerConsumptionRecord.class.getSimpleName(),
 				new PowerConsumptionRecordFactory(),
 				// // BETTER enhance Kieker to support something better
 				new PowerConsumptionRecord("", 0, 0).getValueNames(), record -> record.getPowerConsumptionInWh());

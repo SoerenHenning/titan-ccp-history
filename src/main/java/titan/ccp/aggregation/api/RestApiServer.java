@@ -19,16 +19,16 @@ public class RestApiServer {
 
 	private final Gson gson = new GsonBuilder().create();
 
-	private final PowerConsumptionRepository<AggregatedPowerConsumptionRecord> aggregatedRepository;
-	private final PowerConsumptionRepository<PowerConsumptionRecord> normalRepository;
+	private final ActivePowerRepository<AggregatedPowerConsumptionRecord> aggregatedRepository;
+	private final ActivePowerRepository<PowerConsumptionRecord> normalRepository;
 
 	private final Service webService;
 
 	private final boolean enableCors;
 
 	public RestApiServer(final Session cassandraSession, final int port, final boolean enableCors) {
-		this.aggregatedRepository = PowerConsumptionRepository.forAggregated(cassandraSession);
-		this.normalRepository = PowerConsumptionRepository.forNormal(cassandraSession);
+		this.aggregatedRepository = ActivePowerRepository.forAggregated(cassandraSession);
+		this.normalRepository = ActivePowerRepository.forNormal(cassandraSession);
 		LOGGER.info("Instantiate API server.");
 		this.webService = Service.ignite().port(port);
 		this.enableCors = enableCors;

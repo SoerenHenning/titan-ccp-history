@@ -81,6 +81,10 @@ public class KafkaStreamsBuilder {
 
 		final KStream<String, PowerConsumptionRecord> inputStream = builder.stream(this.inputTopic,
 				Consumed.with(Serdes.String(), RecordSerdes.forPowerConsumptionRecord()));
+		// final KStream<String, ActivePowerRecord> inputStream2 =
+		// builder.stream(this.inputTopic,
+		// Consumed.with(Serdes.String(), IMonitoringRecordSerde.serde(new
+		// ActivePowerRecordFactory())));
 
 		inputStream.foreach((k, v) -> LOGGER.info("received record {}", v)); // TODO Temporary;
 
