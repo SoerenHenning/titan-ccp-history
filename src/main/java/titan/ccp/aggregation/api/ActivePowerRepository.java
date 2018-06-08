@@ -68,6 +68,19 @@ public class ActivePowerRepository<T> {
 		return this.get(statement);
 	}
 
+	public double getTrend(final String identifier, final long after) {
+		final int limit = 10; // TODO
+		final Statement startStatement = QueryBuilder.select().all().from(this.tableName)
+				.where(QueryBuilder.eq("identifier", identifier)).and(QueryBuilder.gt("timestamp", after)).limit(limit);
+		final List<T> first = this.get(startStatement);
+		final List<T> latest = this.getLatest(identifier, limit);
+
+		final double start = first.stream().mapToDouble(this.valueAccessor).average().getAsDouble();
+		final double end = latest.stream().mapToDouble(this.valueAccessor).average().getAsDouble();
+
+		return start / end;
+	}
+
 	public List<DistributionBucket> getDistribution(final String identifier, final long after, final int bucketsCount) {
 		final List<T> records = this.get(identifier, after);
 
@@ -97,16 +110,20 @@ public class ActivePowerRepository<T> {
 		return buckets;
 	}
 
+	// TODO <AggregatedActivePowerRecord>
 	public static ActivePowerRepository<AggregatedPowerConsumptionRecord> forAggregated(
 			final Session cassandraSession) {
 		return new ActivePowerRepository<>(cassandraSession, AggregatedPowerConsumptionRecord.class.getSimpleName(),
+				// TODO AggregatedActivePowerRecordFactory
 				new AggregatedPowerConsumptionRecordFactory(),
 				// BETTER enhance Kieker to support something better
 				new AggregatedPowerConsumptionRecord("", 0, 0, 0, 0, 0, 0).getValueNames(), record -> record.getSum());
 	}
 
+	// TODO <ActivePowerRecord>
 	public static ActivePowerRepository<PowerConsumptionRecord> forNormal(final Session cassandraSession) {
 		return new ActivePowerRepository<>(cassandraSession, PowerConsumptionRecord.class.getSimpleName(),
+				// TODO ActivePowerRecordFactory
 				new PowerConsumptionRecordFactory(),
 				// // BETTER enhance Kieker to support something better
 				new PowerConsumptionRecord("", 0, 0).getValueNames(), record -> record.getPowerConsumptionInWh());
