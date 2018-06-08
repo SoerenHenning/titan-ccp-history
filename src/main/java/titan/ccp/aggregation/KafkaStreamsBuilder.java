@@ -112,7 +112,7 @@ public class KafkaStreamsBuilder {
 			return aggValue2;
 			// return aggValue2.update(newValue);
 		}, Materialized.<String, AggregationHistory, KeyValueStore<Bytes, byte[]>>as(this.aggregationStoreName)
-				.withKeySerde(Serdes.String()).withValueSerde(AggregationHistorySerde.create()));
+				.withKeySerde(Serdes.String()).withValueSerde(AggregationHistorySerde.serde()));
 
 		// aggregated.toStream().foreach((key, value) -> {
 		// System.out.println("A: " + value.getTimestamp());
