@@ -112,19 +112,22 @@ public class KafkaStreamsBuilder {
 			return aggValue2;
 			// return aggValue2.update(newValue);
 		}, Materialized.<String, AggregationHistory, KeyValueStore<Bytes, byte[]>>as(this.aggregationStoreName)
-				.withKeySerde(Serdes.String()).withValueSerde(AggregationHistorySerde.serde()));
+				.withKeySerde(Serdes.String()).withValueSerde(AggregationHistorySerde.serde())); // TODO change to
+																									// ActivePower
 
 		// aggregated.toStream().foreach((key, value) -> {
 		// System.out.println("A: " + value.getTimestamp());
 		// System.out.println("A: " + key + ": " + value.getSummaryStatistics());
 		// }); // TODO
 
+		// TODO change to ActivePower
 		aggregated.toStream().map((key, value) -> KeyValue.pair(key, value.toRecord(key))).to(this.outputTopic,
 				Produced.with(Serdes.String(), RecordSerdes.forAggregatedPowerConsumptionRecord()));
 
-		// Cassandra Writer
+		// Cassandra Writer for AggregatedActivePowerRecord
 		final CassandraWriter cassandraWriter = this.buildCassandraWriter();
 		builder.stream(this.outputTopic,
+				// TODO change to ActivePower
 				Consumed.with(Serdes.String(), RecordSerdes.forAggregatedPowerConsumptionRecord()))
 				.foreach((key, record) -> {
 					LOGGER.info("write to cassandra {}", record);
@@ -133,7 +136,7 @@ public class KafkaStreamsBuilder {
 				});
 		// End Cassandra Writer
 
-		// Cassandra Writer for PowerConsumptionRecords
+		// Cassandra Writer for ActivePowerRecord
 		final CassandraWriter cassandraWriterForNormal = this.buildCassandraWriterForNormal();
 		inputStream.foreach((key, record) -> {
 			cassandraWriterForNormal.write(record);
