@@ -146,8 +146,10 @@ public class KafkaStreamsBuilder {
 
 	private CassandraWriter buildCassandraWriter() {
 		final ExplicitPrimaryKeySelectionStrategy primaryKeySelectionStrategy = new ExplicitPrimaryKeySelectionStrategy();
+		// TODO change to ActivePower
 		primaryKeySelectionStrategy.registerPartitionKeys(AggregatedPowerConsumptionRecord.class.getSimpleName(),
 				"identifier");
+		// TODO change to ActivePower
 		primaryKeySelectionStrategy.registerClusteringColumns(AggregatedPowerConsumptionRecord.class.getSimpleName(),
 				"timestamp");
 
@@ -161,7 +163,9 @@ public class KafkaStreamsBuilder {
 	// BETTER refine name
 	private CassandraWriter buildCassandraWriterForNormal() {
 		final ExplicitPrimaryKeySelectionStrategy primaryKeySelectionStrategy = new ExplicitPrimaryKeySelectionStrategy();
+		// TODO change to ActivePower
 		primaryKeySelectionStrategy.registerPartitionKeys(PowerConsumptionRecord.class.getSimpleName(), "identifier");
+		// TODO change to ActivePower
 		primaryKeySelectionStrategy.registerClusteringColumns(PowerConsumptionRecord.class.getSimpleName(),
 				"timestamp");
 
@@ -180,6 +184,7 @@ public class KafkaStreamsBuilder {
 		return new StreamsConfig(settings);
 	}
 
+	// TODO change to ActivePower
 	private Iterable<KeyValue<String, PowerConsumptionRecord>> flatMap(final PowerConsumptionRecord record) {
 		LOGGER.info("Flat map record: {}", record); // TODO Temporary
 		final List<KeyValue<String, PowerConsumptionRecord>> result = this.sensorRegistry
