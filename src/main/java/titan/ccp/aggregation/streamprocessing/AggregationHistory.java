@@ -5,8 +5,8 @@ import java.util.DoubleSummaryStatistics;
 import java.util.HashMap;
 import java.util.Map;
 
-import titan.ccp.models.records.AggregatedPowerConsumptionRecord;
-import titan.ccp.models.records.PowerConsumptionRecord;
+import titan.ccp.models.records.ActivePowerRecord;
+import titan.ccp.models.records.AggregatedActivePower;
 
 public class AggregationHistory {
 	private final Map<String, Double> lastValues;
@@ -21,10 +21,9 @@ public class AggregationHistory {
 		this.timestamp = timestamp;
 	}
 
-	public AggregationHistory update(final PowerConsumptionRecord powerConsumptionRecord) {
-		this.lastValues.put(powerConsumptionRecord.getIdentifier(),
-				(double) powerConsumptionRecord.getPowerConsumptionInWh());
-		this.timestamp = powerConsumptionRecord.getTimestamp();
+	public AggregationHistory update(final ActivePowerRecord activePowerRecord) {
+		this.lastValues.put(activePowerRecord.getIdentifier(), activePowerRecord.getValueInWh());
+		this.timestamp = activePowerRecord.getTimestamp();
 		return this;
 	}
 
@@ -40,11 +39,10 @@ public class AggregationHistory {
 		return this.lastValues.values().stream().mapToDouble(v -> v).summaryStatistics();
 	}
 
-	public AggregatedPowerConsumptionRecord toRecord(final String identifier) {
+	public AggregatedActivePower toRecord(final String identifier) {
 		final DoubleSummaryStatistics summaryStatistics = this.getSummaryStatistics();
-		// TODO change to AggregatedActivePowerRecord
-		return new AggregatedPowerConsumptionRecord(identifier, this.timestamp, (int) summaryStatistics.getMin(),
-				(int) summaryStatistics.getMax(), summaryStatistics.getCount(), (long) summaryStatistics.getSum(),
+		return new AggregatedActivePower(identifier, this.timestamp, summaryStatistics.getMin(),
+				summaryStatistics.getMax(), summaryStatistics.getCount(), summaryStatistics.getSum(),
 				summaryStatistics.getAverage());
 	}
 

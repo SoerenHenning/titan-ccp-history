@@ -27,10 +27,12 @@ import com.datastax.driver.core.Session;
 import titan.ccp.common.kieker.cassandra.CassandraWriter;
 import titan.ccp.common.kieker.cassandra.ExplicitPrimaryKeySelectionStrategy;
 import titan.ccp.common.kieker.cassandra.PredefinedTableNameMappers;
+import titan.ccp.common.kieker.kafka.IMonitoringRecordSerde;
 import titan.ccp.model.sensorregistry.SensorRegistry;
-import titan.ccp.models.records.AggregatedPowerConsumptionRecord;
-import titan.ccp.models.records.PowerConsumptionRecord;
-import titan.ccp.models.records.serialization.kafka.RecordSerdes;
+import titan.ccp.models.records.ActivePowerRecord;
+import titan.ccp.models.records.ActivePowerRecordFactory;
+import titan.ccp.models.records.AggregatedActivePower;
+import titan.ccp.models.records.AggregatedActivePowerFactory;
 
 public class KafkaStreamsBuilder {
 
@@ -79,8 +81,8 @@ public class KafkaStreamsBuilder {
 	private Topology buildTopology() {
 		final StreamsBuilder builder = new StreamsBuilder();
 
-		final KStream<String, PowerConsumptionRecord> inputStream = builder.stream(this.inputTopic,
-				Consumed.with(Serdes.String(), RecordSerdes.forPowerConsumptionRecord()));
+		final KStream<String, ActivePowerRecord> inputStream = builder.stream(this.inputTopic,
+				Consumed.with(Serdes.String(), IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
 		// final KStream<String, ActivePowerRecord> inputStream2 =
 		// builder.stream(this.inputTopic,
 		// Consumed.with(Serdes.String(), IMonitoringRecordSerde.serde(new
@@ -88,11 +90,10 @@ public class KafkaStreamsBuilder {
 
 		inputStream.foreach((k, v) -> LOGGER.info("received record {}", v)); // TODO Temporary;
 
-		final KStream<String, PowerConsumptionRecord> flatMapped = inputStream
-				.flatMap((key, value) -> this.flatMap(value));
+		final KStream<String, ActivePowerRecord> flatMapped = inputStream.flatMap((key, value) -> this.flatMap(value));
 
-		final KGroupedStream<String, PowerConsumptionRecord> groupedStream = flatMapped
-				.groupByKey(Serialized.with(Serdes.String(), RecordSerdes.forPowerConsumptionRecord()));
+		final KGroupedStream<String, ActivePowerRecord> groupedStream = flatMapped.groupByKey(
+				Serialized.with(Serdes.String(), IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
 
 		final KTable<String, AggregationHistory> aggregated = groupedStream.aggregate(() -> {
 			return new AggregationHistory();
@@ -120,15 +121,13 @@ public class KafkaStreamsBuilder {
 		// System.out.println("A: " + key + ": " + value.getSummaryStatistics());
 		// }); // TODO
 
-		// TODO change to ActivePower
 		aggregated.toStream().map((key, value) -> KeyValue.pair(key, value.toRecord(key))).to(this.outputTopic,
-				Produced.with(Serdes.String(), RecordSerdes.forAggregatedPowerConsumptionRecord()));
+				Produced.with(Serdes.String(), IMonitoringRecordSerde.serde(new AggregatedActivePowerFactory())));
 
 		// Cassandra Writer for AggregatedActivePowerRecord
 		final CassandraWriter cassandraWriter = this.buildCassandraWriter();
 		builder.stream(this.outputTopic,
-				// TODO change to ActivePower
-				Consumed.with(Serdes.String(), RecordSerdes.forAggregatedPowerConsumptionRecord()))
+				Consumed.with(Serdes.String(), IMonitoringRecordSerde.serde(new AggregatedActivePowerFactory())))
 				.foreach((key, record) -> {
 					LOGGER.info("write to cassandra {}", record);
 					cassandraWriter.write(record);
@@ -149,12 +148,8 @@ public class KafkaStreamsBuilder {
 
 	private CassandraWriter buildCassandraWriter() {
 		final ExplicitPrimaryKeySelectionStrategy primaryKeySelectionStrategy = new ExplicitPrimaryKeySelectionStrategy();
-		// TODO change to ActivePower
-		primaryKeySelectionStrategy.registerPartitionKeys(AggregatedPowerConsumptionRecord.class.getSimpleName(),
-				"identifier");
-		// TODO change to ActivePower
-		primaryKeySelectionStrategy.registerClusteringColumns(AggregatedPowerConsumptionRecord.class.getSimpleName(),
-				"timestamp");
+		primaryKeySelectionStrategy.registerPartitionKeys(AggregatedActivePower.class.getSimpleName(), "identifier");
+		primaryKeySelectionStrategy.registerClusteringColumns(AggregatedActivePower.class.getSimpleName(), "timestamp");
 
 		final CassandraWriter cassandraWriter = CassandraWriter.builder(this.cassandraSession).excludeRecordType()
 				.excludeLoggingTimestamp().tableNameMapper(PredefinedTableNameMappers.SIMPLE_CLASS_NAME)
@@ -166,11 +161,8 @@ public class KafkaStreamsBuilder {
 	// BETTER refine name
 	private CassandraWriter buildCassandraWriterForNormal() {
 		final ExplicitPrimaryKeySelectionStrategy primaryKeySelectionStrategy = new ExplicitPrimaryKeySelectionStrategy();
-		// TODO change to ActivePower
-		primaryKeySelectionStrategy.registerPartitionKeys(PowerConsumptionRecord.class.getSimpleName(), "identifier");
-		// TODO change to ActivePower
-		primaryKeySelectionStrategy.registerClusteringColumns(PowerConsumptionRecord.class.getSimpleName(),
-				"timestamp");
+		primaryKeySelectionStrategy.registerPartitionKeys(ActivePowerRecord.class.getSimpleName(), "identifier");
+		primaryKeySelectionStrategy.registerClusteringColumns(ActivePowerRecord.class.getSimpleName(), "timestamp");
 
 		final CassandraWriter cassandraWriter = CassandraWriter.builder(this.cassandraSession).excludeRecordType()
 				.excludeLoggingTimestamp().tableNameMapper(PredefinedTableNameMappers.SIMPLE_CLASS_NAME)
@@ -187,10 +179,9 @@ public class KafkaStreamsBuilder {
 		return new StreamsConfig(settings);
 	}
 
-	// TODO change to ActivePower
-	private Iterable<KeyValue<String, PowerConsumptionRecord>> flatMap(final PowerConsumptionRecord record) {
+	private Iterable<KeyValue<String, ActivePowerRecord>> flatMap(final ActivePowerRecord record) {
 		LOGGER.info("Flat map record: {}", record); // TODO Temporary
-		final List<KeyValue<String, PowerConsumptionRecord>> result = this.sensorRegistry
+		final List<KeyValue<String, ActivePowerRecord>> result = this.sensorRegistry
 				.getSensorForIdentifier(record.getIdentifier()).stream().flatMap(s -> s.getParents().stream())
 				.map(s -> s.getIdentifier()).map(i -> KeyValue.pair(i, record)).collect(Collectors.toList());
 		LOGGER.info("Flat map result: {}", result); // TODO Temporary
