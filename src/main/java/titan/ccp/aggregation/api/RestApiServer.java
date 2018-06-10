@@ -9,8 +9,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import spark.Service;
-import titan.ccp.models.records.AggregatedPowerConsumptionRecord;
-import titan.ccp.models.records.PowerConsumptionRecord;
+import titan.ccp.models.records.ActivePowerRecord;
+import titan.ccp.models.records.AggregatedActivePower;
 
 //TODO make a builder that returns this server
 public class RestApiServer {
@@ -19,8 +19,8 @@ public class RestApiServer {
 
 	private final Gson gson = new GsonBuilder().create();
 
-	private final ActivePowerRepository<AggregatedPowerConsumptionRecord> aggregatedRepository;
-	private final ActivePowerRepository<PowerConsumptionRecord> normalRepository;
+	private final ActivePowerRepository<AggregatedActivePower> aggregatedRepository;
+	private final ActivePowerRepository<ActivePowerRecord> normalRepository;
 
 	private final Service webService;
 

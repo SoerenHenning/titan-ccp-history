@@ -91,6 +91,7 @@ public final class AggregationHistorySerde {
 				buffer.get(keyBytes);
 				final String key = new String(keyBytes, DEFAULT_CHARSET);
 				final double value = buffer.getDouble();
+				// final double value = 0;
 
 				map.put(key, value);
 			}

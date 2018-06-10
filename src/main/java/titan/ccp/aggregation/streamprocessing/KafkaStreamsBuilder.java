@@ -113,8 +113,7 @@ public class KafkaStreamsBuilder {
 			return aggValue2;
 			// return aggValue2.update(newValue);
 		}, Materialized.<String, AggregationHistory, KeyValueStore<Bytes, byte[]>>as(this.aggregationStoreName)
-				.withKeySerde(Serdes.String()).withValueSerde(AggregationHistorySerde.serde())); // TODO change to
-																									// ActivePower
+				.withKeySerde(Serdes.String()).withValueSerde(AggregationHistorySerde.serde()));
 
 		// aggregated.toStream().foreach((key, value) -> {
 		// System.out.println("A: " + value.getTimestamp());
@@ -125,22 +124,25 @@ public class KafkaStreamsBuilder {
 				Produced.with(Serdes.String(), IMonitoringRecordSerde.serde(new AggregatedActivePowerFactory())));
 
 		// Cassandra Writer for AggregatedActivePowerRecord
+
 		final CassandraWriter cassandraWriter = this.buildCassandraWriter();
 		builder.stream(this.outputTopic,
 				Consumed.with(Serdes.String(), IMonitoringRecordSerde.serde(new AggregatedActivePowerFactory())))
 				.foreach((key, record) -> {
 					LOGGER.info("write to cassandra {}", record);
-					cassandraWriter.write(record);
-					// System.out.println("New written"); // TODO
+					cassandraWriter.write(record); // System.out.println("New written"); // TODO
 				});
+
 		// End Cassandra Writer
 
 		// Cassandra Writer for ActivePowerRecord
+
 		final CassandraWriter cassandraWriterForNormal = this.buildCassandraWriterForNormal();
 		inputStream.foreach((key, record) -> {
 			cassandraWriterForNormal.write(record);
 			// System.out.println("New written"); // TODO
 		});
+
 		// End Cassandra Writer
 
 		return builder.build();

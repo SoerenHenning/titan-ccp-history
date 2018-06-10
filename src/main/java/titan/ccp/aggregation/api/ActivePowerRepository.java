@@ -14,10 +14,12 @@ import com.datastax.driver.core.querybuilder.QueryBuilder;
 
 import kieker.common.record.factory.IRecordFactory;
 import titan.ccp.common.kieker.cassandra.CassandraDeserializer;
+import titan.ccp.models.records.ActivePowerRecord;
+import titan.ccp.models.records.ActivePowerRecordFactory;
+import titan.ccp.models.records.AggregatedActivePower;
+import titan.ccp.models.records.AggregatedActivePowerFactory;
 import titan.ccp.models.records.AggregatedPowerConsumptionRecord;
-import titan.ccp.models.records.AggregatedPowerConsumptionRecordFactory;
 import titan.ccp.models.records.PowerConsumptionRecord;
-import titan.ccp.models.records.PowerConsumptionRecordFactory;
 
 public class ActivePowerRepository<T> {
 
@@ -110,23 +112,19 @@ public class ActivePowerRepository<T> {
 		return buckets;
 	}
 
-	// TODO <AggregatedActivePowerRecord>
-	public static ActivePowerRepository<AggregatedPowerConsumptionRecord> forAggregated(
-			final Session cassandraSession) {
-		return new ActivePowerRepository<>(cassandraSession, AggregatedPowerConsumptionRecord.class.getSimpleName(),
-				// TODO AggregatedActivePowerRecordFactory
-				new AggregatedPowerConsumptionRecordFactory(),
+	public static ActivePowerRepository<AggregatedActivePower> forAggregated(final Session cassandraSession) {
+		return new ActivePowerRepository<>(cassandraSession, AggregatedActivePower.class.getSimpleName(),
+				new AggregatedActivePowerFactory(),
 				// BETTER enhance Kieker to support something better
-				new AggregatedPowerConsumptionRecord("", 0, 0, 0, 0, 0, 0).getValueNames(), record -> record.getSum());
+				new AggregatedPowerConsumptionRecord("", 0, 0, 0, 0, 0, 0).getValueNames(),
+				record -> record.getSumInWh());
 	}
 
-	// TODO <ActivePowerRecord>
-	public static ActivePowerRepository<PowerConsumptionRecord> forNormal(final Session cassandraSession) {
-		return new ActivePowerRepository<>(cassandraSession, PowerConsumptionRecord.class.getSimpleName(),
-				// TODO ActivePowerRecordFactory
-				new PowerConsumptionRecordFactory(),
+	public static ActivePowerRepository<ActivePowerRecord> forNormal(final Session cassandraSession) {
+		return new ActivePowerRepository<>(cassandraSession, ActivePowerRecord.class.getSimpleName(),
+				new ActivePowerRecordFactory(),
 				// // BETTER enhance Kieker to support something better
-				new PowerConsumptionRecord("", 0, 0).getValueNames(), record -> record.getPowerConsumptionInWh());
+				new PowerConsumptionRecord("", 0, 0).getValueNames(), record -> record.getValueInWh());
 	}
 
 }
