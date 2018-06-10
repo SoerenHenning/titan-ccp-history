@@ -18,8 +18,6 @@ import titan.ccp.models.records.ActivePowerRecord;
 import titan.ccp.models.records.ActivePowerRecordFactory;
 import titan.ccp.models.records.AggregatedActivePower;
 import titan.ccp.models.records.AggregatedActivePowerFactory;
-import titan.ccp.models.records.AggregatedPowerConsumptionRecord;
-import titan.ccp.models.records.PowerConsumptionRecord;
 
 public class ActivePowerRepository<T> {
 
@@ -116,15 +114,14 @@ public class ActivePowerRepository<T> {
 		return new ActivePowerRepository<>(cassandraSession, AggregatedActivePower.class.getSimpleName(),
 				new AggregatedActivePowerFactory(),
 				// BETTER enhance Kieker to support something better
-				new AggregatedPowerConsumptionRecord("", 0, 0, 0, 0, 0, 0).getValueNames(),
-				record -> record.getSumInWh());
+				new AggregatedActivePower("", 0, 0, 0, 0, 0, 0).getValueNames(), record -> record.getSumInWh());
 	}
 
 	public static ActivePowerRepository<ActivePowerRecord> forNormal(final Session cassandraSession) {
 		return new ActivePowerRepository<>(cassandraSession, ActivePowerRecord.class.getSimpleName(),
 				new ActivePowerRecordFactory(),
 				// // BETTER enhance Kieker to support something better
-				new PowerConsumptionRecord("", 0, 0).getValueNames(), record -> record.getValueInWh());
+				new ActivePowerRecord("", 0, 0).getValueNames(), record -> record.getValueInWh());
 	}
 
 }
