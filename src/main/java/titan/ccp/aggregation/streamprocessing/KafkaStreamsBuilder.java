@@ -81,14 +81,12 @@ public class KafkaStreamsBuilder {
 	private Topology buildTopology() {
 		final StreamsBuilder builder = new StreamsBuilder();
 
+		LOGGER.info("Listening for records at topic '{}'", this.inputTopic);
+
 		final KStream<String, ActivePowerRecord> inputStream = builder.stream(this.inputTopic,
 				Consumed.with(Serdes.String(), IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
-		// final KStream<String, ActivePowerRecord> inputStream2 =
-		// builder.stream(this.inputTopic,
-		// Consumed.with(Serdes.String(), IMonitoringRecordSerde.serde(new
-		// ActivePowerRecordFactory())));
 
-		inputStream.foreach((k, v) -> LOGGER.info("received record {}", v)); // TODO Temporary;
+		inputStream.foreach((k, v) -> LOGGER.info("Received record {}.", v)); // TODO Temporary;
 
 		final KStream<String, ActivePowerRecord> flatMapped = inputStream.flatMap((key, value) -> this.flatMap(value));
 
@@ -175,7 +173,7 @@ public class KafkaStreamsBuilder {
 
 	private StreamsConfig buildStreamConfig() {
 		final Properties settings = new Properties();
-		settings.put(StreamsConfig.APPLICATION_ID_CONFIG, "titanccp-aggregation-0.0.6"); // TODO as parameter
+		settings.put(StreamsConfig.APPLICATION_ID_CONFIG, "titanccp-aggregation-0.0.7"); // TODO as parameter
 		settings.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 1000); // TODO as parameter
 		settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, this.bootstrapServers);
 		return new StreamsConfig(settings);
