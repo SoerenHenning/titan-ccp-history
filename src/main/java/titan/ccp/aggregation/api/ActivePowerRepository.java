@@ -69,11 +69,11 @@ public class ActivePowerRepository<T> {
 	}
 
 	public double getTrend(final String identifier, final long after) {
-		final int limit = 10; // TODO
+		final int pointsToSmooth = 10; // TODO
 		final Statement startStatement = QueryBuilder.select().all().from(this.tableName)
-				.where(QueryBuilder.eq("identifier", identifier)).and(QueryBuilder.gt("timestamp", after)).limit(limit);
+				.where(QueryBuilder.eq("identifier", identifier)).and(QueryBuilder.gt("timestamp", after)).limit(pointsToSmooth);
 		final List<T> first = this.get(startStatement);
-		final List<T> latest = this.getLatest(identifier, limit);
+		final List<T> latest = this.getLatest(identifier, pointsToSmooth);
 
 		final double start = first.stream().mapToDouble(this.valueAccessor).average().getAsDouble();
 		final double end = latest.stream().mapToDouble(this.valueAccessor).average().getAsDouble();
