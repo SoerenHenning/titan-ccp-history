@@ -10,7 +10,7 @@ import com.google.gson.GsonBuilder;
 
 import spark.Service;
 import titan.ccp.models.records.ActivePowerRecord;
-import titan.ccp.models.records.AggregatedActivePower;
+import titan.ccp.models.records.AggregatedActivePowerRecord;
 
 //TODO make a builder that returns this server
 public class RestApiServer {
@@ -19,7 +19,7 @@ public class RestApiServer {
 
 	private final Gson gson = new GsonBuilder().create();
 
-	private final ActivePowerRepository<AggregatedActivePower> aggregatedRepository;
+	private final ActivePowerRepository<AggregatedActivePowerRecord> aggregatedRepository;
 	private final ActivePowerRepository<ActivePowerRecord> normalRepository;
 
 	private final Service webService;

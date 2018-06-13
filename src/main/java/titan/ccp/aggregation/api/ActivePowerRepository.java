@@ -16,8 +16,8 @@ import kieker.common.record.factory.IRecordFactory;
 import titan.ccp.common.kieker.cassandra.CassandraDeserializer;
 import titan.ccp.models.records.ActivePowerRecord;
 import titan.ccp.models.records.ActivePowerRecordFactory;
-import titan.ccp.models.records.AggregatedActivePower;
-import titan.ccp.models.records.AggregatedActivePowerFactory;
+import titan.ccp.models.records.AggregatedActivePowerRecord;
+import titan.ccp.models.records.AggregatedActivePowerRecordFactory;
 
 public class ActivePowerRepository<T> {
 
@@ -71,7 +71,8 @@ public class ActivePowerRepository<T> {
 	public double getTrend(final String identifier, final long after) {
 		final int pointsToSmooth = 10; // TODO
 		final Statement startStatement = QueryBuilder.select().all().from(this.tableName)
-				.where(QueryBuilder.eq("identifier", identifier)).and(QueryBuilder.gt("timestamp", after)).limit(pointsToSmooth);
+				.where(QueryBuilder.eq("identifier", identifier)).and(QueryBuilder.gt("timestamp", after))
+				.limit(pointsToSmooth);
 		final List<T> first = this.get(startStatement);
 		final List<T> latest = this.getLatest(identifier, pointsToSmooth);
 
@@ -110,18 +111,18 @@ public class ActivePowerRepository<T> {
 		return buckets;
 	}
 
-	public static ActivePowerRepository<AggregatedActivePower> forAggregated(final Session cassandraSession) {
-		return new ActivePowerRepository<>(cassandraSession, AggregatedActivePower.class.getSimpleName(),
-				new AggregatedActivePowerFactory(),
+	public static ActivePowerRepository<AggregatedActivePowerRecord> forAggregated(final Session cassandraSession) {
+		return new ActivePowerRepository<>(cassandraSession, AggregatedActivePowerRecord.class.getSimpleName(),
+				new AggregatedActivePowerRecordFactory(),
 				// BETTER enhance Kieker to support something better
-				new AggregatedActivePower("", 0, 0, 0, 0, 0, 0).getValueNames(), record -> record.getSumInWh());
+				new AggregatedActivePowerRecord("", 0, 0, 0, 0, 0, 0).getValueNames(), record -> record.getSumInW());
 	}
 
 	public static ActivePowerRepository<ActivePowerRecord> forNormal(final Session cassandraSession) {
 		return new ActivePowerRepository<>(cassandraSession, ActivePowerRecord.class.getSimpleName(),
 				new ActivePowerRecordFactory(),
 				// // BETTER enhance Kieker to support something better
-				new ActivePowerRecord("", 0, 0).getValueNames(), record -> record.getValueInWh());
+				new ActivePowerRecord("", 0, 0).getValueNames(), record -> record.getValueInW());
 	}
 
 }

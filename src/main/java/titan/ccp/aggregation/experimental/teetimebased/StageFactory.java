@@ -7,7 +7,7 @@ import java.util.function.Function;
 import teetime.framework.AbstractConsumerStage;
 import teetime.framework.AbstractProducerStage;
 import teetime.stage.basic.AbstractTransformation;
-import titan.ccp.models.records.PowerConsumptionRecord;
+import titan.ccp.models.records.ActivePowerRecord;
 
 public class StageFactory {
 
@@ -59,7 +59,7 @@ public class StageFactory {
 		final AbstractConsumerStage<String> consumer = StageFactory.consumer(new PrintWriter(System.out),
 				w -> (final String s) -> w.println(s));
 
-		final AbstractTransformation<PowerConsumptionRecord, AggregationResult> transformation = StageFactory
+		final AbstractTransformation<ActivePowerRecord, AggregationResult> transformation = StageFactory
 				.transformation(s -> new Aggregator(null, null, s), (final Aggregator a) -> a::process);
 
 	}

@@ -2,9 +2,9 @@ package titan.ccp.aggregation.experimental.teetimebased;
 
 import teetime.stage.basic.AbstractTransformation;
 import titan.ccp.model.sensorregistry.SensorRegistry;
-import titan.ccp.models.records.PowerConsumptionRecord;
+import titan.ccp.models.records.ActivePowerRecord;
 
-public class AggregatorStage extends AbstractTransformation<PowerConsumptionRecord, AggregationResult> {
+public class AggregatorStage extends AbstractTransformation<ActivePowerRecord, AggregationResult> {
 
 	private final Aggregator aggregator;
 
@@ -13,7 +13,7 @@ public class AggregatorStage extends AbstractTransformation<PowerConsumptionReco
 	}
 
 	@Override
-	protected void execute(final PowerConsumptionRecord powerConsumptionRecord) throws Exception {
+	protected void execute(final ActivePowerRecord powerConsumptionRecord) throws Exception {
 		this.aggregator.process(powerConsumptionRecord);
 	}
 

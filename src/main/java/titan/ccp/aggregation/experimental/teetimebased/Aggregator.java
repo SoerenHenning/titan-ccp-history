@@ -1,14 +1,14 @@
 package titan.ccp.aggregation.experimental.teetimebased;
 
 import java.time.Instant;
+import java.util.DoubleSummaryStatistics;
 import java.util.List;
-import java.util.LongSummaryStatistics;
 import java.util.function.Consumer;
 
 import titan.ccp.model.sensorregistry.AggregatedSensor;
 import titan.ccp.model.sensorregistry.MachineSensor;
 import titan.ccp.model.sensorregistry.SensorRegistry;
-import titan.ccp.models.records.PowerConsumptionRecord;
+import titan.ccp.models.records.ActivePowerRecord;
 
 public class Aggregator {
 
@@ -26,14 +26,14 @@ public class Aggregator {
 		this.resultHandler = resultHandler;
 	}
 
-	public void process(final PowerConsumptionRecord record) {
+	public void process(final ActivePowerRecord record) {
 
 		// TODO rework this
 		final String identifier = record.getIdentifier();
 		final MachineSensor sensor = this.sensorRegistry.getSensorForIdentifier(identifier).get(); // TODO bad
 
 		// Update last sensor value
-		final long powerConsumption = record.getPowerConsumptionInWh();
+		final double powerConsumption = record.getValueInW();
 		final Instant time = Instant.ofEpochMilli(record.getTimestamp()); // TODO
 		this.sensorHistory.update(sensor, powerConsumption, time);
 
@@ -41,8 +41,8 @@ public class Aggregator {
 		final List<AggregatedSensor> affectedSensors = sensor.getParents();
 		// Recalculate affected sensor class
 		for (final AggregatedSensor affectedSensor : affectedSensors) {
-			final LongSummaryStatistics statistics = affectedSensor.getAllChildren().stream()
-					.mapToLong(s -> this.sensorHistory.getOrZero(s)).summaryStatistics();
+			final DoubleSummaryStatistics statistics = affectedSensor.getAllChildren().stream()
+					.mapToDouble(s -> this.sensorHistory.getOrZero(s)).summaryStatistics();
 			// .mapToLong(s -> this.sensorHistory.getOrNull(s)).filter(Objects::nonNull)
 
 			final AggregationResult aggregationResult = new AggregationResult(affectedSensor, time, statistics);

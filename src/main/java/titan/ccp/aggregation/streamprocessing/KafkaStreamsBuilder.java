@@ -31,8 +31,8 @@ import titan.ccp.common.kieker.kafka.IMonitoringRecordSerde;
 import titan.ccp.model.sensorregistry.SensorRegistry;
 import titan.ccp.models.records.ActivePowerRecord;
 import titan.ccp.models.records.ActivePowerRecordFactory;
-import titan.ccp.models.records.AggregatedActivePower;
-import titan.ccp.models.records.AggregatedActivePowerFactory;
+import titan.ccp.models.records.AggregatedActivePowerRecord;
+import titan.ccp.models.records.AggregatedActivePowerRecordFactory;
 
 public class KafkaStreamsBuilder {
 
@@ -119,13 +119,13 @@ public class KafkaStreamsBuilder {
 		// }); // TODO
 
 		aggregated.toStream().map((key, value) -> KeyValue.pair(key, value.toRecord(key))).to(this.outputTopic,
-				Produced.with(Serdes.String(), IMonitoringRecordSerde.serde(new AggregatedActivePowerFactory())));
+				Produced.with(Serdes.String(), IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())));
 
 		// Cassandra Writer for AggregatedActivePowerRecord
 
 		final CassandraWriter cassandraWriter = this.buildCassandraWriter();
 		builder.stream(this.outputTopic,
-				Consumed.with(Serdes.String(), IMonitoringRecordSerde.serde(new AggregatedActivePowerFactory())))
+				Consumed.with(Serdes.String(), IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
 				.foreach((key, record) -> {
 					LOGGER.info("write to cassandra {}", record);
 					cassandraWriter.write(record); // System.out.println("New written"); // TODO
@@ -148,8 +148,10 @@ public class KafkaStreamsBuilder {
 
 	private CassandraWriter buildCassandraWriter() {
 		final ExplicitPrimaryKeySelectionStrategy primaryKeySelectionStrategy = new ExplicitPrimaryKeySelectionStrategy();
-		primaryKeySelectionStrategy.registerPartitionKeys(AggregatedActivePower.class.getSimpleName(), "identifier");
-		primaryKeySelectionStrategy.registerClusteringColumns(AggregatedActivePower.class.getSimpleName(), "timestamp");
+		primaryKeySelectionStrategy.registerPartitionKeys(AggregatedActivePowerRecord.class.getSimpleName(),
+				"identifier");
+		primaryKeySelectionStrategy.registerClusteringColumns(AggregatedActivePowerRecord.class.getSimpleName(),
+				"timestamp");
 
 		final CassandraWriter cassandraWriter = CassandraWriter.builder(this.cassandraSession).excludeRecordType()
 				.excludeLoggingTimestamp().tableNameMapper(PredefinedTableNameMappers.SIMPLE_CLASS_NAME)

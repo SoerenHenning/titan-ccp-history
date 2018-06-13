@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import titan.ccp.models.records.ActivePowerRecord;
-import titan.ccp.models.records.AggregatedActivePower;
+import titan.ccp.models.records.AggregatedActivePowerRecord;
 
 public class AggregationHistory {
 	private final Map<String, Double> lastValues;
@@ -22,7 +22,7 @@ public class AggregationHistory {
 	}
 
 	public AggregationHistory update(final ActivePowerRecord activePowerRecord) {
-		this.lastValues.put(activePowerRecord.getIdentifier(), activePowerRecord.getValueInWh());
+		this.lastValues.put(activePowerRecord.getIdentifier(), activePowerRecord.getValueInW());
 		this.timestamp = activePowerRecord.getTimestamp();
 		return this;
 	}
@@ -39,9 +39,9 @@ public class AggregationHistory {
 		return this.lastValues.values().stream().mapToDouble(v -> v).summaryStatistics();
 	}
 
-	public AggregatedActivePower toRecord(final String identifier) {
+	public AggregatedActivePowerRecord toRecord(final String identifier) {
 		final DoubleSummaryStatistics summaryStatistics = this.getSummaryStatistics();
-		return new AggregatedActivePower(identifier, this.timestamp, summaryStatistics.getMin(),
+		return new AggregatedActivePowerRecord(identifier, this.timestamp, summaryStatistics.getMin(),
 				summaryStatistics.getMax(), summaryStatistics.getCount(), summaryStatistics.getSum(),
 				summaryStatistics.getAverage());
 	}

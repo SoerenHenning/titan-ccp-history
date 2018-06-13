@@ -16,18 +16,18 @@ public class LastValueSensorHistory implements SensorHistory {
 	}
 
 	@Override
-	public long getOrZero(final MachineSensor machineSensor) {
-		final long lastValue = this.lastValues.get(machineSensor.getIdentifier()).value;
+	public double getOrZero(final MachineSensor machineSensor) {
+		final double lastValue = this.lastValues.get(machineSensor.getIdentifier()).value;
 		return this.lastValues != null ? lastValue : 0;
 	}
 
 	@Override
-	public void update(final MachineSensor machineSensor, final long value) {
+	public void update(final MachineSensor machineSensor, final double value) {
 		this.update(machineSensor, value, Instant.MIN);
 	}
 
 	@Override
-	public void update(final MachineSensor machineSensor, final long value, final Instant time) {
+	public void update(final MachineSensor machineSensor, final double value, final Instant time) {
 		// update value for sensor iff sensor has current value or passed value is newer
 		// (or equal new)
 		final String identifier = machineSensor.getIdentifier();
@@ -37,11 +37,11 @@ public class LastValueSensorHistory implements SensorHistory {
 
 	private static class LastValue {
 
-		private final long value;
+		private final double value;
 
 		private final Instant time;
 
-		private LastValue(final long value, final Instant time) {
+		private LastValue(final double value, final Instant time) {
 			this.value = value;
 			this.time = time;
 		}

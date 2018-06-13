@@ -11,15 +11,15 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import titan.ccp.common.kieker.kafka.IMonitoringRecordSerde;
 import titan.ccp.model.sensorregistry.ExampleSensors;
-import titan.ccp.models.records.PowerConsumptionRecord;
-import titan.ccp.models.records.serialization.kafka.PowerConsumptionRecordSerializer;
+import titan.ccp.models.records.ActivePowerRecord;
 
 public class KafkaRecordProducer {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(KafkaRecordProducer.class);
 
-	private final Producer<String, PowerConsumptionRecord> producer;
+	private final Producer<String, ActivePowerRecord> producer;
 	private static final String BOOTSRATP_SERVERS = "localhost:9092";
 	private static final String TOPIC = "test-topic-18040319";
 
@@ -37,11 +37,12 @@ public class KafkaRecordProducer {
 		// properties.put("value.serializer",
 		// "org.apache.kafka.common.serialization.ByteArraySerializer");
 
-		this.producer = new KafkaProducer<>(properties, new StringSerializer(), new PowerConsumptionRecordSerializer());
+		this.producer = new KafkaProducer<>(properties, new StringSerializer(),
+				IMonitoringRecordSerde.serializer());
 	}
 
-	public void write(final PowerConsumptionRecord powerConsumptionRecord) {
-		final ProducerRecord<String, PowerConsumptionRecord> record = new ProducerRecord<>(TOPIC,
+	public void write(final ActivePowerRecord powerConsumptionRecord) {
+		final ProducerRecord<String, ActivePowerRecord> record = new ProducerRecord<>(TOPIC,
 				powerConsumptionRecord.getIdentifier(), powerConsumptionRecord);
 		this.producer.send(record);
 	}
@@ -58,8 +59,8 @@ public class KafkaRecordProducer {
 		while (true) {
 			final String identifier = identifiers.get(random.nextInt(identifiers.size()));
 			final long timestamp = System.currentTimeMillis();
-			final int value = random.nextInt(100);
-			final PowerConsumptionRecord record = new PowerConsumptionRecord(identifier, timestamp, value);
+			final double value = random.nextDouble() * 100;
+			final ActivePowerRecord record = new ActivePowerRecord(identifier, timestamp, value);
 			kafkaWriter.write(record);
 			Thread.sleep(1000);
 		}
