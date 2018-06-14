@@ -3,6 +3,7 @@ package titan.ccp.aggregation.api;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.OptionalDouble;
 import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 
@@ -76,10 +77,15 @@ public class ActivePowerRepository<T> {
 		final List<T> first = this.get(startStatement);
 		final List<T> latest = this.getLatest(identifier, pointsToSmooth);
 
-		final double start = first.stream().mapToDouble(this.valueAccessor).average().getAsDouble();
-		final double end = latest.stream().mapToDouble(this.valueAccessor).average().getAsDouble();
+		final OptionalDouble start = first.stream().mapToDouble(this.valueAccessor).average();
+		final OptionalDouble end = latest.stream().mapToDouble(this.valueAccessor).average();
 
-		return start / end;
+		if (start.isPresent() && end.isPresent()) {
+			return start.getAsDouble() > 0.0 ? end.getAsDouble() / start.getAsDouble() : 1;
+		} else {
+			return -1;
+		}
+
 	}
 
 	public List<DistributionBucket> getDistribution(final String identifier, final long after, final int bucketsCount) {
