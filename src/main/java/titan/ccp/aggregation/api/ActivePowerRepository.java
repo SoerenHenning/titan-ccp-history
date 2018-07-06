@@ -117,6 +117,12 @@ public class ActivePowerRepository<T> {
 		return buckets;
 	}
 
+	public int getCount(final String identifier, final long after) {
+		final Statement statement = QueryBuilder.select().countAll().from(this.tableName)
+				.where(QueryBuilder.eq("identifier", identifier)).and(QueryBuilder.gt("timestamp", after));
+		return this.cassandraSession.execute(statement).all().get(0).getInt(0);
+	}
+
 	public static ActivePowerRepository<AggregatedActivePowerRecord> forAggregated(final Session cassandraSession) {
 		return new ActivePowerRepository<>(cassandraSession, AggregatedActivePowerRecord.class.getSimpleName(),
 				new AggregatedActivePowerRecordFactory(),
