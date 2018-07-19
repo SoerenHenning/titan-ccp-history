@@ -91,6 +91,11 @@ public class RestApiServer {
 			return this.normalRepository.getCount(identifier, after);
 		}, this.gson::toJson);
 
+		//TODO temp for evaluation
+		this.webService.get("/power-consumption-count", (request, response) -> {
+			return this.normalRepository.getTotalCount();
+		}, this.gson::toJson);
+
 		this.webService.get("/aggregated-power-consumption/:identifier", (request, response) -> {
 			final String identifier = request.params("identifier");
 			final long after = NumberUtils.toLong(request.queryParams("after"), 0);
