@@ -117,10 +117,15 @@ public class ActivePowerRepository<T> {
 		return buckets;
 	}
 
-	public int getCount(final String identifier, final long after) {
+	public long getTotalCount() {
+		final Statement statement = QueryBuilder.select().countAll().from(this.tableName);
+		return this.cassandraSession.execute(statement).all().get(0).getLong(0);
+	}
+
+	public long getCount(final String identifier, final long after) {
 		final Statement statement = QueryBuilder.select().countAll().from(this.tableName)
 				.where(QueryBuilder.eq("identifier", identifier)).and(QueryBuilder.gt("timestamp", after));
-		return this.cassandraSession.execute(statement).all().get(0).getInt(0);
+		return this.cassandraSession.execute(statement).all().get(0).getLong(0);
 	}
 
 	public static ActivePowerRepository<AggregatedActivePowerRecord> forAggregated(final Session cassandraSession) {
