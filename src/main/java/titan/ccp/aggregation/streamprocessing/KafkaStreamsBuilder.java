@@ -5,20 +5,13 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.Consumed;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
-import org.apache.kafka.streams.kstream.KGroupedStream;
 import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KTable;
-import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.Produced;
-import org.apache.kafka.streams.kstream.Serialized;
-import org.apache.kafka.streams.state.KeyValueStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +25,6 @@ import titan.ccp.model.sensorregistry.SensorRegistry;
 import titan.ccp.models.records.ActivePowerRecord;
 import titan.ccp.models.records.ActivePowerRecordFactory;
 import titan.ccp.models.records.AggregatedActivePowerRecord;
-import titan.ccp.models.records.AggregatedActivePowerRecordFactory;
 
 public class KafkaStreamsBuilder {
 
@@ -86,50 +78,61 @@ public class KafkaStreamsBuilder {
 		final KStream<String, ActivePowerRecord> inputStream = builder.stream(this.inputTopic,
 				Consumed.with(Serdes.String(), IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
 
-		inputStream.foreach((k, v) -> LOGGER.info("Received record {}.", v)); // TODO Temporary;
+		// inputStream.foreach((k, v) -> LOGGER.info("Received record {}.", v)); // TODO
+		// Temporary;
+		//
+		// final KStream<String, ActivePowerRecord> flatMapped =
+		// inputStream.flatMap((key, value) -> this.flatMap(value));
+		//
+		// final KGroupedStream<String, ActivePowerRecord> groupedStream =
+		// flatMapped.groupByKey(
+		// Serialized.with(Serdes.String(), IMonitoringRecordSerde.serde(new
+		// ActivePowerRecordFactory())));
 
-		final KStream<String, ActivePowerRecord> flatMapped = inputStream.flatMap((key, value) -> this.flatMap(value));
-
-		final KGroupedStream<String, ActivePowerRecord> groupedStream = flatMapped.groupByKey(
-				Serialized.with(Serdes.String(), IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
-
-		final KTable<String, AggregationHistory> aggregated = groupedStream.aggregate(() -> {
-			return new AggregationHistory();
-		}, (aggKey, newValue, aggValue2) -> {
-			// System.out.println(".");
-			// System.out.println("__");
-			// System.out.println("O: " + aggKey + ": " + aggValue2.getLastValues());
-			// System.out.println("O: " + aggKey + ": " + aggValue2.getSummaryStatistics());
-			// System.out.println("new: " + newValue.getIdentifier() + ": " +
-			// newValue.getPowerConsumptionInWh());
-			// System.out.println("New record in aggregation."); // TODO
-			aggValue2.update(newValue);
-			// System.out.println("N: " + aggKey + ": " + aggValue2.getLastValues());
-			// System.out.println("N: " + aggKey + ": " + aggValue2.getSummaryStatistics());
-			// System.out.println("P: " + aggValue2.getTimestamp());
-			LOGGER.info("update history {}", aggValue2); // TODO
-			return aggValue2;
-			// return aggValue2.update(newValue);
-		}, Materialized.<String, AggregationHistory, KeyValueStore<Bytes, byte[]>>as(this.aggregationStoreName)
-				.withKeySerde(Serdes.String()).withValueSerde(AggregationHistorySerde.serde()));
+		// final KTable<String, AggregationHistory> aggregated =
+		// groupedStream.aggregate(() -> {
+		// return new AggregationHistory();
+		// }, (aggKey, newValue, aggValue2) -> {
+		// // System.out.println(".");
+		// // System.out.println("__");
+		// // System.out.println("O: " + aggKey + ": " + aggValue2.getLastValues());
+		// // System.out.println("O: " + aggKey + ": " +
+		// aggValue2.getSummaryStatistics());
+		// // System.out.println("new: " + newValue.getIdentifier() + ": " +
+		// // newValue.getPowerConsumptionInWh());
+		// // System.out.println("New record in aggregation."); // TODO
+		// aggValue2.update(newValue);
+		// // System.out.println("N: " + aggKey + ": " + aggValue2.getLastValues());
+		// // System.out.println("N: " + aggKey + ": " +
+		// aggValue2.getSummaryStatistics());
+		// // System.out.println("P: " + aggValue2.getTimestamp());
+		// LOGGER.info("update history {}", aggValue2); // TODO
+		// return aggValue2;
+		// // return aggValue2.update(newValue);
+		// }, Materialized.<String, AggregationHistory, KeyValueStore<Bytes,
+		// byte[]>>as(this.aggregationStoreName)
+		// .withKeySerde(Serdes.String()).withValueSerde(AggregationHistorySerde.serde()));
 
 		// aggregated.toStream().foreach((key, value) -> {
 		// System.out.println("A: " + value.getTimestamp());
 		// System.out.println("A: " + key + ": " + value.getSummaryStatistics());
 		// }); // TODO
 
-		aggregated.toStream().map((key, value) -> KeyValue.pair(key, value.toRecord(key))).to(this.outputTopic,
-				Produced.with(Serdes.String(), IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())));
+		// aggregated.toStream().map((key, value) -> KeyValue.pair(key,
+		// value.toRecord(key))).to(this.outputTopic,
+		// Produced.with(Serdes.String(), IMonitoringRecordSerde.serde(new
+		// AggregatedActivePowerRecordFactory())));
 
 		// Cassandra Writer for AggregatedActivePowerRecord
 
-		final CassandraWriter cassandraWriter = this.buildCassandraWriter();
-		builder.stream(this.outputTopic,
-				Consumed.with(Serdes.String(), IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
-				.foreach((key, record) -> {
-					LOGGER.info("write to cassandra {}", record);
-					cassandraWriter.write(record); // System.out.println("New written"); // TODO
-				});
+		// final CassandraWriter cassandraWriter = this.buildCassandraWriter();
+		// builder.stream(this.outputTopic,
+		// Consumed.with(Serdes.String(), IMonitoringRecordSerde.serde(new
+		// AggregatedActivePowerRecordFactory())))
+		// .foreach((key, record) -> {
+		// LOGGER.info("write to cassandra {}", record);
+		// cassandraWriter.write(record); // System.out.println("New written"); // TODO
+		// });
 
 		// End Cassandra Writer
 
