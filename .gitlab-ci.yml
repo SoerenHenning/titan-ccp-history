@@ -38,7 +38,7 @@ deploy:
     - docker:dind
   script:
     - docker build --pull -t titan-ccp-aggregation .
-    - docker tag titan-ccp-aggregation industrialdevops/titan-ccp-aggregation:$(date +%Y%m%d%H%M%S):scalability-evaluation
+    - docker tag titan-ccp-aggregation industrialdevops/titan-ccp-aggregation:$(date +%Y%m%d%H%M%S)_scalability-evaluation
     - echo $DOCKERHUB_PW | docker login -u $DOCKERHUB_ID --password-stdin
     - docker push industrialdevops/titan-ccp-aggregation
   only:
