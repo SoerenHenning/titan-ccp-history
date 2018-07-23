@@ -11,7 +11,9 @@ import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
+import org.apache.kafka.streams.kstream.KGroupedStream;
 import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.Serialized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,14 +82,10 @@ public class KafkaStreamsBuilder {
 
 		// inputStream.foreach((k, v) -> LOGGER.info("Received record {}.", v)); // TODO
 		// Temporary;
-		//
-		// final KStream<String, ActivePowerRecord> flatMapped =
-		// inputStream.flatMap((key, value) -> this.flatMap(value));
-		//
-		// final KGroupedStream<String, ActivePowerRecord> groupedStream =
-		// flatMapped.groupByKey(
-		// Serialized.with(Serdes.String(), IMonitoringRecordSerde.serde(new
-		// ActivePowerRecordFactory())));
+
+		final KStream<String, ActivePowerRecord> flatMapped = inputStream.flatMap((key, value) -> this.flatMap(value));
+		final KGroupedStream<String, ActivePowerRecord> groupedStream = flatMapped.groupByKey(
+				Serialized.with(Serdes.String(), IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
 
 		// final KTable<String, AggregationHistory> aggregated =
 		// groupedStream.aggregate(() -> {
@@ -141,6 +139,7 @@ public class KafkaStreamsBuilder {
 		final CassandraWriter cassandraWriterForNormal = this.buildCassandraWriterForNormal();
 		inputStream.foreach((key, record) -> {
 			cassandraWriterForNormal.write(record);
+			LOGGER.info("write to cassandra {}", record);
 			// System.out.println("New written"); // TODO
 		});
 
