@@ -82,7 +82,8 @@ public class RestApiServer {
 		this.webService.get("/power-consumption/:identifier/trend", (request, response) -> {
 			final String identifier = request.params("identifier");
 			final long after = NumberUtils.toLong(request.queryParams("after"), 0);
-			return this.normalRepository.getTrend(identifier, after);
+			final int pointsToSmooth = NumberUtils.toInt(request.queryParams("pointsToSmooth"), 10);
+			return this.aggregatedRepository.getTrend(identifier, after, pointsToSmooth);
 		}, this.gson::toJson);
 
 		this.webService.get("/power-consumption/:identifier/count", (request, response) -> {
@@ -91,7 +92,7 @@ public class RestApiServer {
 			return this.normalRepository.getCount(identifier, after);
 		}, this.gson::toJson);
 
-		//TODO temp for evaluation
+		// TODO Temporary for evaluation, this is not working for huge data sets
 		this.webService.get("/power-consumption-count", (request, response) -> {
 			return this.normalRepository.getTotalCount();
 		}, this.gson::toJson);
@@ -118,7 +119,8 @@ public class RestApiServer {
 		this.webService.get("/aggregated-power-consumption/:identifier/trend", (request, response) -> {
 			final String identifier = request.params("identifier");
 			final long after = NumberUtils.toLong(request.queryParams("after"), 0);
-			return this.aggregatedRepository.getTrend(identifier, after);
+			final int pointsToSmooth = NumberUtils.toInt(request.queryParams("pointsToSmooth"), 10);
+			return this.aggregatedRepository.getTrend(identifier, after, pointsToSmooth);
 		}, this.gson::toJson);
 
 		this.webService.get("/aggregated-power-consumption/:identifier/count", (request, response) -> {

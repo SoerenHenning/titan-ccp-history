@@ -69,8 +69,7 @@ public class ActivePowerRepository<T> {
 		return this.get(statement);
 	}
 
-	public double getTrend(final String identifier, final long after) {
-		final int pointsToSmooth = 10; // TODO
+	public double getTrend(final String identifier, final long after, final int pointsToSmooth) {
 		final Statement startStatement = QueryBuilder.select().all().from(this.tableName)
 				.where(QueryBuilder.eq("identifier", identifier)).and(QueryBuilder.gt("timestamp", after))
 				.limit(pointsToSmooth);
@@ -117,6 +116,7 @@ public class ActivePowerRepository<T> {
 		return buckets;
 	}
 
+	// TODO This is not working for huge data sets
 	public long getTotalCount() {
 		final Statement statement = QueryBuilder.select().countAll().from(this.tableName);
 		return this.cassandraSession.execute(statement).all().get(0).getLong(0);
