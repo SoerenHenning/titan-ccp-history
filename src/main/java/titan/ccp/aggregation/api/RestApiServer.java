@@ -60,6 +60,10 @@ public class RestApiServer {
 
 		// TODO rename urls
 
+		this.webService.get("/power-consumption", (request, response) -> {
+			return this.normalRepository.getIdentifiers();
+		}, this.gson::toJson);
+
 		this.webService.get("/power-consumption/:identifier", (request, response) -> {
 			final String identifier = request.params("identifier");
 			final long after = NumberUtils.toLong(request.queryParams("after"), 0);
@@ -95,6 +99,10 @@ public class RestApiServer {
 		// TODO Temporary for evaluation, this is not working for huge data sets
 		this.webService.get("/power-consumption-count", (request, response) -> {
 			return this.normalRepository.getTotalCount();
+		}, this.gson::toJson);
+
+		this.webService.get("/aggregated-power-consumption", (request, response) -> {
+			return this.aggregatedRepository.getIdentifiers();
 		}, this.gson::toJson);
 
 		this.webService.get("/aggregated-power-consumption/:identifier", (request, response) -> {

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.OptionalDouble;
 import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
+import java.util.stream.Collectors;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
@@ -126,6 +127,12 @@ public class ActivePowerRepository<T> {
 		final Statement statement = QueryBuilder.select().countAll().from(this.tableName)
 				.where(QueryBuilder.eq("identifier", identifier)).and(QueryBuilder.gt("timestamp", after));
 		return this.cassandraSession.execute(statement).all().get(0).getLong(0);
+	}
+
+	public List<String> getIdentifiers() {
+		final Statement statement = QueryBuilder.select("identifier").distinct().from(this.tableName);
+		return this.cassandraSession.execute(statement).all().stream().map(row -> row.getString(0))
+				.collect(Collectors.toList());
 	}
 
 	public static ActivePowerRepository<AggregatedActivePowerRecord> forAggregated(final Session cassandraSession) {
