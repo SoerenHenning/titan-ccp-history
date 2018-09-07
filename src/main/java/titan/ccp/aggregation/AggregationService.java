@@ -69,10 +69,12 @@ public class AggregationService {
 
 		// Create Rest API
 		// TODO use builder
-		final RestApiServer restApiServer = new RestApiServer(clusterSession.getSession(),
-				this.configuration.getInt("webserver.port"), this.configuration.getBoolean("webserver.cors"));
-		restApiServer.start();
-		// TODO stop missing
+		if (this.configuration.getBoolean("webserver.enable")) {
+			final RestApiServer restApiServer = new RestApiServer(clusterSession.getSession(),
+					this.configuration.getInt("webserver.port"), this.configuration.getBoolean("webserver.cors"));
+			restApiServer.start();
+			// TODO stop missing
+		}
 
 		// CompletableFuture<Void> stop = new CompletableFuture<>();
 		// stop.thenRun(() -> clusterSession.getCluster().close());
