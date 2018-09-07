@@ -19,5 +19,5 @@ create the file `build/distributions/titanccp-aggregation.tar` which contains
 start scripts for Linux/macOS and Windows.
 
 This repository also contains a Dockerfile. Run
-`docker build -t titan-ccp-kieker-bridge-raritan .` to create a container from it (after
+`docker build -t titan-ccp-aggregation .` to create a container from it (after
 building it with Gradle).
