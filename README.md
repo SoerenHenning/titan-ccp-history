@@ -6,6 +6,7 @@ It allows to monitor, analyze and visualize the electrical power consumption of
 devices and machines in production environments such as factories.
 
 This repository contains the **History** microservice of the Titan CCP.
+*Note: Formerly, this service was named Aggregation. Not all internal parts are completely renamed yet.*
 
 ## Build and Run
 
