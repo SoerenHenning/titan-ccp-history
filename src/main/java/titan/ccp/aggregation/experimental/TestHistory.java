@@ -26,9 +26,9 @@ import titan.ccp.common.kieker.kafka.IMonitoringRecordSerde;
 import titan.ccp.models.records.ActivePowerRecord;
 import titan.ccp.models.records.ActivePowerRecordFactory;
 
-public class TestKafkaStreams {
+public class TestHistory {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(TestKafkaStreams.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(TestHistory.class);
 
 	public static void main(final String[] args) {
 		final String cassandraHost = Objects.requireNonNullElse(System.getenv("CASSANDRA_HOST"), "localhost");
