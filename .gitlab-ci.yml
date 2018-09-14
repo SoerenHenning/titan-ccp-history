@@ -21,7 +21,12 @@ build:
   script: ./gradlew --build-cache assemble
   artifacts:
     paths:
-      - build/
+      - build/libs/*.jar
+      - build/distributions/*.tar
+      - record-counter/build/libs/*.jar
+      - record-counter/build/distributions/*.tar
+    expire_in: 1 day
+
 
 test:
   stage: test
@@ -59,3 +64,19 @@ deploy-simple-writer:
     - docker push industrialdevops/titan-ccp-aggregation
   only:
     - simple-writer
+    
+deploy-record-tester:
+  stage: deploy
+  tags:
+    - dockerex
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - docker build --pull -t titan-ccp-record-counter ./record-counter
+    - docker tag titan-ccp-record-counter industrialdevops/titan-ccp-record-counter:latest
+    - docker tag titan-ccp-record-counter industrialdevops/titan-ccp-record-counter:$(date +%Y%m%d%H%M%S)
+    - echo $DOCKERHUB_PW | docker login -u $DOCKERHUB_ID --password-stdin
+    - docker push industrialdevops/titan-ccp-record-counter
+  only:
+    - master
