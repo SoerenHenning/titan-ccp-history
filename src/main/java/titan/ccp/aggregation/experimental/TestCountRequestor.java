@@ -15,8 +15,11 @@ public class TestCountRequestor {
 
 	public static void main(final String[] args) {
 
-		final ClusterSession clusterSession = new SessionBuilder().contactPoint("localhost").port(9042)
-				.keyspace("titanccp").build();
+		final String cassandraHost = Objects.requireNonNullElse(System.getenv("CASSANDRA_HOST"), "localhost");
+		final int cassandraPort = Integer.parseInt(Objects.requireNonNullElse(System.getenv("CASSANDRA_PORT"), "9042"));
+		final String cassandraKeyspace = Objects.requireNonNullElse(System.getenv("CASSANDRA_KEYSPACE"), "titanccp");
+		final ClusterSession clusterSession = new SessionBuilder().contactPoint(cassandraHost).port(cassandraPort)
+				.keyspace(cassandraKeyspace).build();
 		final ActivePowerRepository<ActivePowerRecord> normalRepository = ActivePowerRepository
 				.forNormal(clusterSession.getSession());
 		final String redisHost = Objects.requireNonNullElse(System.getenv("REDIS_HOST"), "localhost");
