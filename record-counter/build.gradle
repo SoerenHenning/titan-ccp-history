@@ -1,0 +1,33 @@
+apply plugin: 'application'
+apply plugin: 'eclipse'
+
+sourceCompatibility = "1.10"
+targetCompatibility = "1.10"
+
+repositories {
+    jcenter()
+    maven {
+    	url "https://oss.sonatype.org/content/repositories/snapshots/"
+    }
+}
+
+dependencies {
+    compile project(':')
+    compile('org.industrial-devops:titan.ccp.model:0.0.1-SNAPSHOT') { changing = true }
+    compile 'net.kieker-monitoring:kieker:1.14-SNAPSHOT'
+    
+    compile 'org.slf4j:slf4j-simple:1.6.1'
+    compile 'redis.clients:jedis:2.9.0'
+
+    // Use JUnit test framework
+    testCompile 'junit:junit:4.12'
+}
+
+mainClassName = "titan.ccp.aggregation.recordcounter.RecordCounter"
+
+eclipse {
+    classpath {
+       downloadSources=true
+       downloadJavadoc=true
+    }
+}
