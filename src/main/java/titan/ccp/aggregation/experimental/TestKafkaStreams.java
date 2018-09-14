@@ -1,5 +1,6 @@
 package titan.ccp.aggregation.experimental;
 
+import java.util.Objects;
 import java.util.Properties;
 
 import org.apache.kafka.common.serialization.Serdes;
@@ -29,22 +30,30 @@ public class TestKafkaStreams {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TestKafkaStreams.class);
 
-	private final String inputTopic = "test";
-	private final String aggregationStoreName = "stream-store"; // TODO
-
 	public static void main(final String[] args) {
-		final Properties settings = new Properties();
-		settings.put(StreamsConfig.APPLICATION_ID_CONFIG, "titanccp-aggregation-test-0.0.7"); // TODO as parameter
-		settings.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 1000); // TODO as parameter
-		settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+		final String cassandraHost = Objects.requireNonNullElse(System.getenv("CASSANDRA_HOST"), "localhost");
+		final int cassandraPort = Integer.parseInt(Objects.requireNonNullElse(System.getenv("CASSANDRA_PORT"), "9042"));
+		final String cassandraKeyspace = Objects.requireNonNullElse(System.getenv("CASSANDRA_KEYSPACE"), "titanccp");
+		final String kafkaBootstrapServers = Objects.requireNonNullElse(System.getenv("KAFKA_BOOTSTRAP_SEVERS"),
+				"localhost:9092");
+		final String kafkaApplicationId = Objects.requireNonNullElse(System.getenv("KAFKA_APPLICATION_ID"),
+				"titanccp-aggregation-test-0.0.1");
+		final int kafkaCommitInterval = Integer
+				.parseInt(Objects.requireNonNullElse(System.getenv("KAFKA_COMMIT_INTERVAL"), "1000"));
+		final String kafkaInputTopic = Objects.requireNonNullElse(System.getenv("KAFKA_INPUT_TOPIC"), "input");
 
-		final ClusterSession clusterSession = new SessionBuilder().contactPoint("localhost").port(9042)
-				.keyspace("titanccp").build();
+		final Properties settings = new Properties();
+		settings.put(StreamsConfig.APPLICATION_ID_CONFIG, kafkaApplicationId);
+		settings.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, kafkaCommitInterval);
+		settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrapServers);
+
+		final ClusterSession clusterSession = new SessionBuilder().contactPoint(cassandraHost).port(cassandraPort)
+				.keyspace(cassandraKeyspace).build();
 		final CassandraWriter cassandraWriter = buildCassandraWriter(clusterSession.getSession(),
 				ActivePowerRecord.class);
 
 		final StreamsBuilder builder = new StreamsBuilder();
-		final KStream<String, ActivePowerRecord> input = builder.stream("input",
+		final KStream<String, ActivePowerRecord> input = builder.stream(kafkaInputTopic,
 				Consumed.with(Serdes.String(), IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
 
 		// input.foreach((k, v) -> System.out.println(k + ": " + v));
