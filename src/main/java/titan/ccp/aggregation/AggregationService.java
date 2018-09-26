@@ -4,7 +4,6 @@ import org.apache.commons.configuration2.Configuration;
 import org.apache.kafka.streams.KafkaStreams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import titan.ccp.aggregation.api.RestApiServer;
 import titan.ccp.aggregation.streamprocessing.KafkaStreamsBuilder;
 import titan.ccp.common.configuration.Configurations;
@@ -17,77 +16,96 @@ import titan.ccp.model.sensorregistry.SensorRegistry;
 import titan.ccp.model.sensorregistry.client.RetryingSensorRegistryRequester;
 import titan.ccp.model.sensorregistry.client.SensorRegistryRequester;
 
-public class AggregationService {
+/**
+ * A microservice that manages the history and, therefore, stores and aggregates incoming
+ * measurements.
+ *
+ * <p>
+ * Will be soon renamed to HistoryService.
+ * </p>
+ *
+ */
+public class AggregationService { // TODO rename to HistoryService
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(AggregationService.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(AggregationService.class);
 
-	private final Configuration configuration = Configurations.create();
-	private final RetryingSensorRegistryRequester sensorRegistryRequester;
-	private final ProxySensorRegistry sensorRegistry = new ProxySensorRegistry();
-	// private final KafkaStreams kafkaStreams;
-	// private final RestApiServer restApiServer;
+  private final Configuration configuration = Configurations.create();
+  private final RetryingSensorRegistryRequester sensorRegistryRequester;
+  private final ProxySensorRegistry sensorRegistry = new ProxySensorRegistry();
+  // private final KafkaStreams kafkaStreams;
+  // private final RestApiServer restApiServer;
 
-	// private final CompletableFuture<Void> stopEvent = new CompletableFuture();
+  // private final CompletableFuture<Void> stopEvent = new CompletableFuture();
 
-	public AggregationService() {
-		this.sensorRegistryRequester = new RetryingSensorRegistryRequester(new SensorRegistryRequester(
-				this.configuration.getString("configuration.host"), this.configuration.getInt("configuration.port")));
-		// this.restApiServer = new RestApiServer(session);
-	}
+  /**
+   * Create an Aggregation service using a configuration via external parameters. These can be an
+   * {@code application.properties} file or environment variables.
+   */
+  public AggregationService() {
+    this.sensorRegistryRequester = new RetryingSensorRegistryRequester(new SensorRegistryRequester(
+        this.configuration.getString(ConfigurationKeys.CONFIGURATION_HOST),
+        this.configuration.getInt(ConfigurationKeys.CONFIGURATION_PORT)));
+    // this.restApiServer = new RestApiServer(session);
+  }
 
-	public void run() {
-		// this.sensorRegistry.setBackingSensorRegisty(ExampleSensors.registry());
-		final SensorRegistry sensorRegistry = this.sensorRegistryRequester.request().join();
-		this.sensorRegistry.setBackingSensorRegisty(sensorRegistry);
+  /**
+   * Start the service.
+   */
+  public void run() {
+    // this.sensorRegistry.setBackingSensorRegisty(ExampleSensors.registry());
+    final SensorRegistry sensorRegistry = this.sensorRegistryRequester.request().join();
+    this.sensorRegistry.setBackingSensorRegisty(sensorRegistry);
 
-		final KafkaSubscriber configEventSubscriber = new KafkaSubscriber(
-				this.configuration.getString("kafka.bootstrap.servers"), "titan-ccp-aggregation", // TODO group id
-				this.configuration.getString("configuration.kafka.topic"));
-		configEventSubscriber.subscribe(Event.SENSOR_REGISTRY_CHANGED, data -> {
-			this.sensorRegistry.setBackingSensorRegisty(SensorRegistry.fromJson(data));
-			LOGGER.info("Received new sensor registry.");
-		});
-		configEventSubscriber.run();
+    final KafkaSubscriber configEventSubscriber =
+        new KafkaSubscriber(this.configuration.getString(ConfigurationKeys.KAFKA_BOOTSTRAP_SERVERS),
+            "titan-ccp-aggregation", // TODO group id
+            this.configuration.getString(ConfigurationKeys.CONFIGURATION_KAFKA_TOPIC));
+    configEventSubscriber.subscribe(Event.SENSOR_REGISTRY_CHANGED, data -> {
+      this.sensorRegistry.setBackingSensorRegisty(SensorRegistry.fromJson(data));
+      LOGGER.info("Received new sensor registry.");
+    });
+    configEventSubscriber.run();
 
-		// Cassandra connect
-		final ClusterSession clusterSession = new SessionBuilder()
-				.contactPoint(this.configuration.getString("cassandra.host"))
-				.port(this.configuration.getInt("cassandra.port"))
-				.keyspace(this.configuration.getString("cassandra.keyspace")).build();
-		// CompletableFuture.supplyAsync(() -> ... )
-		// TODO stop missing
+    // Cassandra connect
+    final ClusterSession clusterSession = new SessionBuilder()
+        .contactPoint(this.configuration.getString(ConfigurationKeys.CASSANDRA_HOST))
+        .port(this.configuration.getInt(ConfigurationKeys.CASSANDRA_PORT))
+        .keyspace(this.configuration.getString(ConfigurationKeys.CASSANDRA_KEYSPACE)).build();
+    // CompletableFuture.supplyAsync(() -> ... )
+    // TODO stop missing
 
-		// Create Kafka Streams Application
-		final KafkaStreams kafkaStreams = new KafkaStreamsBuilder()
-				.bootstrapServers(this.configuration.getString("kafka.bootstrap.servers"))
-				.inputTopic(this.configuration.getString("kafka.input.topic"))
-				.outputTopic(this.configuration.getString("kafka.output.topic")).sensorRegistry(this.sensorRegistry)
-				.cassandraSession(clusterSession.getSession()).build();
-		kafkaStreams.start();
-		// TODO stop missing
-		// this.stopEvent.thenRun(() -> kafkaStreams.close())
+    // Create Kafka Streams Application
+    final KafkaStreams kafkaStreams = new KafkaStreamsBuilder()
+        .bootstrapServers(this.configuration.getString(ConfigurationKeys.KAFKA_BOOTSTRAP_SERVERS))
+        .inputTopic(this.configuration.getString(ConfigurationKeys.KAFKA_INPUT_TOPIC))
+        .outputTopic(this.configuration.getString(ConfigurationKeys.KAFKA_OUTPUT_TOPIC))
+        .sensorRegistry(this.sensorRegistry).cassandraSession(clusterSession.getSession()).build();
+    kafkaStreams.start();
+    // TODO stop missing
+    // this.stopEvent.thenRun(() -> kafkaStreams.close())
 
-		// Create Rest API
-		// TODO use builder
-		if (this.configuration.getBoolean("webserver.enable")) {
-			final RestApiServer restApiServer = new RestApiServer(clusterSession.getSession(),
-					this.configuration.getInt("webserver.port"), this.configuration.getBoolean("webserver.cors"));
-			restApiServer.start();
-			// TODO stop missing
-		}
+    // Create Rest API
+    // TODO use builder
+    if (this.configuration.getBoolean(ConfigurationKeys.WEBSERVER_ENABLE)) {
+      final RestApiServer restApiServer = new RestApiServer(clusterSession.getSession(),
+          this.configuration.getInt(ConfigurationKeys.WEBSERVER_PORT),
+          this.configuration.getBoolean(ConfigurationKeys.WEBSERVER_CORS));
+      restApiServer.start();
+      // TODO stop missing
+    }
 
-		// CompletableFuture<Void> stop = new CompletableFuture<>();
-		// stop.thenRun(() -> clusterSession.getCluster().close());
-		// stop.complete(null);
+    // CompletableFuture<Void> stop = new CompletableFuture<>();
+    // stop.thenRun(() -> clusterSession.getCluster().close());
+    // stop.complete(null);
 
-	}
+  }
 
-	// public void stop() {
-	// this.stopEvent.complete(null);
-	// }
+  // public void stop() {
+  // this.stopEvent.complete(null);
+  // }
 
-	public static void main(final String[] args) {
-		new AggregationService().run();
-	}
+  public static void main(final String[] args) {
+    new AggregationService().run();
+  }
 
 }

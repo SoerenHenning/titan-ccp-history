@@ -5,10 +5,10 @@
 .project
 .classpath
 build-eclipse/
-/bin/
-/build/
-/dist/
-/tmp/
+bin/
+build/
+dist/
+tmp/
 #META-INF/MANIFEST.MF
 #plugin.properties
 #plugin.xml

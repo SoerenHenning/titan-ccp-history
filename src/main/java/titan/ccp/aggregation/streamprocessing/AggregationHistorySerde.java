@@ -5,7 +5,6 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-
 import org.apache.kafka.common.serialization.ByteBufferDeserializer;
 import org.apache.kafka.common.serialization.ByteBufferSerializer;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -13,95 +12,100 @@ import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
 
+/**
+ * {@link Serde} for {@link AggregationHistory}.
+ */
 public final class AggregationHistorySerde {
 
-	public static Serde<AggregationHistory> serde() {
-		return Serdes.serdeFrom(new AggregationHistorySerializer(), new AggregationHistoryDeserializer());
-	}
+  protected static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8"); // NOPMD
 
-	public static Serializer<AggregationHistory> serializer() {
-		return new AggregationHistorySerializer();
-	}
+  private AggregationHistorySerde() {}
 
-	public static Deserializer<AggregationHistory> deserializer() {
-		return new AggregationHistoryDeserializer();
-	}
+  public static Serde<AggregationHistory> serde() {
+    return Serdes.serdeFrom(new AggregationHistorySerializer(),
+        new AggregationHistoryDeserializer());
+  }
 
-	private static class AggregationHistorySerializer implements Serializer<AggregationHistory> {
+  public static Serializer<AggregationHistory> serializer() {
+    return new AggregationHistorySerializer();
+  }
 
-		private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
-		private static final int BYTE_BUFFER_CAPACITY = 65536; // Is only virtual memory
+  public static Deserializer<AggregationHistory> deserializer() {
+    return new AggregationHistoryDeserializer();
+  }
 
-		private final ByteBufferSerializer byteBufferSerializer = new ByteBufferSerializer();
+  private static class AggregationHistorySerializer implements Serializer<AggregationHistory> {
 
-		@Override
-		public void configure(final Map<String, ?> configs, final boolean isKey) {
-			this.byteBufferSerializer.configure(configs, isKey);
-		}
+    private static final int BYTE_BUFFER_CAPACITY = 65536; // Is only virtual memory
 
-		@Override
-		public byte[] serialize(final String topic, final AggregationHistory data) {
-			final ByteBuffer buffer = ByteBuffer.allocateDirect(BYTE_BUFFER_CAPACITY);
+    private final ByteBufferSerializer byteBufferSerializer = new ByteBufferSerializer();
 
-			buffer.putLong(data.getTimestamp());
-			buffer.putInt(data.getLastValues().size());
-			for (final Entry<String, Double> entry : data.getLastValues().entrySet()) {
-				final byte[] key = entry.getKey().getBytes(DEFAULT_CHARSET);
-				buffer.putInt(key.length);
-				buffer.put(key);
-				buffer.putDouble(entry.getValue());
-			}
+    @Override
+    public void configure(final Map<String, ?> configs, final boolean isKey) {
+      this.byteBufferSerializer.configure(configs, isKey);
+    }
 
-			return this.byteBufferSerializer.serialize(topic, buffer);
-		}
+    @Override
+    public byte[] serialize(final String topic, final AggregationHistory data) {
+      final ByteBuffer buffer = ByteBuffer.allocateDirect(BYTE_BUFFER_CAPACITY);
 
-		@Override
-		public void close() {
-			this.byteBufferSerializer.close();
-		}
+      buffer.putLong(data.getTimestamp());
+      buffer.putInt(data.getLastValues().size());
+      for (final Entry<String, Double> entry : data.getLastValues().entrySet()) {
+        final byte[] key = entry.getKey().getBytes(AggregationHistorySerde.DEFAULT_CHARSET);// NOPMD
+        buffer.putInt(key.length);
+        buffer.put(key);
+        buffer.putDouble(entry.getValue());
+      }
 
-	}
+      return this.byteBufferSerializer.serialize(topic, buffer);
+    }
 
-	private static class AggregationHistoryDeserializer implements Deserializer<AggregationHistory> {
+    @Override
+    public void close() {
+      this.byteBufferSerializer.close();
+    }
 
-		private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
+  }
 
-		private final ByteBufferDeserializer byteBufferDeserializer = new ByteBufferDeserializer();
+  private static class AggregationHistoryDeserializer implements Deserializer<AggregationHistory> {
 
-		@Override
-		public void configure(final Map<String, ?> configs, final boolean isKey) {
-			this.byteBufferDeserializer.configure(configs, isKey);
-		}
+    private final ByteBufferDeserializer byteBufferDeserializer = new ByteBufferDeserializer();
 
-		@Override
-		public AggregationHistory deserialize(final String topic, final byte[] data) {
-			final ByteBuffer buffer = this.byteBufferDeserializer.deserialize(topic, data);
+    @Override
+    public void configure(final Map<String, ?> configs, final boolean isKey) {
+      this.byteBufferDeserializer.configure(configs, isKey);
+    }
 
-			if (buffer == null) {
-				return new AggregationHistory();
-			}
+    @Override
+    public AggregationHistory deserialize(final String topic, final byte[] data) {
+      final ByteBuffer buffer = this.byteBufferDeserializer.deserialize(topic, data);
 
-			final long timestamp = buffer.getLong();
+      if (buffer == null) {
+        return new AggregationHistory();
+      }
 
-			final Map<String, Double> map = new HashMap<>();
-			final int size = buffer.getInt();
-			for (int i = 0; i < size; i++) {
-				final int keyLength = buffer.getInt();
-				final byte[] keyBytes = new byte[keyLength];
-				buffer.get(keyBytes);
-				final String key = new String(keyBytes, DEFAULT_CHARSET);
-				final double value = buffer.getDouble();
+      final long timestamp = buffer.getLong();
 
-				map.put(key, value);
-			}
+      final Map<String, Double> map = new HashMap<>();
+      final int size = buffer.getInt();
+      for (int i = 0; i < size; i++) {
+        final int keyLength = buffer.getInt();
+        final byte[] keyBytes = new byte[keyLength]; // NOPMD
+        buffer.get(keyBytes);
+        final String key = new String(keyBytes, DEFAULT_CHARSET); // NOPMD
+        final double value = buffer.getDouble();
 
-			return new AggregationHistory(map, timestamp);
-		}
+        map.put(key, value);
+      }
 
-		@Override
-		public void close() {
-			this.byteBufferDeserializer.close();
-		}
+      return new AggregationHistory(map, timestamp);
+    }
 
-	}
+    @Override
+    public void close() {
+      this.byteBufferDeserializer.close();
+    }
+
+  }
 }
