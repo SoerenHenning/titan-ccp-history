@@ -40,21 +40,21 @@ dependencies {
 mainClassName = "titan.ccp.aggregation.recordcounter.RecordCounter"
 
 pmd {
-  ruleSetFiles = files("config/pmd.xml")
+  ruleSetFiles = files("../config/pmd.xml")
   ignoreFailures = false
   toolVersion = "6.7.0"
 }
 
 checkstyle {
-  configDir = file("config")
-  configFile = file("config/checkstyle.xml")
+  configDir = file("../config")
+  configFile = file("../config/checkstyle.xml")
   maxWarnings = 0
   ignoreFailures = false
   toolVersion = "8.12"
 }
 
 spotbugs {
-  excludeFilter = file("config/spotbugs-exclude-filter.xml")
+  excludeFilter = file("../config/spotbugs-exclude-filter.xml")
   reportLevel = "low"
   effort = "max"
   ignoreFailures = false
@@ -72,16 +72,25 @@ tasks.withType(com.github.spotbugs.SpotBugsTask) {
 }
 
 task checkstyle {
+  group 'Quality Assurance'
+  description 'Run Checkstyle'
+  
   dependsOn 'checkstyleMain'
   dependsOn 'checkstyleTest'
 }
 
 task pmd {
+  group 'Quality Assurance'
+  description 'Run PMD'
+
   dependsOn 'pmdMain'
   dependsOn 'pmdTest'
 }
 
 task spotbugs {
+  group 'Quality Assurance'
+  description 'Run SpotBugs'
+  
   dependsOn 'spotbugsMain'
   dependsOn 'spotbugsTest'
 }
