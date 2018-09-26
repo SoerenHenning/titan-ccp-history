@@ -10,6 +10,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import titan.ccp.model.sensorregistry.SensorRegistry;
 
+/**
+ * Loads a {@link SensorRegistry} via HTTP from the given URI.
+ */
 public class SensorRegistryRequester {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SensorRegistryRequester.class);
@@ -21,7 +24,7 @@ public class SensorRegistryRequester {
   private final URI uri;
 
   public SensorRegistryRequester(final String host, final int port) {
-    this(buildURI(host, port));
+    this(buildUri(host, port));
   }
 
   public SensorRegistryRequester(final String uri) {
@@ -32,6 +35,9 @@ public class SensorRegistryRequester {
     this.uri = uri;
   }
 
+  /**
+   * Requests a {@link SensorRegistry} asynchronously.
+   */
   public CompletableFuture<SensorRegistry> request() {
     final HttpRequest request = HttpRequest.newBuilder().uri(this.uri).GET().build();
 
@@ -43,7 +49,7 @@ public class SensorRegistryRequester {
     });
   }
 
-  private static final URI buildURI(final String host, final int port) {
+  private static URI buildUri(final String host, final int port) {
     try {
       return new URI(DEFAULT_SCHEME, null, host, port, DEFAULT_PATH, null, null);
     } catch (final URISyntaxException e) {

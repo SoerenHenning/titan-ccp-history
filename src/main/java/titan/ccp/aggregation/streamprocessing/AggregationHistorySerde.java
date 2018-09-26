@@ -14,6 +14,8 @@ import org.apache.kafka.common.serialization.Serializer;
 
 public final class AggregationHistorySerde {
 
+  private AggregationHistorySerde() {}
+
   public static Serde<AggregationHistory> serde() {
     return Serdes.serdeFrom(new AggregationHistorySerializer(),
         new AggregationHistoryDeserializer());

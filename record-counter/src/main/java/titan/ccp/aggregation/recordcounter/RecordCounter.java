@@ -10,8 +10,17 @@ import titan.ccp.common.kieker.cassandra.SessionBuilder;
 import titan.ccp.common.kieker.cassandra.SessionBuilder.ClusterSession;
 import titan.ccp.models.records.ActivePowerRecord;
 
-public class RecordCounter {
+/**
+ * Prints the total amount of input measurements along with the total amount of stored measurements
+ * every second to the command line.
+ */
+public final class RecordCounter {
 
+  private RecordCounter() {}
+
+  /**
+   * Main method to start the record counter.
+   */
   public static void main(final String[] args) {
 
     final String cassandraHost =

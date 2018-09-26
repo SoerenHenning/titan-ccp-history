@@ -15,11 +15,12 @@ import titan.ccp.models.records.ActivePowerRecord;
 
 public class KafkaRecordProducer {
 
+  private static final String BOOTSRATP_SERVERS = "localhost:9092";
+  private static final String TOPIC = "test-topic-18040319";
+
   private static final Logger LOGGER = LoggerFactory.getLogger(KafkaRecordProducer.class);
 
   private final Producer<String, ActivePowerRecord> producer;
-  private static final String BOOTSRATP_SERVERS = "localhost:9092";
-  private static final String TOPIC = "test-topic-18040319";
 
   public KafkaRecordProducer() {
     final Properties properties = new Properties();

@@ -11,7 +11,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import titan.ccp.model.sensorregistry.SensorRegistry;
 
+/**
+ * Wrapper class for a {@link SensorRegistryRequester} that is able to automatically repeat requests
+ * if it fails.
+ */
 public class RetryingSensorRegistryRequester {
+
+  private static final int INITIAL_DELAY = 500;
+
+  private static final int MAX_DELAY = 10_000;
+
+  private static final int MAX_RETRIES = 10;
 
   private static final Logger LOGGER =
       LoggerFactory.getLogger(RetryingSensorRegistryRequester.class);
@@ -22,10 +32,13 @@ public class RetryingSensorRegistryRequester {
     this.requester = requester;
   }
 
+  /**
+   * Requests a {@link SensorRegistry} asynchronously.
+   */
   public CompletableFuture<SensorRegistry> request() {
     final RetryPolicy retryPolicy =
-        new RetryPolicy().withBackoff(500, 10_000, TimeUnit.MILLISECONDS).withMaxRetries(10)
-            .retryOn(IOException.class);
+        new RetryPolicy().withBackoff(INITIAL_DELAY, MAX_DELAY, TimeUnit.MILLISECONDS)
+            .withMaxRetries(MAX_RETRIES).retryOn(IOException.class);
 
     final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 

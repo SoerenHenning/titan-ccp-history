@@ -16,7 +16,16 @@ import titan.ccp.model.sensorregistry.SensorRegistry;
 import titan.ccp.model.sensorregistry.client.RetryingSensorRegistryRequester;
 import titan.ccp.model.sensorregistry.client.SensorRegistryRequester;
 
-public class AggregationService {
+/**
+ * A microservice that manages the history and, therefore, stores and aggregates incoming
+ * measurements.
+ *
+ * <p>
+ * Will be soon renamed to HistoryService.
+ * </p>
+ *
+ */
+public class AggregationService { // TODO rename to HistoryService
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AggregationService.class);
 

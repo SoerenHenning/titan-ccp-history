@@ -21,6 +21,9 @@ import titan.ccp.models.records.AggregatedActivePowerRecordFactory;
 
 public class ActivePowerRepository<T> {
 
+  private static final String TIMESTAMP_KEY = "timestamp";
+  private static final String IDENTIFIER_KEY = "identifier";
+
   private final Session cassandraSession;
   private final String tableName;
   private final Function<Row, T> recordFactory;
@@ -44,13 +47,14 @@ public class ActivePowerRepository<T> {
 
   public List<T> get(final String identifier, final long after) {
     final Statement statement = QueryBuilder.select().all().from(this.tableName)
-        .where(QueryBuilder.eq("identifier", identifier)).and(QueryBuilder.gt("timestamp", after));
+        .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
+        .and(QueryBuilder.gt(TIMESTAMP_KEY, after));
 
     return this.get(statement);
   }
 
   private List<T> get(final Statement statement) {
-    final ResultSet resultSet = this.cassandraSession.execute(statement);
+    final ResultSet resultSet = this.cassandraSession.execute(statement); // NOPMD no close()
 
     final List<T> records = new ArrayList<>();
     for (final Row row : resultSet) {
@@ -63,16 +67,16 @@ public class ActivePowerRepository<T> {
 
   public List<T> getLatest(final String identifier, final int count) {
     final Statement statement = QueryBuilder.select().all().from(this.tableName)
-        .where(QueryBuilder.eq("identifier", identifier)).orderBy(QueryBuilder.desc("timestamp"))
-        .limit(count);
+        .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
+        .orderBy(QueryBuilder.desc(TIMESTAMP_KEY)).limit(count);
 
     return this.get(statement);
   }
 
   public double getTrend(final String identifier, final long after, final int pointsToSmooth) {
-    final Statement startStatement = QueryBuilder.select().all().from(this.tableName)
-        .where(QueryBuilder.eq("identifier", identifier)).and(QueryBuilder.gt("timestamp", after))
-        .limit(pointsToSmooth);
+    final Statement startStatement = QueryBuilder.select().all().from(this.tableName) // NOPMD
+        .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
+        .and(QueryBuilder.gt(TIMESTAMP_KEY, after)).limit(pointsToSmooth);
     final List<T> first = this.get(startStatement);
     final List<T> latest = this.getLatest(identifier, pointsToSmooth);
 
@@ -125,12 +129,13 @@ public class ActivePowerRepository<T> {
 
   public long getCount(final String identifier, final long after) {
     final Statement statement = QueryBuilder.select().countAll().from(this.tableName)
-        .where(QueryBuilder.eq("identifier", identifier)).and(QueryBuilder.gt("timestamp", after));
+        .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
+        .and(QueryBuilder.gt(TIMESTAMP_KEY, after));
     return this.cassandraSession.execute(statement).all().get(0).getLong(0);
   }
 
   public List<String> getIdentifiers() {
-    final Statement statement = QueryBuilder.select("identifier").distinct().from(this.tableName);
+    final Statement statement = QueryBuilder.select(IDENTIFIER_KEY).distinct().from(this.tableName);
     return this.cassandraSession.execute(statement).all().stream().map(row -> row.getString(0))
         .collect(Collectors.toList());
   }

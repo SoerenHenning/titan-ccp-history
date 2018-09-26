@@ -44,8 +44,6 @@ public class KafkaStreamsBuilder {
   private SensorRegistry sensorRegistry;
   private Session cassandraSession;
 
-  public KafkaStreamsBuilder() {}
-
   public KafkaStreamsBuilder sensorRegistry(final SensorRegistry sensorRegistry) {
     this.sensorRegistry = sensorRegistry;
     return this;

@@ -1,5 +1,8 @@
 package titan.ccp.aggregation;
 
+/**
+ * Keys to access configuration parameters.
+ */
 public final class ConfigurationKeys {
 
   public static final String CASSANDRA_HOST = "cassandra.host";
