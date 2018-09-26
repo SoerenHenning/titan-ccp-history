@@ -10,8 +10,12 @@ import spark.Service;
 import titan.ccp.models.records.ActivePowerRecord;
 import titan.ccp.models.records.AggregatedActivePowerRecord;
 
-// TODO make a builder that returns this server
+
+/**
+ * Contains a web server for accessing the history via a REST interface.
+ */
 public class RestApiServer {
+  // TODO make a builder that returns this server
 
   private static final Logger LOGGER = LoggerFactory.getLogger(RestApiServer.class);
 
@@ -24,6 +28,9 @@ public class RestApiServer {
 
   private final boolean enableCors;
 
+  /**
+   * Creates a new API server using the passed parameters.
+   */
   public RestApiServer(final Session cassandraSession, final int port, final boolean enableCors) {
     this.aggregatedRepository = ActivePowerRepository.forAggregated(cassandraSession);
     this.normalRepository = ActivePowerRepository.forNormal(cassandraSession);
@@ -32,7 +39,10 @@ public class RestApiServer {
     this.enableCors = enableCors;
   }
 
-  public void start() {
+  /**
+   * Start the web server by setting up the API routes.
+   */
+  public void start() { // NOPMD declaration of routes
     LOGGER.info("Instantiate API routes.");
 
     if (this.enableCors) {
@@ -64,28 +74,28 @@ public class RestApiServer {
     }, this.gson::toJson);
 
     this.webService.get("/power-consumption/:identifier", (request, response) -> {
-      final String identifier = request.params("identifier");
-      final long after = NumberUtils.toLong(request.queryParams("after"), 0);
+      final String identifier = request.params("identifier"); // NOCS NOPMD
+      final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
       return this.normalRepository.get(identifier, after);
     }, this.gson::toJson);
 
     this.webService.get("/power-consumption/:identifier/latest", (request, response) -> {
       final String identifier = request.params("identifier");
-      final int count = NumberUtils.toInt(request.queryParams("count"), 1);
+      final int count = NumberUtils.toInt(request.queryParams("count"), 1); // NOCS
       return this.normalRepository.getLatest(identifier, count);
     }, this.gson::toJson);
 
     this.webService.get("/power-consumption/:identifier/distribution", (request, response) -> {
       final String identifier = request.params("identifier");
       final long after = NumberUtils.toLong(request.queryParams("after"), 0);
-      final int buckets = NumberUtils.toInt(request.queryParams("buckets"), 4);
+      final int buckets = NumberUtils.toInt(request.queryParams("buckets"), 4); // NOCS
       return this.normalRepository.getDistribution(identifier, after, buckets);
     }, this.gson::toJson);
 
     this.webService.get("/power-consumption/:identifier/trend", (request, response) -> {
       final String identifier = request.params("identifier");
       final long after = NumberUtils.toLong(request.queryParams("after"), 0);
-      final int pointsToSmooth = NumberUtils.toInt(request.queryParams("pointsToSmooth"), 10);
+      final int pointsToSmooth = NumberUtils.toInt(request.queryParams("pointsToSmooth"), 10); // NOCS
       return this.aggregatedRepository.getTrend(identifier, after, pointsToSmooth);
     }, this.gson::toJson);
 

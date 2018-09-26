@@ -37,6 +37,10 @@ public class AggregationService { // TODO rename to HistoryService
 
   // private final CompletableFuture<Void> stopEvent = new CompletableFuture();
 
+  /**
+   * Create an Aggregation service using a configuration via external parameters. These can be an
+   * {@code application.properties} file or environment variables.
+   */
   public AggregationService() {
     this.sensorRegistryRequester = new RetryingSensorRegistryRequester(new SensorRegistryRequester(
         this.configuration.getString(ConfigurationKeys.CONFIGURATION_HOST),
@@ -44,6 +48,9 @@ public class AggregationService { // TODO rename to HistoryService
     // this.restApiServer = new RestApiServer(session);
   }
 
+  /**
+   * Start the service.
+   */
   public void run() {
     // this.sensorRegistry.setBackingSensorRegisty(ExampleSensors.registry());
     final SensorRegistry sensorRegistry = this.sensorRegistryRequester.request().join();

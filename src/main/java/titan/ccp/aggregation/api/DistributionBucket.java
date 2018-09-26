@@ -1,11 +1,17 @@
 package titan.ccp.aggregation.api;
 
+/**
+ * A distribution bucket stores the number of elements for a range.
+ */
 public class DistributionBucket {
 
   private final double lower;
   private final double upper;
   private final int elements;
 
+  /**
+   * Create a new {@link DistributionBucket}.
+   */
   public DistributionBucket(final double lower, final double upper, final int elements) {
     this.lower = lower;
     this.upper = upper;

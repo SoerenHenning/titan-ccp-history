@@ -12,7 +12,12 @@ import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
 
+/**
+ * {@link Serde} for {@link AggregationHistory}.
+ */
 public final class AggregationHistorySerde {
+
+  protected static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8"); // NOPMD
 
   private AggregationHistorySerde() {}
 
@@ -31,7 +36,6 @@ public final class AggregationHistorySerde {
 
   private static class AggregationHistorySerializer implements Serializer<AggregationHistory> {
 
-    private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
     private static final int BYTE_BUFFER_CAPACITY = 65536; // Is only virtual memory
 
     private final ByteBufferSerializer byteBufferSerializer = new ByteBufferSerializer();
@@ -48,7 +52,7 @@ public final class AggregationHistorySerde {
       buffer.putLong(data.getTimestamp());
       buffer.putInt(data.getLastValues().size());
       for (final Entry<String, Double> entry : data.getLastValues().entrySet()) {
-        final byte[] key = entry.getKey().getBytes(DEFAULT_CHARSET);
+        final byte[] key = entry.getKey().getBytes(AggregationHistorySerde.DEFAULT_CHARSET);// NOPMD
         buffer.putInt(key.length);
         buffer.put(key);
         buffer.putDouble(entry.getValue());
@@ -65,8 +69,6 @@ public final class AggregationHistorySerde {
   }
 
   private static class AggregationHistoryDeserializer implements Deserializer<AggregationHistory> {
-
-    private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
 
     private final ByteBufferDeserializer byteBufferDeserializer = new ByteBufferDeserializer();
 
@@ -89,9 +91,9 @@ public final class AggregationHistorySerde {
       final int size = buffer.getInt();
       for (int i = 0; i < size; i++) {
         final int keyLength = buffer.getInt();
-        final byte[] keyBytes = new byte[keyLength];
+        final byte[] keyBytes = new byte[keyLength]; // NOPMD
         buffer.get(keyBytes);
-        final String key = new String(keyBytes, DEFAULT_CHARSET);
+        final String key = new String(keyBytes, DEFAULT_CHARSET); // NOPMD
         final double value = buffer.getDouble();
 
         map.put(key, value);

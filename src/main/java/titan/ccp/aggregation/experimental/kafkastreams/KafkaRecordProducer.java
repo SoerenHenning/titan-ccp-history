@@ -59,7 +59,7 @@ public class KafkaRecordProducer {
       final String identifier = identifiers.get(random.nextInt(identifiers.size()));
       final long timestamp = System.currentTimeMillis();
       final double value = random.nextDouble() * 100;
-      final ActivePowerRecord record = new ActivePowerRecord(identifier, timestamp, value);
+      final ActivePowerRecord record = new ActivePowerRecord(identifier, timestamp, value); // NOPMD
       kafkaWriter.write(record);
       Thread.sleep(1000);
     }
