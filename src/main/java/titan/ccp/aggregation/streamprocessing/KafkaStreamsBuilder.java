@@ -1,4 +1,4 @@
-package titan.ccp.aggregation.streamprocessing;
+package titan.ccp.aggregation.streamprocessing; // NOPMD
 
 import com.datastax.driver.core.Session;
 import java.util.List;
@@ -32,17 +32,24 @@ import titan.ccp.models.records.ActivePowerRecordFactory;
 import titan.ccp.models.records.AggregatedActivePowerRecord;
 import titan.ccp.models.records.AggregatedActivePowerRecordFactory;
 
+/**
+ * Builder for the Kafka Streams configuration.
+ */
 public class KafkaStreamsBuilder {
+
+  private static final String APPLICATION_ID = "titanccp-aggregation-0.0.7";
+
+  private static final int COMMIT_INTERVAL_MS = 1000;
 
   private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStreamsBuilder.class);
 
-  private String bootstrapServers;
-  private String inputTopic;
-  private String outputTopic;
-  private final String aggregationStoreName = "stream-store"; // TODO
+  private String bootstrapServers; // NOPMD
+  private String inputTopic; // NOPMD
+  private String outputTopic; // NOPMD
+  private final String aggregationStoreName = "stream-store"; // NOPMD
 
-  private SensorRegistry sensorRegistry;
-  private Session cassandraSession;
+  private SensorRegistry sensorRegistry; // NOPMD
+  private Session cassandraSession; // NOPMD
 
   public KafkaStreamsBuilder sensorRegistry(final SensorRegistry sensorRegistry) {
     this.sensorRegistry = sensorRegistry;
@@ -110,7 +117,7 @@ public class KafkaStreamsBuilder {
             Consumed.with(Serdes.String(),
                 IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
         .foreach((key, record) -> {
-          LOGGER.info("write to cassandra {}", record);
+          LOGGER.info("write to cassandra {}", record); // NOCS
           cassandraWriter.write(record);
         });
 
@@ -118,7 +125,7 @@ public class KafkaStreamsBuilder {
     final CassandraWriter cassandraWriterForNormal =
         this.buildCassandraWriter(ActivePowerRecord.class);
     inputStream.foreach((key, record) -> {
-      LOGGER.info("write to cassandra {}", record);
+      LOGGER.info("write to cassandra {}", record); // NOCS
       cassandraWriterForNormal.write(record);
     });
 
@@ -152,9 +159,9 @@ public class KafkaStreamsBuilder {
 
   private StreamsConfig buildStreamConfig() {
     final Properties settings = new Properties();
-    settings.put(StreamsConfig.APPLICATION_ID_CONFIG, "titanccp-aggregation-0.0.7"); // TODO as
-                                                                                     // parameter
-    settings.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 1000); // TODO as parameter
+    // TODO as parameter
+    settings.put(StreamsConfig.APPLICATION_ID_CONFIG, APPLICATION_ID); // TODO as parameter
+    settings.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, COMMIT_INTERVAL_MS); // TODO as parameter
     settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, this.bootstrapServers);
     return new StreamsConfig(settings);
   }

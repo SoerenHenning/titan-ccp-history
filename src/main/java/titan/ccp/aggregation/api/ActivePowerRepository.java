@@ -19,6 +19,11 @@ import titan.ccp.models.records.ActivePowerRecordFactory;
 import titan.ccp.models.records.AggregatedActivePowerRecord;
 import titan.ccp.models.records.AggregatedActivePowerRecordFactory;
 
+/**
+ * A proxy class to encapsulate the database and queries to it.
+ *
+ * @param <T> type of records in this repository
+ */
 public class ActivePowerRepository<T> {
 
   private static final String TIMESTAMP_KEY = "timestamp";
@@ -29,6 +34,9 @@ public class ActivePowerRepository<T> {
   private final Function<Row, T> recordFactory;
   private final ToDoubleFunction<T> valueAccessor;
 
+  /**
+   * Create a new {@link ActivePowerRepository}.
+   */
   public ActivePowerRepository(final Session cassandraSession, final String tableName,
       final Function<Row, T> recordFactory, final ToDoubleFunction<T> valueAccessor) {
     this.cassandraSession = cassandraSession;
@@ -45,6 +53,9 @@ public class ActivePowerRepository<T> {
         row -> recordFactory.create(new CassandraDeserializer(row, recordFields)), valueAccessor);
   }
 
+  /**
+   * Get all selected records.
+   */
   public List<T> get(final String identifier, final long after) {
     final Statement statement = QueryBuilder.select().all().from(this.tableName)
         .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
@@ -65,6 +76,9 @@ public class ActivePowerRepository<T> {
     return records;
   }
 
+  /**
+   * Get the latests records.
+   */
   public List<T> getLatest(final String identifier, final int count) {
     final Statement statement = QueryBuilder.select().all().from(this.tableName)
         .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
@@ -73,6 +87,10 @@ public class ActivePowerRepository<T> {
     return this.get(statement);
   }
 
+  /**
+   * Compute a trend for the selected records, i.e., a value showing how the values increased or
+   * decreased over time.
+   */
   public double getTrend(final String identifier, final long after, final int pointsToSmooth) {
     final Statement startStatement = QueryBuilder.select().all().from(this.tableName) // NOPMD
         .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
@@ -91,6 +109,10 @@ public class ActivePowerRepository<T> {
 
   }
 
+  /**
+   * Get a frequency distribution of records. Records are grouped by their values and this methods
+   * returns a list of {@link DistributionBucket}s.
+   */
   public List<DistributionBucket> getDistribution(final String identifier, final long after,
       final int bucketsCount) {
     final List<T> records = this.get(identifier, after);
@@ -115,18 +137,24 @@ public class ActivePowerRepository<T> {
     for (int i = 0; i < bucketsCount; i++) {
       final double lower = i > 0 ? buckets.get(i - 1).getUpper() : min;
       final double upper = i < bucketsCount ? lower + sliceSize : max;
-      buckets.add(new DistributionBucket(lower, upper, distribution[i]));
+      buckets.add(new DistributionBucket(lower, upper, distribution[i])); // NOPMD
     }
 
     return buckets;
   }
 
-  // TODO This is not working for huge data sets
+  /**
+   * Get the total amount of all records.
+   */
   public long getTotalCount() {
+    // TODO This is not working for huge data sets
     final Statement statement = QueryBuilder.select().countAll().from(this.tableName);
     return this.cassandraSession.execute(statement).all().get(0).getLong(0);
   }
 
+  /**
+   * Get the number of records for the given sensor identifier and after a timestamp.
+   */
   public long getCount(final String identifier, final long after) {
     final Statement statement = QueryBuilder.select().countAll().from(this.tableName)
         .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
@@ -134,12 +162,18 @@ public class ActivePowerRepository<T> {
     return this.cassandraSession.execute(statement).all().get(0).getLong(0);
   }
 
+  /**
+   * Get all available sensor identifiers.
+   */
   public List<String> getIdentifiers() {
     final Statement statement = QueryBuilder.select(IDENTIFIER_KEY).distinct().from(this.tableName);
     return this.cassandraSession.execute(statement).all().stream().map(row -> row.getString(0))
         .collect(Collectors.toList());
   }
 
+  /**
+   * Create an {@link ActivePowerRepository} for {@link AggregatedActivePowerRecord}s.
+   */
   public static ActivePowerRepository<AggregatedActivePowerRecord> forAggregated(
       final Session cassandraSession) {
     return new ActivePowerRepository<>(cassandraSession,
@@ -149,6 +183,9 @@ public class ActivePowerRepository<T> {
         record -> record.getSumInW());
   }
 
+  /**
+   * Create an {@link ActivePowerRepository} for {@link ActivePowerRecord}s.
+   */
   public static ActivePowerRepository<ActivePowerRecord> forNormal(final Session cassandraSession) {
     return new ActivePowerRepository<>(cassandraSession, ActivePowerRecord.class.getSimpleName(),
         new ActivePowerRecordFactory(),

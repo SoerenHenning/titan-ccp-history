@@ -24,7 +24,7 @@ public final class RecordCounter {
   public static void main(final String[] args) {
 
     final String cassandraHost =
-        Objects.requireNonNullElse(System.getenv("CASSANDRA_HOST"), "localhost");
+        Objects.requireNonNullElse(System.getenv("CASSANDRA_HOST"), "localhost"); // NOCS
     final int cassandraPort =
         Integer.parseInt(Objects.requireNonNullElse(System.getenv("CASSANDRA_PORT"), "9042"));
     final String cassandraKeyspace =
@@ -42,7 +42,7 @@ public final class RecordCounter {
     scheduler.scheduleAtFixedRate(() -> {
       final long inputValue = Long.parseLong(jedis.get("input_counter"));
       final long outputValue = normalRepository.getTotalCount();
-      System.out.println(inputValue + "," + outputValue + "," + (inputValue - outputValue));
+      System.out.println(inputValue + "," + outputValue + "," + (inputValue - outputValue));// NOPMD
     }, 1, 1, TimeUnit.SECONDS);
 
   }
