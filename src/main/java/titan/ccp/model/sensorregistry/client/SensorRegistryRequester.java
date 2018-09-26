@@ -3,54 +3,52 @@ package titan.ccp.model.sensorregistry.client;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.CompletableFuture;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jdk.incubator.http.HttpClient;
 import jdk.incubator.http.HttpRequest;
 import jdk.incubator.http.HttpResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import titan.ccp.model.sensorregistry.SensorRegistry;
 
 public class SensorRegistryRequester {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(SensorRegistryRequester.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(SensorRegistryRequester.class);
 
-	private static final String DEFAULT_PATH = "/sensor-registry";
-	private static final String DEFAULT_SCHEME = "http";
+  private static final String DEFAULT_PATH = "/sensor-registry";
+  private static final String DEFAULT_SCHEME = "http";
 
-	private final HttpClient client = HttpClient.newHttpClient();
-	private final URI uri;
+  private final HttpClient client = HttpClient.newHttpClient();
+  private final URI uri;
 
-	public SensorRegistryRequester(final String host, final int port) {
-		this(buildURI(host, port));
-	}
+  public SensorRegistryRequester(final String host, final int port) {
+    this(buildURI(host, port));
+  }
 
-	public SensorRegistryRequester(final String uri) {
-		this(URI.create(uri));
-	}
+  public SensorRegistryRequester(final String uri) {
+    this(URI.create(uri));
+  }
 
-	public SensorRegistryRequester(final URI uri) {
-		this.uri = uri;
-	}
+  public SensorRegistryRequester(final URI uri) {
+    this.uri = uri;
+  }
 
-	public CompletableFuture<SensorRegistry> request() {
-		final HttpRequest request = HttpRequest.newBuilder().uri(this.uri).GET().build();
+  public CompletableFuture<SensorRegistry> request() {
+    final HttpRequest request = HttpRequest.newBuilder().uri(this.uri).GET().build();
 
-		LOGGER.info("Request sensor registry on GET: {}", this.uri);
+    LOGGER.info("Request sensor registry on GET: {}", this.uri);
 
-		// TODO handle errors
-		return this.client.sendAsync(request, HttpResponse.BodyHandler.asString()).thenApply(r -> {
-			return SensorRegistry.fromJson(r.body());
-		});
-	}
+    // TODO handle errors
+    return this.client.sendAsync(request, HttpResponse.BodyHandler.asString()).thenApply(r -> {
+      return SensorRegistry.fromJson(r.body());
+    });
+  }
 
-	private static final URI buildURI(final String host, final int port) {
-		try {
-			return new URI(DEFAULT_SCHEME, null, host, port, DEFAULT_PATH, null, null);
-		} catch (final URISyntaxException e) {
-			throw new IllegalArgumentException(e);
-		}
-	}
+  private static final URI buildURI(final String host, final int port) {
+    try {
+      return new URI(DEFAULT_SCHEME, null, host, port, DEFAULT_PATH, null, null);
+    } catch (final URISyntaxException e) {
+      throw new IllegalArgumentException(e);
+    }
+  }
 
 }

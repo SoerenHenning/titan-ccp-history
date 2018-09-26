@@ -3,68 +3,66 @@ package titan.ccp.aggregation.experimental.kafkastreams;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
-
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import titan.ccp.common.kieker.kafka.IMonitoringRecordSerde;
 import titan.ccp.model.sensorregistry.ExampleSensors;
 import titan.ccp.models.records.ActivePowerRecord;
 
 public class KafkaRecordProducer {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(KafkaRecordProducer.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(KafkaRecordProducer.class);
 
-	private final Producer<String, ActivePowerRecord> producer;
-	private static final String BOOTSRATP_SERVERS = "localhost:9092";
-	private static final String TOPIC = "test-topic-18040319";
+  private final Producer<String, ActivePowerRecord> producer;
+  private static final String BOOTSRATP_SERVERS = "localhost:9092";
+  private static final String TOPIC = "test-topic-18040319";
 
-	public KafkaRecordProducer() {
-		final Properties properties = new Properties();
+  public KafkaRecordProducer() {
+    final Properties properties = new Properties();
 
-		properties.put("bootstrap.servers", BOOTSRATP_SERVERS);
-		// properties.put("acks", this.acknowledges);
-		// properties.put("batch.size", this.batchSize);
-		// properties.put("linger.ms", this.lingerMs);
-		// properties.put("buffer.memory", this.bufferMemory);
+    properties.put("bootstrap.servers", BOOTSRATP_SERVERS);
+    // properties.put("acks", this.acknowledges);
+    // properties.put("batch.size", this.batchSize);
+    // properties.put("linger.ms", this.lingerMs);
+    // properties.put("buffer.memory", this.bufferMemory);
 
-		// properties.put("key.serializer",
-		// "org.apache.kafka.common.serialization.StringSerializer");
-		// properties.put("value.serializer",
-		// "org.apache.kafka.common.serialization.ByteArraySerializer");
+    // properties.put("key.serializer",
+    // "org.apache.kafka.common.serialization.StringSerializer");
+    // properties.put("value.serializer",
+    // "org.apache.kafka.common.serialization.ByteArraySerializer");
 
-		this.producer = new KafkaProducer<>(properties, new StringSerializer(),
-				IMonitoringRecordSerde.serializer());
-	}
+    this.producer = new KafkaProducer<>(properties, new StringSerializer(),
+        IMonitoringRecordSerde.serializer());
+  }
 
-	public void write(final ActivePowerRecord powerConsumptionRecord) {
-		final ProducerRecord<String, ActivePowerRecord> record = new ProducerRecord<>(TOPIC,
-				powerConsumptionRecord.getIdentifier(), powerConsumptionRecord);
-		this.producer.send(record);
-	}
+  public void write(final ActivePowerRecord powerConsumptionRecord) {
+    final ProducerRecord<String, ActivePowerRecord> record =
+        new ProducerRecord<>(TOPIC, powerConsumptionRecord.getIdentifier(), powerConsumptionRecord);
+    this.producer.send(record);
+  }
 
-	public static void main(final String[] args) throws InterruptedException {
-		LOGGER.info("Start producing records");
+  public static void main(final String[] args) throws InterruptedException {
+    LOGGER.info("Start producing records");
 
-		final Random random = new Random();
-		final KafkaRecordProducer kafkaWriter = new KafkaRecordProducer();
+    final Random random = new Random();
+    final KafkaRecordProducer kafkaWriter = new KafkaRecordProducer();
 
-		// final List<String> identifiers = List.of("sensor-1", "sensor-2", "sensor-3");
-		final List<String> identifiers = ExampleSensors.machineSensorNames();
+    // final List<String> identifiers = List.of("sensor-1", "sensor-2", "sensor-3");
+    final List<String> identifiers = ExampleSensors.machineSensorNames();
 
-		while (true) {
-			final String identifier = identifiers.get(random.nextInt(identifiers.size()));
-			final long timestamp = System.currentTimeMillis();
-			final double value = random.nextDouble() * 100;
-			final ActivePowerRecord record = new ActivePowerRecord(identifier, timestamp, value);
-			kafkaWriter.write(record);
-			Thread.sleep(1000);
-		}
+    while (true) {
+      final String identifier = identifiers.get(random.nextInt(identifiers.size()));
+      final long timestamp = System.currentTimeMillis();
+      final double value = random.nextDouble() * 100;
+      final ActivePowerRecord record = new ActivePowerRecord(identifier, timestamp, value);
+      kafkaWriter.write(record);
+      Thread.sleep(1000);
+    }
 
-	}
+  }
 
 }
