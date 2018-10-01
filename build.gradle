@@ -23,14 +23,16 @@ configurations.all {
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 }
 
-repositories {
-    jcenter()
-    maven {
-    	url 'https://oss.sonatype.org/content/repositories/snapshots/'
-    }
-    maven {
-    	url 'https://jitpack.io'
-    }
+allprojects { 
+	repositories {
+	    jcenter()
+	    maven {
+	    	url "https://oss.sonatype.org/content/repositories/snapshots/"
+	    }
+	    maven {
+    		url 'https://jitpack.io'
+    	}
+	}
 }
 
 dependencies {
