@@ -17,7 +17,7 @@ import org.apache.kafka.common.serialization.Serializer;
  */
 public final class AggregationHistorySerde {
 
-  protected static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8"); // NOPMD
+  private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
 
   private AggregationHistorySerde() {}
 
@@ -52,7 +52,7 @@ public final class AggregationHistorySerde {
       buffer.putLong(data.getTimestamp());
       buffer.putInt(data.getLastValues().size());
       for (final Entry<String, Double> entry : data.getLastValues().entrySet()) {
-        final byte[] key = entry.getKey().getBytes(AggregationHistorySerde.DEFAULT_CHARSET);// NOPMD
+        final byte[] key = entry.getKey().getBytes(AggregationHistorySerde.DEFAULT_CHARSET);
         buffer.putInt(key.length);
         buffer.put(key);
         buffer.putDouble(entry.getValue());
@@ -91,9 +91,9 @@ public final class AggregationHistorySerde {
       final int size = buffer.getInt();
       for (int i = 0; i < size; i++) {
         final int keyLength = buffer.getInt();
-        final byte[] keyBytes = new byte[keyLength]; // NOPMD
+        final byte[] keyBytes = new byte[keyLength];
         buffer.get(keyBytes);
-        final String key = new String(keyBytes, DEFAULT_CHARSET); // NOPMD
+        final String key = new String(keyBytes, AggregationHistorySerde.DEFAULT_CHARSET);
         final double value = buffer.getDouble();
 
         map.put(key, value);
