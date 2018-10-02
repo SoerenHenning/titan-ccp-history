@@ -41,7 +41,7 @@ public final class TestHistory {
     final String cassandraKeyspace =
         Objects.requireNonNullElse(System.getenv("CASSANDRA_KEYSPACE"), "titanccp");
     final String kafkaBootstrapServers =
-        Objects.requireNonNullElse(System.getenv("KAFKA_BOOTSTRAP_SEVERS"), "localhost:9092");
+        Objects.requireNonNullElse(System.getenv("KAFKA_BOOTSTRAP_SERVERS"), "localhost:9092");
     final String kafkaApplicationId = Objects.requireNonNullElse(
         System.getenv("KAFKA_APPLICATION_ID"), "titanccp-aggregation-test-0.0.1");
     final int kafkaCommitInterval = Integer
