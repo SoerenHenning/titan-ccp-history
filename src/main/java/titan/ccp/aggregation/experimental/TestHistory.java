@@ -104,7 +104,7 @@ public final class TestHistory {
 
     return CassandraWriter.builder(session).excludeRecordType().excludeLoggingTimestamp()
         .tableNameMapper(PredefinedTableNameMappers.SIMPLE_CLASS_NAME)
-        .primaryKeySelectionStrategy(primaryKeySelectionStrategy).build();
+        .primaryKeySelectionStrategy(primaryKeySelectionStrategy).async().build();
   }
 
 }
