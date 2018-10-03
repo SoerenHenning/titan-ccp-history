@@ -88,6 +88,21 @@ deploy-simple-writer:
   only:
     - simple-writer
     
+deploy-simple-writer-without-cassandra:
+  stage: deploy
+  tags:
+    - dockerex
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - docker build --pull -t titan-ccp-aggregation .
+    - docker tag titan-ccp-aggregation industrialdevops/titan-ccp-aggregation:$(date +%Y%m%d%H%M%S)_simple-writer-without-cassandra
+    - echo $DOCKERHUB_PW | docker login -u $DOCKERHUB_ID --password-stdin
+    - docker push industrialdevops/titan-ccp-aggregation
+  only:
+    - simple-writer-without-cassandra
+    
 deploy-record-tester:
   stage: deploy
   tags:
@@ -103,3 +118,19 @@ deploy-record-tester:
     - docker push industrialdevops/titan-ccp-record-counter
   only:
     - master
+    
+deploy-record-tester-without-cassandra:
+  stage: deploy
+  tags:
+    - dockerex
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - docker build --pull -t titan-ccp-record-counter ./record-counter
+    - docker tag titan-ccp-record-counter industrialdevops/titan-ccp-record-counter:latest
+    - docker tag titan-ccp-record-counter industrialdevops/titan-ccp-record-counter:$(date +%Y%m%d%H%M%S)_without-cassandra
+    - echo $DOCKERHUB_PW | docker login -u $DOCKERHUB_ID --password-stdin
+    - docker push industrialdevops/titan-ccp-record-counter
+  only:
+    - simple-writer-without-cassandra
