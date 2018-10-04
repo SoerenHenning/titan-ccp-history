@@ -43,9 +43,8 @@ public final class RecordCounter {
       final long inputValue = Long.parseLong(jedis.get("input_counter"));
       final long redisOutputValue = Long.parseLong(jedis.get("output_counter"));
       final long cassandraOutputValue = normalRepository.getTotalCount();
-      System.out.println(inputValue + ',' + redisOutputValue + ',' + // NOPMD NOCS
-      /* */ cassandraOutputValue + ',' + (inputValue - redisOutputValue) + ','
-          + (inputValue - cassandraOutputValue));
+      System.out.println("" + inputValue + ',' + redisOutputValue + ',' + cassandraOutputValue + ','
+          + (inputValue - redisOutputValue) + ',' + (inputValue - cassandraOutputValue));
     }, 1, 1, TimeUnit.SECONDS);
 
   }
