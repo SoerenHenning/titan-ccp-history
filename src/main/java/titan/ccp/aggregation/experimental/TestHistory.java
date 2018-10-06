@@ -20,6 +20,8 @@ import redis.clients.jedis.Jedis;
 import titan.ccp.common.kieker.cassandra.CassandraWriter;
 import titan.ccp.common.kieker.cassandra.ExplicitPrimaryKeySelectionStrategy;
 import titan.ccp.common.kieker.cassandra.PredefinedTableNameMappers;
+import titan.ccp.common.kieker.cassandra.SessionBuilder;
+import titan.ccp.common.kieker.cassandra.SessionBuilder.ClusterSession;
 import titan.ccp.common.kieker.kafka.IMonitoringRecordSerde;
 import titan.ccp.models.records.ActivePowerRecord;
 import titan.ccp.models.records.ActivePowerRecordFactory;
@@ -66,10 +68,10 @@ public final class TestHistory {
     settings.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, kafkaCommitInterval);
     settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrapServers);
 
-    // final ClusterSession clusterSession = new
-    // SessionBuilder().contactPoint(cassandraHost).port(cassandraPort).keyspace(cassandraKeyspace).build();
-    // final CassandraWriter cassandraWriter = buildCassandraWriter(clusterSession.getSession(),
-    // ActivePowerRecord.class);
+    final ClusterSession clusterSession = new SessionBuilder().contactPoint(cassandraHost)
+        .port(cassandraPort).keyspace(cassandraKeyspace).build();
+    final CassandraWriter cassandraWriter =
+        buildCassandraWriter(clusterSession.getSession(), ActivePowerRecord.class);
 
     final StreamsBuilder builder = new StreamsBuilder();
     final KStream<String, ActivePowerRecord> input = builder.stream(kafkaInputTopic, Consumed
@@ -78,10 +80,8 @@ public final class TestHistory {
     // input.foreach((k, v) -> System.out.println(k + ": " + v));
 
     input.foreach((key, record) -> {
-      // System.out.println("Write record: " + v);
-
       counter.incrementAndGet();
-      // cassandraWriter.write(record);
+      cassandraWriter.write(record);
     });
 
     /*
