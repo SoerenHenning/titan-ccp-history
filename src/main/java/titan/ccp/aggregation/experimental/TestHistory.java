@@ -3,6 +3,10 @@ package titan.ccp.aggregation.experimental;
 import com.datastax.driver.core.Session;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import kieker.common.record.IMonitoringRecord;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.Consumed;
@@ -16,8 +20,6 @@ import redis.clients.jedis.Jedis;
 import titan.ccp.common.kieker.cassandra.CassandraWriter;
 import titan.ccp.common.kieker.cassandra.ExplicitPrimaryKeySelectionStrategy;
 import titan.ccp.common.kieker.cassandra.PredefinedTableNameMappers;
-import titan.ccp.common.kieker.cassandra.SessionBuilder;
-import titan.ccp.common.kieker.cassandra.SessionBuilder.ClusterSession;
 import titan.ccp.common.kieker.kafka.IMonitoringRecordSerde;
 import titan.ccp.models.records.ActivePowerRecord;
 import titan.ccp.models.records.ActivePowerRecordFactory;
@@ -27,6 +29,7 @@ import titan.ccp.models.records.ActivePowerRecordFactory;
  */
 public final class TestHistory {
 
+  private static final int TERMINATION_TIMEOUT_SECONDS = 10;
   private static final String REDIS_OUTPUT_COUNTER_KEY = "output_counter";
 
   private TestHistory() {}
@@ -56,15 +59,17 @@ public final class TestHistory {
         Integer.parseInt(Objects.requireNonNullElse(System.getenv("REDIS_PORT"), "6379"));
     final Jedis jedis = new Jedis(redisHost, redisPort);
 
+    final AtomicLong counter = new AtomicLong(0);
+
     final Properties settings = new Properties();
     settings.put(StreamsConfig.APPLICATION_ID_CONFIG, kafkaApplicationId);
     settings.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, kafkaCommitInterval);
     settings.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrapServers);
 
-    final ClusterSession clusterSession = new SessionBuilder().contactPoint(cassandraHost)
-        .port(cassandraPort).keyspace(cassandraKeyspace).build();
-    final CassandraWriter cassandraWriter =
-        buildCassandraWriter(clusterSession.getSession(), ActivePowerRecord.class);
+    // final ClusterSession clusterSession = new
+    // SessionBuilder().contactPoint(cassandraHost).port(cassandraPort).keyspace(cassandraKeyspace).build();
+    // final CassandraWriter cassandraWriter = buildCassandraWriter(clusterSession.getSession(),
+    // ActivePowerRecord.class);
 
     final StreamsBuilder builder = new StreamsBuilder();
     final KStream<String, ActivePowerRecord> input = builder.stream(kafkaInputTopic, Consumed
@@ -74,8 +79,9 @@ public final class TestHistory {
 
     input.foreach((key, record) -> {
       // System.out.println("Write record: " + v);
-      jedis.incrBy(REDIS_OUTPUT_COUNTER_KEY, 1);
-      cassandraWriter.write(record);
+
+      counter.incrementAndGet();
+      // cassandraWriter.write(record);
     });
 
     /*
@@ -101,6 +107,26 @@ public final class TestHistory {
     System.out.println(topologyDescription); // NOPMD test
     final KafkaStreams streams = new KafkaStreams(topology, new StreamsConfig(settings));
     streams.start();
+
+    final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+    scheduler.scheduleAtFixedRate(() -> {
+      final long oldValue = counter.getAndSet(0);
+      System.out.println(oldValue); // NOPMD
+      jedis.incrBy(REDIS_OUTPUT_COUNTER_KEY, oldValue);
+    }, 1, 1, TimeUnit.SECONDS);
+
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      scheduler.shutdown();
+      try {
+        scheduler.awaitTermination(TERMINATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+      } catch (final InterruptedException e) {
+        throw new IllegalStateException(e);
+      }
+      final long oldValue = counter.getAndSet(0);
+      System.out.println(oldValue); // NOPMD
+      jedis.incrBy(REDIS_OUTPUT_COUNTER_KEY, oldValue);
+      jedis.close();
+    }));
   }
 
 
