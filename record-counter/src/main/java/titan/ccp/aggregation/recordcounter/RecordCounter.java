@@ -49,6 +49,11 @@ public final class RecordCounter {
       // redisOutputValue));
     }, 1, 1, TimeUnit.SECONDS);
 
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      scheduler.shutdown();
+      jedis.close();
+    }));
+
   }
 
 }
