@@ -8,7 +8,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 import kieker.common.record.IMonitoringRecord;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
@@ -103,7 +102,7 @@ public class TestKafkaStreamsBuilder {
     final KStream<String, ActivePowerRecord> inputStream = builder.stream(this.inputTopic, Consumed
         .with(Serdes.String(), IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
 
-    inputStream.foreach((k, v) -> LOGGER.info("Received record {}.", v)); // TODO Temporary
+    // inputStream.foreach((k, v) -> LOGGER.info("Received record {}.", v)); // TODO Temporary
 
     final KStream<String, ActivePowerRecord> flatMapped =
         inputStream.flatMap((key, value) -> this.flatMap(value));
@@ -114,7 +113,7 @@ public class TestKafkaStreamsBuilder {
     final KTable<String, AggregationHistory> aggregated =
         groupedStream.aggregate(() -> new AggregationHistory(), (aggKey, newValue, aggValue2) -> {
           aggValue2.update(newValue);
-          LOGGER.info("update history {}", aggValue2); // TODO
+          // LOGGER.info("update history {}", aggValue2); // TODO
           return aggValue2;
         }, Materialized
             .<String, AggregationHistory, KeyValueStore<Bytes, byte[]>>as(this.aggregationStoreName)
@@ -132,7 +131,7 @@ public class TestKafkaStreamsBuilder {
             Consumed.with(Serdes.String(),
                 IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
         .foreach((key, record) -> {
-          LOGGER.info("write to cassandra {}", record); // NOCS
+          // LOGGER.info("write to cassandra {}", record); // NOCS
           cassandraWriter.write(record);
         });
 
@@ -141,7 +140,7 @@ public class TestKafkaStreamsBuilder {
     final CassandraWriter cassandraWriterForNormal =
         this.buildCassandraWriter(ActivePowerRecord.class);
     inputStream.foreach((key, record) -> {
-      LOGGER.info("write to cassandra {}", record); // NOCS
+      // LOGGER.info("write to cassandra {}", record); // NOCS
       counter.incrementAndGet();
       cassandraWriterForNormal.write(record);
     });
@@ -187,19 +186,21 @@ public class TestKafkaStreamsBuilder {
     final CassandraWriter cassandraWriter =
         CassandraWriter.builder(this.cassandraSession).excludeRecordType().excludeLoggingTimestamp()
             .tableNameMapper(PredefinedTableNameMappers.SIMPLE_CLASS_NAME)
-            .primaryKeySelectionStrategy(primaryKeySelectionStrategy).build();
+            .primaryKeySelectionStrategy(primaryKeySelectionStrategy).async().build();
 
     return cassandraWriter;
   }
 
   private Iterable<KeyValue<String, ActivePowerRecord>> flatMap(final ActivePowerRecord record) {
-    LOGGER.info("Flat map record: {}", record); // TODO Temporary
-    final List<KeyValue<String, ActivePowerRecord>> result =
-        this.sensorRegistry.getSensorForIdentifier(record.getIdentifier()).stream()
-            .flatMap(s -> s.getParents().stream()).map(s -> s.getIdentifier())
-            .map(i -> KeyValue.pair(i, record)).collect(Collectors.toList());
-    LOGGER.info("Flat map result: {}", result); // TODO Temporary
-    return result;
+    return List.of(KeyValue.pair("root", record));
+    /*
+     * LOGGER.info("Flat map record: {}", record); // TODO Temporary final List<KeyValue<String,
+     * ActivePowerRecord>> result =
+     * this.sensorRegistry.getSensorForIdentifier(record.getIdentifier()).stream() .flatMap(s ->
+     * s.getParents().stream()).map(s -> s.getIdentifier()) .map(i -> KeyValue.pair(i,
+     * record)).collect(Collectors.toList()); LOGGER.info("Flat map result: {}", result); // TODO
+     * Temporary return result;
+     */
   }
 
   private StreamsConfig buildStreamConfig() {

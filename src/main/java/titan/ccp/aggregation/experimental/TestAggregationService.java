@@ -7,9 +7,6 @@ import titan.ccp.common.configuration.Configurations;
 import titan.ccp.common.kieker.cassandra.SessionBuilder;
 import titan.ccp.common.kieker.cassandra.SessionBuilder.ClusterSession;
 import titan.ccp.model.sensorregistry.ProxySensorRegistry;
-import titan.ccp.model.sensorregistry.SensorRegistry;
-import titan.ccp.model.sensorregistry.client.RetryingSensorRegistryRequester;
-import titan.ccp.model.sensorregistry.client.SensorRegistryRequester;
 
 /**
  * A microservice that manages the history and, therefore, stores and aggregates incoming
@@ -23,26 +20,21 @@ import titan.ccp.model.sensorregistry.client.SensorRegistryRequester;
 public class TestAggregationService {
 
   private final Configuration configuration = Configurations.create();
-  private final RetryingSensorRegistryRequester sensorRegistryRequester;
   private final ProxySensorRegistry sensorRegistry = new ProxySensorRegistry();
 
   /**
    * Create an Aggregation service using a configuration via external parameters. These can be an
    * {@code application.properties} file or environment variables.
    */
-  public TestAggregationService() {
-    this.sensorRegistryRequester = new RetryingSensorRegistryRequester(new SensorRegistryRequester(
-        this.configuration.getString(ConfigurationKeys.CONFIGURATION_HOST),
-        this.configuration.getInt(ConfigurationKeys.CONFIGURATION_PORT)));
-  }
+  public TestAggregationService() {}
 
   /**
    * Start the service.
    */
   public void run() {
     // this.sensorRegistry.setBackingSensorRegisty(ExampleSensors.registry());
-    final SensorRegistry sensorRegistry = this.sensorRegistryRequester.request().join();
-    this.sensorRegistry.setBackingSensorRegisty(sensorRegistry);
+    // final SensorRegistry sensorRegistry = this.sensorRegistryRequester.request().join();
+    // this.sensorRegistry.setBackingSensorRegisty(sensorRegistry);
 
     // Cassandra connect
     final ClusterSession clusterSession = new SessionBuilder()
