@@ -43,7 +43,7 @@ public final class TestHistory {
    */
   public static void main(final String[] args) {
     final String cassandraHost =
-        Objects.requireNonNullElse(System.getenv("CASSANDRA_HOST"), "localhost");
+        Objects.requireNonNullElse(System.getenv("CASSANDRA_HOST"), "localhost"); // NOCS
     final int cassandraPort =
         Integer.parseInt(Objects.requireNonNullElse(System.getenv("CASSANDRA_PORT"), "9042"));
     final String cassandraKeyspace =
@@ -141,6 +141,5 @@ public final class TestHistory {
         .tableNameMapper(PredefinedTableNameMappers.SIMPLE_CLASS_NAME)
         .primaryKeySelectionStrategy(primaryKeySelectionStrategy).async().build();
   }
-
 
 }

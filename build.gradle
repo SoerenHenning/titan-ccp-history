@@ -67,7 +67,7 @@ tasks.withType(Test) {
   jvmArgs += ["--add-modules", "jdk.incubator.httpclient"]
 }
 
-mainClassName = "titan.ccp.aggregation.experimental.TestHistory"
+mainClassName = "titan.ccp.aggregation.experimental.TestAggregationService"
 
 applicationDefaultJvmArgs = ["--add-modules=jdk.incubator.httpclient"]
 
