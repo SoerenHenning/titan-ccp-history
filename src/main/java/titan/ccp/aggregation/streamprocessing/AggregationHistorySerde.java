@@ -58,6 +58,7 @@ public final class AggregationHistorySerde {
         buffer.putDouble(entry.getValue());
       }
 
+      buffer.flip();
       return this.byteBufferSerializer.serialize(topic, buffer);
     }
 
