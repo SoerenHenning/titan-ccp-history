@@ -66,7 +66,7 @@ tasks.withType(Test) {
   jvmArgs += ["--add-modules", "jdk.incubator.httpclient"]
 }
 
-mainClassName = "titan.ccp.aggregation.AggregationService"
+mainClassName = "titan.ccp.aggregation.HsitoryService"
 
 applicationDefaultJvmArgs = ["--add-modules=jdk.incubator.httpclient"]
 

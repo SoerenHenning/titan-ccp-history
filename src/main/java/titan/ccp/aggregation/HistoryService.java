@@ -20,14 +20,10 @@ import titan.ccp.model.sensorregistry.client.SensorRegistryRequester;
  * A microservice that manages the history and, therefore, stores and aggregates incoming
  * measurements.
  *
- * <p>
- * Will be soon renamed to HistoryService.
- * </p>
- *
  */
-public class AggregationService { // TODO rename to HistoryService
+public class HistoryService {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(AggregationService.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(HistoryService.class);
 
   private final Configuration configuration = Configurations.create();
   private final RetryingSensorRegistryRequester sensorRegistryRequester;
@@ -41,7 +37,7 @@ public class AggregationService { // TODO rename to HistoryService
    * Create an Aggregation service using a configuration via external parameters. These can be an
    * {@code application.properties} file or environment variables.
    */
-  public AggregationService() {
+  public HistoryService() {
     this.sensorRegistryRequester = new RetryingSensorRegistryRequester(new SensorRegistryRequester(
         this.configuration.getString(ConfigurationKeys.CONFIGURATION_HOST),
         this.configuration.getInt(ConfigurationKeys.CONFIGURATION_PORT)));
@@ -105,7 +101,7 @@ public class AggregationService { // TODO rename to HistoryService
   // }
 
   public static void main(final String[] args) {
-    new AggregationService().run();
+    new HistoryService().run();
   }
 
 }
