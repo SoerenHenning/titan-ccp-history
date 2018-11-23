@@ -1,4 +1,4 @@
-package titan.ccp.aggregation.streamprocessing;
+package titan.ccp.history.streamprocessing;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

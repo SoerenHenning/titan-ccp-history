@@ -1,4 +1,4 @@
-package titan.ccp.aggregation.api;
+package titan.ccp.history.api;
 
 /**
  * A distribution bucket stores the number of elements for a range.

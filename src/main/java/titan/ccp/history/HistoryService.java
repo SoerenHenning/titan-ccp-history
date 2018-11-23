@@ -1,16 +1,16 @@
-package titan.ccp.aggregation;
+package titan.ccp.history;
 
 import org.apache.commons.configuration2.Configuration;
 import org.apache.kafka.streams.KafkaStreams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import titan.ccp.aggregation.api.RestApiServer;
-import titan.ccp.aggregation.streamprocessing.KafkaStreamsBuilder;
 import titan.ccp.common.configuration.Configurations;
 import titan.ccp.common.kieker.cassandra.SessionBuilder;
 import titan.ccp.common.kieker.cassandra.SessionBuilder.ClusterSession;
 import titan.ccp.configuration.events.Event;
 import titan.ccp.configuration.events.KafkaSubscriber;
+import titan.ccp.history.api.RestApiServer;
+import titan.ccp.history.streamprocessing.KafkaStreamsBuilder;
 import titan.ccp.model.sensorregistry.ProxySensorRegistry;
 import titan.ccp.model.sensorregistry.SensorRegistry;
 import titan.ccp.model.sensorregistry.client.RetryingSensorRegistryRequester;

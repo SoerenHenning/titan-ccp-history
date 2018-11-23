@@ -1,4 +1,4 @@
-package titan.ccp.aggregation.streamprocessing; // NOPMD
+package titan.ccp.history.streamprocessing; // NOPMD
 
 import com.datastax.driver.core.Session;
 import java.util.List;

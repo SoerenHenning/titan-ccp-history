@@ -1,4 +1,4 @@
-package titan.ccp.aggregation;
+package titan.ccp.history;
 
 /**
  * Keys to access configuration parameters.
