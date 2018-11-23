@@ -11,6 +11,7 @@ import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
+import titan.ccp.model.sensorregistry.SensorRegistry;
 
 /**
  * {@link Serde} for {@link AggregationHistory}.
@@ -21,17 +22,17 @@ public final class AggregationHistorySerde {
 
   private AggregationHistorySerde() {}
 
-  public static Serde<AggregationHistory> serde() {
+  public static Serde<AggregationHistory> serde(final SensorRegistry sensorRegistry) {
     return Serdes.serdeFrom(new AggregationHistorySerializer(),
-        new AggregationHistoryDeserializer());
+        new AggregationHistoryDeserializer(sensorRegistry));
   }
 
   public static Serializer<AggregationHistory> serializer() {
     return new AggregationHistorySerializer();
   }
 
-  public static Deserializer<AggregationHistory> deserializer() {
-    return new AggregationHistoryDeserializer();
+  public static Deserializer<AggregationHistory> deserializer(final SensorRegistry sensorRegistry) {
+    return new AggregationHistoryDeserializer(sensorRegistry);
   }
 
   private static class AggregationHistorySerializer implements Serializer<AggregationHistory> {
@@ -57,6 +58,7 @@ public final class AggregationHistorySerde {
         buffer.put(key);
         buffer.putDouble(entry.getValue());
       }
+      buffer.putInt(data.getSensorRegistry().hashCode());
 
       buffer.flip();
       return this.byteBufferSerializer.serialize(topic, buffer);
@@ -73,6 +75,12 @@ public final class AggregationHistorySerde {
 
     private final ByteBufferDeserializer byteBufferDeserializer = new ByteBufferDeserializer();
 
+    private final SensorRegistry sensorRegistry;
+
+    public AggregationHistoryDeserializer(final SensorRegistry sensorRegistry) {
+      this.sensorRegistry = sensorRegistry;
+    }
+
     @Override
     public void configure(final Map<String, ?> configs, final boolean isKey) {
       this.byteBufferDeserializer.configure(configs, isKey);
@@ -83,7 +91,7 @@ public final class AggregationHistorySerde {
       final ByteBuffer buffer = this.byteBufferDeserializer.deserialize(topic, data);
 
       if (buffer == null) {
-        return new AggregationHistory();
+        return new AggregationHistory(this.sensorRegistry);
       }
 
       final long timestamp = buffer.getLong();
@@ -99,8 +107,9 @@ public final class AggregationHistorySerde {
 
         map.put(key, value);
       }
+      final int oldHash = buffer.getInt();
 
-      return new AggregationHistory(map, timestamp);
+      return AggregationHistory.createFromRawData(this.sensorRegistry, map, timestamp, oldHash);
     }
 
     @Override

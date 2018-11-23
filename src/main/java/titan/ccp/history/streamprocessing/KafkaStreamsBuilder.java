@@ -96,14 +96,16 @@ public class KafkaStreamsBuilder {
     final KGroupedStream<String, ActivePowerRecord> groupedStream = flatMapped.groupByKey(Serialized
         .with(Serdes.String(), IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
 
-    final KTable<String, AggregationHistory> aggregated =
-        groupedStream.aggregate(() -> new AggregationHistory(), (aggKey, newValue, aggValue2) -> {
+    final KTable<String, AggregationHistory> aggregated = groupedStream.aggregate(
+        () -> new AggregationHistory(this.sensorRegistry), (aggKey, newValue, aggValue2) -> {
           aggValue2.update(newValue);
           LOGGER.info("update history {}", aggValue2); // TODO
           return aggValue2;
-        }, Materialized
+        },
+        Materialized
             .<String, AggregationHistory, KeyValueStore<Bytes, byte[]>>as(this.aggregationStoreName)
-            .withKeySerde(Serdes.String()).withValueSerde(AggregationHistorySerde.serde()));
+            .withKeySerde(Serdes.String())
+            .withValueSerde(AggregationHistorySerde.serde(this.sensorRegistry)));
 
     aggregated.toStream().map((key, value) -> KeyValue.pair(key, value.toRecord(key)))
         .to(this.outputTopic, Produced.with(Serdes.String(),

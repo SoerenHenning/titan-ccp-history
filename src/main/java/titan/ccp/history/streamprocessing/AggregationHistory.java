@@ -4,6 +4,8 @@ import java.util.Collections;
 import java.util.DoubleSummaryStatistics;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
+import titan.ccp.model.sensorregistry.SensorRegistry;
 import titan.ccp.models.records.ActivePowerRecord;
 import titan.ccp.models.records.AggregatedActivePowerRecord;
 
@@ -13,12 +15,16 @@ import titan.ccp.models.records.AggregatedActivePowerRecord;
 public class AggregationHistory {
   private final Map<String, Double> lastValues;
   private long timestamp;
+  private final SensorRegistry sensorRegistry;
 
-  public AggregationHistory() {
+  public AggregationHistory(final SensorRegistry sensorRegistry) {
+    this.sensorRegistry = sensorRegistry;
     this.lastValues = new HashMap<>();
   }
 
-  public AggregationHistory(final Map<String, Double> lastValues, final long timestamp) {
+  private AggregationHistory(final SensorRegistry sensorRegistry,
+      final Map<String, Double> lastValues, final long timestamp) {
+    this.sensorRegistry = sensorRegistry;
     this.lastValues = new HashMap<>(lastValues);
     this.timestamp = timestamp;
   }
@@ -27,8 +33,10 @@ public class AggregationHistory {
    * Update the associated last value of a sensor with the passed new record.
    */
   public AggregationHistory update(final ActivePowerRecord activePowerRecord) {
-    this.lastValues.put(activePowerRecord.getIdentifier(), activePowerRecord.getValueInW());
-    this.timestamp = activePowerRecord.getTimestamp();
+    if (this.sensorRegistry.getSensorForIdentifier(activePowerRecord.getIdentifier()).isPresent()) {
+      this.lastValues.put(activePowerRecord.getIdentifier(), activePowerRecord.getValueInW());
+      this.timestamp = activePowerRecord.getTimestamp();
+    }
     return this;
   }
 
@@ -54,8 +62,35 @@ public class AggregationHistory {
         summaryStatistics.getAverage());
   }
 
+  public SensorRegistry getSensorRegistry() {
+    return this.sensorRegistry;
+  }
+
   @Override
   public String toString() {
     return this.timestamp + ": " + this.lastValues;
   }
+
+  /**
+   * Create an {@link AggregationHistory} from its raw values using the additional hash of an old
+   * sensor registry.
+   *
+   * @param sensorRegistry The associated {@link SensorRegistry} for the {@link AggregationHistory}.
+   * @param lastValues Map of last measured values keyed by the sensor's identifier.
+   * @param timestamp Timestamp of the last measured value.
+   * @param oldSensorRegistryHash Hash of a previous version of the {@link AggregationHistory}.
+   * @return
+   */
+  public static final AggregationHistory createFromRawData(final SensorRegistry sensorRegistry,
+      final Map<String, Double> lastValues, final long timestamp, final int oldSensorRegistryHash) {
+    Map<String, Double> lastValuesFiltered = lastValues;
+    // We expect that the sensor registry has not changed if the hash code remains unchanged.
+    if (sensorRegistry.hashCode() != oldSensorRegistryHash) {
+      lastValuesFiltered = lastValues.entrySet().stream()
+          .filter(x -> sensorRegistry.getSensorForIdentifier(x.getKey()).isPresent())
+          .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+    return new AggregationHistory(sensorRegistry, lastValuesFiltered, timestamp);
+  }
+
 }
