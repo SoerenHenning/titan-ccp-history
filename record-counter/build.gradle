@@ -28,7 +28,7 @@ dependencies {
     testCompile 'junit:junit:4.12'
 }
 
-mainClassName = "titan.ccp.aggregation.recordcounter.RecordCounter"
+mainClassName = "titan.ccp.history.recordcounter.RecordCounter"
 
 pmd {
   ruleSetFiles = files("../config/pmd.xml")

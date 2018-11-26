@@ -1,4 +1,4 @@
-package titan.ccp.aggregation.recordcounter;
+package titan.ccp.history.recordcounter;
 
 import java.util.Objects;
 import java.util.concurrent.Executors;
