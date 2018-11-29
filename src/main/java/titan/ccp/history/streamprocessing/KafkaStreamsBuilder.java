@@ -88,7 +88,7 @@ public class KafkaStreamsBuilder {
     final KStream<String, ActivePowerRecord> inputStream = builder.stream(this.inputTopic, Consumed
         .with(Serdes.String(), IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
 
-    inputStream.foreach((k, v) -> LOGGER.info("Received record {}.", v)); // TODO Temporary
+    inputStream.foreach((k, v) -> LOGGER.debug("Received record {}.", v));
 
     final KStream<String, ActivePowerRecord> flatMapped =
         inputStream.flatMap((key, value) -> this.flatMap(value));
@@ -97,10 +97,10 @@ public class KafkaStreamsBuilder {
         .with(Serdes.String(), IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
 
     final KTable<String, AggregationHistory> aggregated = groupedStream.aggregate(
-        () -> new AggregationHistory(this.sensorRegistry), (aggKey, newValue, aggValue2) -> {
-          aggValue2.update(newValue);
-          LOGGER.info("update history {}", aggValue2); // TODO
-          return aggValue2;
+        () -> new AggregationHistory(this.sensorRegistry), (aggKey, newValue, aggValue) -> {
+          aggValue.update(newValue);
+          LOGGER.debug("update history {}", aggValue);
+          return aggValue;
         },
         Materialized
             .<String, AggregationHistory, KeyValueStore<Bytes, byte[]>>as(this.aggregationStoreName)
