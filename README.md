@@ -16,7 +16,7 @@ To simply run the source code from within, e.g., Eclipse make sure to add
 
 We use Gradle as a build tool. In order to build the executeables run 
 `./gradlew build` on Linux/macOS or `./gradlew.bat build` on Windows. This will
-create the file `build/distributions/titanccp-aggregation.tar` which contains
+create the file `build/distributions/titanccp-history.tar` which contains
 start scripts for Linux/macOS and Windows.
 
 This repository also contains a Dockerfile. Run
