@@ -150,12 +150,12 @@ public class KafkaStreamsBuilder {
   }
 
   private Iterable<KeyValue<String, ActivePowerRecord>> flatMap(final ActivePowerRecord record) {
-    LOGGER.info("Flat map record: {}", record); // TODO Temporary
+    LOGGER.debug("Flat map record: {}", record); // TODO Temporary
     final List<KeyValue<String, ActivePowerRecord>> result =
         this.sensorRegistry.getSensorForIdentifier(record.getIdentifier()).stream()
             .flatMap(s -> s.getParents().stream()).map(s -> s.getIdentifier())
             .map(i -> KeyValue.pair(i, record)).collect(Collectors.toList());
-    LOGGER.info("Flat map result: {}", result); // TODO Temporary
+    LOGGER.debug("Flat map result: {}", result); // TODO Temporary
     return result;
   }
 
