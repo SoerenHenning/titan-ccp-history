@@ -119,7 +119,7 @@ public class KafkaStreamsBuilder {
             Consumed.with(Serdes.String(),
                 IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
         .foreach((key, record) -> {
-          LOGGER.info("write to cassandra {}", record); // NOCS
+          LOGGER.debug("write to cassandra {}", record); // NOCS
           cassandraWriter.write(record);
         });
 
@@ -127,7 +127,7 @@ public class KafkaStreamsBuilder {
     final CassandraWriter cassandraWriterForNormal =
         this.buildCassandraWriter(ActivePowerRecord.class);
     inputStream.foreach((key, record) -> {
-      LOGGER.info("write to cassandra {}", record); // NOCS
+      LOGGER.debug("write to cassandra {}", record); // NOCS
       cassandraWriterForNormal.write(record);
     });
 
