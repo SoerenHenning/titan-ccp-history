@@ -50,8 +50,6 @@ dependencies {
     
     //TODO Temporary
     compile 'net.jodah:failsafe:1.1.0'
-    
-    compile 'net.sourceforge.teetime:teetime:3.0' //TODO remove
 
     // Use JUnit test framework
     testCompile 'junit:junit:4.12'
