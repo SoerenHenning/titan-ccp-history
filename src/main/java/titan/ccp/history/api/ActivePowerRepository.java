@@ -1,4 +1,4 @@
-package titan.ccp.aggregation.api;
+package titan.ccp.history.api;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;

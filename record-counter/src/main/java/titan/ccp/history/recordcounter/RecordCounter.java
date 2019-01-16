@@ -1,13 +1,13 @@
-package titan.ccp.aggregation.recordcounter;
+package titan.ccp.history.recordcounter;
 
 import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import redis.clients.jedis.Jedis;
-import titan.ccp.aggregation.api.ActivePowerRepository;
-import titan.ccp.common.kieker.cassandra.SessionBuilder;
-import titan.ccp.common.kieker.cassandra.SessionBuilder.ClusterSession;
+import titan.ccp.common.cassandra.SessionBuilder;
+import titan.ccp.common.cassandra.SessionBuilder.ClusterSession;
+import titan.ccp.history.api.ActivePowerRepository;
 import titan.ccp.models.records.ActivePowerRecord;
 
 /**

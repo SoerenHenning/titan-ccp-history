@@ -15,6 +15,6 @@ include 'api'
 include 'services:webservice'
 */
 
-rootProject.name = 'titanccp-aggregation'
+rootProject.name = 'titanccp-history'
 
 include 'record-counter'

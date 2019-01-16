@@ -1,16 +1,16 @@
-package titan.ccp.aggregation;
+package titan.ccp.history;
 
 import org.apache.commons.configuration2.Configuration;
 import org.apache.kafka.streams.KafkaStreams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import titan.ccp.aggregation.api.RestApiServer;
-import titan.ccp.aggregation.streamprocessing.KafkaStreamsBuilder;
+import titan.ccp.common.cassandra.SessionBuilder;
+import titan.ccp.common.cassandra.SessionBuilder.ClusterSession;
 import titan.ccp.common.configuration.Configurations;
-import titan.ccp.common.kieker.cassandra.SessionBuilder;
-import titan.ccp.common.kieker.cassandra.SessionBuilder.ClusterSession;
 import titan.ccp.configuration.events.Event;
 import titan.ccp.configuration.events.KafkaSubscriber;
+import titan.ccp.history.api.RestApiServer;
+import titan.ccp.history.streamprocessing.KafkaStreamsBuilder;
 import titan.ccp.model.sensorregistry.ProxySensorRegistry;
 import titan.ccp.model.sensorregistry.SensorRegistry;
 import titan.ccp.model.sensorregistry.client.RetryingSensorRegistryRequester;
@@ -20,14 +20,10 @@ import titan.ccp.model.sensorregistry.client.SensorRegistryRequester;
  * A microservice that manages the history and, therefore, stores and aggregates incoming
  * measurements.
  *
- * <p>
- * Will be soon renamed to HistoryService.
- * </p>
- *
  */
-public class AggregationService { // TODO rename to HistoryService
+public class HistoryService {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(AggregationService.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(HistoryService.class);
 
   private final Configuration configuration = Configurations.create();
   private final RetryingSensorRegistryRequester sensorRegistryRequester;
@@ -41,7 +37,7 @@ public class AggregationService { // TODO rename to HistoryService
    * Create an Aggregation service using a configuration via external parameters. These can be an
    * {@code application.properties} file or environment variables.
    */
-  public AggregationService() {
+  public HistoryService() {
     this.sensorRegistryRequester = new RetryingSensorRegistryRequester(new SensorRegistryRequester(
         this.configuration.getString(ConfigurationKeys.CONFIGURATION_HOST),
         this.configuration.getInt(ConfigurationKeys.CONFIGURATION_PORT)));
@@ -105,7 +101,7 @@ public class AggregationService { // TODO rename to HistoryService
   // }
 
   public static void main(final String[] args) {
-    new AggregationService().run();
+    new HistoryService().run();
   }
 
 }

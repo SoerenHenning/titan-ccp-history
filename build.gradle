@@ -23,29 +23,34 @@ configurations.all {
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 }
 
-repositories {
-    jcenter()
-    maven {
-    	url "https://oss.sonatype.org/content/repositories/snapshots/"
-    }
+allprojects { 
+	repositories {
+	    jcenter()
+	    maven {
+	    	url "https://oss.sonatype.org/content/repositories/snapshots/"
+	    }
+	    maven {
+    		url 'https://jitpack.io'
+    	}
+		maven {
+    		url 'https://packages.confluent.io/maven/'
+    	}
+	}
 }
 
 dependencies {
-    compile('org.industrial-devops:titan.ccp.model:0.0.1-SNAPSHOT') { changing = true }
+    //compile('org.industrial-devops:titan.ccp.model:0.0.1-SNAPSHOT') { changing = true }
+    compile('com.github.cau-se:titan-ccp-common:master-SNAPSHOT') { changing = true }
     compile 'net.kieker-monitoring:kieker:1.14-SNAPSHOT'
-    compile 'org.apache.kafka:kafka-streams:1.0.1'
+    compile 'org.apache.kafka:kafka-streams:2.1.0'
     compile 'com.sparkjava:spark-core:2.7.2'
 	compile 'com.google.code.gson:gson:2.8.2'
     compile 'com.google.guava:guava:20.0'
+    compile 'net.jodah:failsafe:1.1.0'
     compile 'org.apache.commons:commons-configuration2:2.2'
     compile 'commons-beanutils:commons-beanutils:1.9.2' // for commons-configuration2
     compile 'org.apache.commons:commons-lang3:3.7'
-    compile 'org.slf4j:slf4j-simple:1.6.1'
-    
-    //TODO Temporary
-    compile 'net.jodah:failsafe:1.1.0'
-    
-    compile 'net.sourceforge.teetime:teetime:3.0' //TODO remove
+    compile 'org.slf4j:slf4j-simple:1.7.25'
 
     // Use JUnit test framework
     testCompile 'junit:junit:4.12'
@@ -60,7 +65,7 @@ tasks.withType(Test) {
   jvmArgs += ["--add-modules", "jdk.incubator.httpclient"]
 }
 
-mainClassName = "titan.ccp.aggregation.AggregationService"
+mainClassName = "titan.ccp.history.HistoryService"
 
 applicationDefaultJvmArgs = ["--add-modules=jdk.incubator.httpclient"]
 
