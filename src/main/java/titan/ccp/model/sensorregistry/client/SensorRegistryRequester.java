@@ -2,10 +2,10 @@ package titan.ccp.model.sensorregistry.client;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
-import jdk.incubator.http.HttpClient;
-import jdk.incubator.http.HttpRequest;
-import jdk.incubator.http.HttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import titan.ccp.model.sensorregistry.SensorRegistry;
@@ -44,7 +44,7 @@ public class SensorRegistryRequester {
     LOGGER.info("Request sensor registry on GET: {}", this.uri);
 
     // TODO handle errors
-    return this.client.sendAsync(request, HttpResponse.BodyHandler.asString()).thenApply(r -> {
+    return this.client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(r -> {
       return SensorRegistry.fromJson(r.body());
     });
   }

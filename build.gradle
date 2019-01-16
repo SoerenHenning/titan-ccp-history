@@ -57,17 +57,7 @@ dependencies {
     testCompile 'com.github.stefanbirkner:system-rules:1.17.0'
 }
 
-tasks.withType(AbstractCompile) {
-  options.compilerArgs += ["--add-modules", "jdk.incubator.httpclient"]
-}
-
-tasks.withType(Test) {
-  jvmArgs += ["--add-modules", "jdk.incubator.httpclient"]
-}
-
 mainClassName = "titan.ccp.history.HistoryService"
-
-applicationDefaultJvmArgs = ["--add-modules=jdk.incubator.httpclient"]
 
 pmd {
   ruleSetFiles = files("config/pmd.xml")
