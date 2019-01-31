@@ -87,11 +87,11 @@ deploy-test:
     - echo $CI_COMMIT_SHORT_SHA
     - echo $DOCKER_TAG_NAME
     - docker build --pull -t titan-ccp-history .
-    - docker tag titan-ccp-history industrialdevops/titan-ccp-aggregation:$DOCKER_TAG_NAME:latest
-    - docker tag titan-ccp-history industrialdevops/titan-ccp-aggregation:$DOCKER_TAG_NAME$(date +%Y%m%d%H%M%S)
-    - docker tag titan-ccp-history industrialdevops/titan-ccp-aggregation:$DOCKER_TAG_NAME$CI_COMMIT_SHA
+    - docker tag titan-ccp-history industrialdevops/titan-ccp-history:$DOCKER_TAG_NAME:latest
+    - docker tag titan-ccp-history industrialdevops/titan-ccp-history:$DOCKER_TAG_NAME$(date +%Y%m%d%H%M%S)
+    - docker tag titan-ccp-history industrialdevops/titan-ccp-history:$DOCKER_TAG_NAME$CI_COMMIT_SHA
     - echo $DOCKERHUB_PW | docker login -u $DOCKERHUB_ID --password-stdin
-    #- docker push industrialdevops/titan-ccp-aggregation
+    #- docker push industrialdevops/titan-ccp-history
   only:
     variables:
       - $PROTECTED
