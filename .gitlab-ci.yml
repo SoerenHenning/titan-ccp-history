@@ -65,36 +65,17 @@ deploy:
   services:
     - docker:dind
   script:
-    - docker build --pull -t titan-ccp-history .
-    - docker tag titan-ccp-history industrialdevops/titan-ccp-aggregation:latest
-    - docker tag titan-ccp-history industrialdevops/titan-ccp-aggregation:$(date +%Y%m%d%H%M%S)
-    - echo $DOCKERHUB_PW | docker login -u $DOCKERHUB_ID --password-stdin
-    - docker push industrialdevops/titan-ccp-aggregation
-  only:
-    - master
-
-deploy-test:
-  stage: deploy
-  tags:
-    - dockerex
-  image: docker:latest
-  services:
-    - docker:dind
-  script:
     - DOCKER_TAG_NAME=$(echo $CI_COMMIT_REF_SLUG- | sed 's/^master-$//')
-    - echo $CI_COMMIT_REF_SLUG
-    - echo $CI_COMMIT_SHA
-    - echo $CI_COMMIT_SHORT_SHA
-    - echo $DOCKER_TAG_NAME
     - docker build --pull -t titan-ccp-history .
     - docker tag titan-ccp-history industrialdevops/titan-ccp-history:${DOCKER_TAG_NAME}latest
     - docker tag titan-ccp-history industrialdevops/titan-ccp-history:$DOCKER_TAG_NAME$(date +%Y%m%d%H%M%S)
     - docker tag titan-ccp-history industrialdevops/titan-ccp-history:$DOCKER_TAG_NAME$CI_COMMIT_SHA
     - echo $DOCKERHUB_PW | docker login -u $DOCKERHUB_ID --password-stdin
-    #- docker push industrialdevops/titan-ccp-history
+    - docker push industrialdevops/titan-ccp-history
   only:
     variables:
-      - $PROTECTED
+      - $DOCKERHUB_ID
+      - $DOCKERHUB_PW
 
 deploy-record-tester:
   stage: deploy
@@ -104,10 +85,14 @@ deploy-record-tester:
   services:
     - docker:dind
   script:
+    - DOCKER_TAG_NAME=$(echo $CI_COMMIT_REF_SLUG- | sed 's/^master-$//')
     - docker build --pull -t titan-ccp-record-counter ./record-counter
     - docker tag titan-ccp-record-counter industrialdevops/titan-ccp-record-counter:latest
     - docker tag titan-ccp-record-counter industrialdevops/titan-ccp-record-counter:$(date +%Y%m%d%H%M%S)
+    - docker tag titan-ccp-history industrialdevops/titan-ccp-history:$DOCKER_TAG_NAME$CI_COMMIT_SHA
     - echo $DOCKERHUB_PW | docker login -u $DOCKERHUB_ID --password-stdin
     - docker push industrialdevops/titan-ccp-record-counter
   only:
-    - master
+    variables:
+      - $DOCKERHUB_ID
+      - $DOCKERHUB_PW
