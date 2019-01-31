@@ -81,8 +81,7 @@ deploy-test:
   services:
     - docker:dind
   script:
-    - echo "Deploy!"
-    - if $CI_COMMIT_REF_SLUG=="master"; then DOCKER_TAG_NAME=""; else DOCKER_TAG_NAME= $CI_COMMIT_REF_SLUG-; fi
+    - DOCKER_TAG_NAME=$(echo $CI_COMMIT_REF_SLUG- | sed 's/^master-$//')
     - echo $CI_COMMIT_REF_SLUG
     - echo $CI_COMMIT_SHA
     - echo $CI_COMMIT_SHORT_SHA
