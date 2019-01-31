@@ -97,6 +97,14 @@ public class KafkaStreamsBuilder {
     final KGroupedStream<String, ActivePowerRecord> groupedStream = flatMapped.groupByKey(Grouped
         .with(Serdes.String(), IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
 
+    groupedStream
+        .reduce((aggValue, newValue) -> newValue,
+            Materialized.with(Serdes.String(),
+                IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())))
+        .groupBy((final String k, final ActivePowerRecord v) -> KeyValue.pair(k.split("#")[1], v))
+        .aggregate(() -> 0, (k, v, r) -> r + 1, (k, v, r) -> r - 1).toStream();
+    // ...
+
     final KTable<String, AggregationHistory> aggregated = groupedStream.aggregate(
         () -> new AggregationHistory(this.sensorRegistry), (aggKey, newValue, aggValue) -> {
           aggValue.update(newValue);
@@ -155,7 +163,7 @@ public class KafkaStreamsBuilder {
     final List<KeyValue<String, ActivePowerRecord>> result =
         this.sensorRegistry.getSensorForIdentifier(record.getIdentifier()).stream()
             .flatMap(s -> s.getParents().stream()).map(s -> s.getIdentifier())
-            .map(i -> KeyValue.pair(i, record)).collect(Collectors.toList());
+            .map(i -> KeyValue.pair(i + '#' + i, record)).collect(Collectors.toList());
     LOGGER.debug("Flat map result: {}", result); // TODO Temporary
     return result;
   }
