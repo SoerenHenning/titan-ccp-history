@@ -89,7 +89,7 @@ deploy-record-tester:
     - docker build --pull -t titan-ccp-record-counter ./record-counter
     - docker tag titan-ccp-record-counter industrialdevops/titan-ccp-record-counter:latest
     - docker tag titan-ccp-record-counter industrialdevops/titan-ccp-record-counter:$(date +%Y%m%d%H%M%S)
-    - docker tag titan-ccp-history industrialdevops/titan-ccp-history:$DOCKER_TAG_NAME$CI_COMMIT_SHA
+    - docker tag titan-ccp-record-counter industrialdevops/titan-ccp-record-counter:$DOCKER_TAG_NAME$CI_COMMIT_SHA
     - echo $DOCKERHUB_PW | docker login -u $DOCKERHUB_ID --password-stdin
     - docker push industrialdevops/titan-ccp-record-counter
   only:
