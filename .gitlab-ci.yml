@@ -82,11 +82,17 @@ deploy-test:
     - docker:dind
   script:
     - echo "Deploy!"
-    - if $CI_COMMIT_REF_SLUG=="master"; then DOCKER_TAG_NAME=""; else DOCKER_TAG_NAME= $CI_COMMIT_REF_SLUG- fi
+    - if $CI_COMMIT_REF_SLUG=="master"; then DOCKER_TAG_NAME=""; else DOCKER_TAG_NAME= $CI_COMMIT_REF_SLUG-; fi
     - echo $CI_COMMIT_REF_SLUG
     - echo $CI_COMMIT_SHA
     - echo $CI_COMMIT_SHORT_SHA
     - echo $DOCKER_TAG_NAME
+    - docker build --pull -t titan-ccp-history .
+    - docker tag titan-ccp-history industrialdevops/titan-ccp-aggregation:$DOCKER_TAG_NAME:latest
+    - docker tag titan-ccp-history industrialdevops/titan-ccp-aggregation:$DOCKER_TAG_NAME$(date +%Y%m%d%H%M%S)
+    - docker tag titan-ccp-history industrialdevops/titan-ccp-aggregation:$DOCKER_TAG_NAME$CI_COMMIT_SHA
+    - echo $DOCKERHUB_PW | docker login -u $DOCKERHUB_ID --password-stdin
+    #- docker push industrialdevops/titan-ccp-aggregation
   only:
     variables:
       - $PROTECTED
