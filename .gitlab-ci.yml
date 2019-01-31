@@ -83,11 +83,39 @@ deploy-test:
   script:
     - echo "Deploy!"
   only:
+    variables:
+      - $PROTECTED == "true"
+
+deploy-test2:
+  stage: deploy
+  tags:
+    - dockerex
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - echo "Deploy!"
+  only:
     refs:
-      - master@titan/ControlCenterPrototype/History
+      - branches
+    variables:
+      - $PROTECTED == "true"
+
+deploy-test3:
+  stage: deploy
+  tags:
+    - dockerex
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - echo "Deploy!"
+  only:
+    refs:
+      - branches
     variables:
       - $PROTECTED
-    
+
 deploy-record-tester:
   stage: deploy
   tags:
