@@ -80,8 +80,15 @@ deploy-test:
   image: docker:latest
   services:
     - docker:dind
+  variables:
+    - DOCKER_TAG_NAME: $CI_COMMIT_REF_SLUG
   script:
     - echo "Deploy!"
+    - if $CI_COMMIT_REF_SLUG=="master"; then DOCKER_TAG_NAME=""; else DOCKER_TAG_NAME= $CI_COMMIT_REF_SLUG- fi
+    - echo $CI_COMMIT_REF_SLUG
+    - echo $CI_COMMIT_SHA
+    - echo $CI_COMMIT_SHORT_SHA
+    - echo $DOCKER_TAG_NAME
   only:
     variables:
       - $PROTECTED
