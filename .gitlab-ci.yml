@@ -80,8 +80,6 @@ deploy-test:
   image: docker:latest
   services:
     - docker:dind
-  variables:
-    - DOCKER_TAG_NAME: $CI_COMMIT_REF_SLUG
   script:
     - echo "Deploy!"
     - if $CI_COMMIT_REF_SLUG=="master"; then DOCKER_TAG_NAME=""; else DOCKER_TAG_NAME= $CI_COMMIT_REF_SLUG- fi
