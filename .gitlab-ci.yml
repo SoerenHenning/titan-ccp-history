@@ -72,6 +72,21 @@ deploy:
     - docker push industrialdevops/titan-ccp-aggregation
   only:
     - master
+
+deploy-test:
+  stage: deploy
+  tags:
+    - dockerex
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - echo "Deploy!"
+  only:
+    refs:
+      - master@titan/ControlCenterPrototype/History
+    variables:
+      - $PROTECTED
     
 deploy-record-tester:
   stage: deploy
