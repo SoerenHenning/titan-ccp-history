@@ -57,6 +57,7 @@ public class HistoryService {
             "titan-ccp-aggregation", // TODO group id
             this.configuration.getString(ConfigurationKeys.CONFIGURATION_KAFKA_TOPIC));
     configEventSubscriber.subscribe(Event.SENSOR_REGISTRY_CHANGED, data -> {
+      // Will soon not longer be required
       this.sensorRegistry.setBackingSensorRegisty(SensorRegistry.fromJson(data));
       LOGGER.info("Received new sensor registry.");
     });
@@ -75,6 +76,8 @@ public class HistoryService {
         .bootstrapServers(this.configuration.getString(ConfigurationKeys.KAFKA_BOOTSTRAP_SERVERS))
         .inputTopic(this.configuration.getString(ConfigurationKeys.KAFKA_INPUT_TOPIC))
         .outputTopic(this.configuration.getString(ConfigurationKeys.KAFKA_OUTPUT_TOPIC))
+        .configurationTopic(
+            this.configuration.getString(ConfigurationKeys.CONFIGURATION_KAFKA_TOPIC))
         .sensorRegistry(this.sensorRegistry).cassandraSession(clusterSession.getSession()).build();
     kafkaStreams.start();
     // TODO stop missing
