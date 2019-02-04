@@ -1,11 +1,14 @@
 package titan.ccp.history.streamprocessing; // NOPMD
 
 import com.datastax.driver.core.Session;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.Set;
 import java.util.stream.Collectors;
 import kieker.common.record.IMonitoringRecord;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KafkaStreams;
@@ -30,6 +33,7 @@ import titan.ccp.common.kieker.cassandra.KiekerDataAdapter;
 import titan.ccp.common.kieker.kafka.IMonitoringRecordSerde;
 import titan.ccp.configuration.events.Event;
 import titan.ccp.configuration.events.EventSerde;
+import titan.ccp.model.sensorregistry.Sensor;
 import titan.ccp.model.sensorregistry.SensorRegistry;
 import titan.ccp.models.records.ActivePowerRecord;
 import titan.ccp.models.records.ActivePowerRecordFactory;
@@ -100,94 +104,251 @@ public class KafkaStreamsBuilder {
 
     configurationStream.foreach((k, v) -> System.out.println(k + ": " + v));
 
-    final KStream<String, String> childParentsChangelog =
-        configurationStream.mapValues(data -> SensorRegistry.fromJson(data))
-            .flatMap((key, registry) -> {
-              // Registry -> Map/List<Sensor -> All Parents>
-              return registry.getMachineSensors().stream()
-                  .map(s -> KeyValue.pair(s.getIdentifier(),
-                      s.getParents().stream().map(p -> p.getIdentifier())
-                          .collect(Collectors.joining(";"))))
-                  .collect(Collectors.toList());
-            });
+    // final KStream<String, String> childParentsChangelog =
+    // configurationStream.mapValues(data -> SensorRegistry.fromJson(data))
+    // .flatMap((key, registry) -> {
+    // // Registry -> Map/List<Sensor -> All Parents>
+    // return registry.getMachineSensors().stream()
+    // .map(s -> KeyValue.pair(s.getIdentifier(),
+    // s.getParents().stream().map(p -> p.getIdentifier())
+    // .collect(Collectors.joining(";"))))
+    // .collect(Collectors.toList());
+    // });
+    //
+    // final KTable<String, String> childParentsTable =
+    // childParentsChangelog.groupByKey(Grouped.with(Serdes.String(), Serdes.String())).reduce(
+    // (aggValue, newValue) -> newValue, Materialized.with(Serdes.String(), Serdes.String()));
 
-    final KTable<String, String> childParentsTable =
-        childParentsChangelog.groupByKey(Grouped.with(Serdes.String(), Serdes.String())).reduce(
-            (aggValue, newValue) -> newValue, Materialized.with(Serdes.String(), Serdes.String()));
-
-    childParentsTable.toStream().foreach((k, v) -> System.out.println("CPT: " + k + ':' + v));
+    // childParentsTable.toStream().foreach((k, v) -> System.out.println("CPT: " + k + ':' + v));
 
 
 
     // ============
 
-    final KTable<String, String> deletionsPre =
-        childParentsChangelog.groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
-            .aggregate(() -> "#", (key, value, aggr) -> {
-              final String[] split = aggr.split("#");
-              if (aggr.equals("#") || value.equals(split[0])) {
-                // Nothing has changed
-                return value + "#";
-              } else {
-                final List<String> oldParents = List.of(split[1].split(";"));
-                final Set<String> newParents = Set.of(value.split(";"));
-                final String changedParents = oldParents.stream()
-                    .filter(p -> !newParents.contains(p)).collect(Collectors.joining(";"));
-                return value + "#" + changedParents;
-              }
-            }, Materialized.with(Serdes.String(), Serdes.String()));
-    deletionsPre.toStream().foreach((k, v) -> System.out.println("DTP: " + k + ':' + v));
-    final KTable<String, String> deletions = deletionsPre.mapValues(v -> v.split("#", -1)[1]);
-
-
-    deletions.toStream().foreach((k, v) -> System.out.println("DT: " + k + ':' + v));
-
-    final KStream<String, ActivePowerRecord> deletionsStream =
-        deletions.toStream().filterNot((k, v) -> {
-          return v.equals("");
-        }).flatMap((k, v) -> {
-          return List.of(v.split(";")).stream()
-              .map(p -> KeyValue.pair(v + "#" + p, (ActivePowerRecord) null))
+    final KStream<Event, String> childPrentsChangelog2 = configurationStream
+        .mapValues(data -> SensorRegistry.fromJson(data))
+        .mapValues(registry -> {
+          // Registry -> Map/List<Parent -> All children>
+          final List<KeyValue<String, String>> childParentsPairs = registry
+              .getMachineSensors()
+              .stream()
+              .map(child -> KeyValue.pair(
+                  child.getIdentifier(),
+                  child.getParents()
+                      .stream()
+                      .map(Sensor::getIdentifier)
+                      .collect(Collectors.joining(";"))))
               .collect(Collectors.toList());
+
+
+          return childParentsPairs.stream()
+              .map(e -> e.key + ':' + e.value)
+              .collect(Collectors.joining("+"));
+
+          // final List<KeyValue<String, String>> parentChildrenPairs = new ArrayList<>();
+          // new SensorRegistryTraverser().traverseAggregated(registry, parent -> {
+          // final String children = parent.getAllChildren()
+          // .stream()
+          // .map(Sensor::getIdentifier)
+          // .collect(Collectors.joining(";"));
+          // parentChildrenPairs.add(KeyValue.pair(parent.getIdentifier(), children));
+          // });
+          // return parentChildrenPairs.stream()
+          // .map(e -> e.key + ':' + e.value)
+          // .collect(Collectors.joining("+"));
         });
 
-    deletionsStream.foreach((k, v) -> System.out.println("DS: " + k + ':' + v));
+
+    final KTable<Event, String> sensorRegistryMetaTable = childPrentsChangelog2
+        .groupByKey(Grouped.with(EventSerde.serde(), Serdes.String()))
+        .aggregate(() -> "", (key, value, aggr) -> { // reduce should be sufficient
+          if (aggr.equals("")) {
+            // Nothing has changed
+            return value;
+          }
+          final String[] oldMapEntrys = aggr.split("\\+");
+          final Map<String, String> oldMap = new HashMap<>();
+          for (final String entry : oldMapEntrys) {
+            final String[] keyAndValue = entry.split(":");
+            final String child = keyAndValue[0];
+            final String parents = keyAndValue[1];
+            oldMap.put(child, parents);
+          }
+          final String[] newMapEntrys = value.split("\\+");
+          final Map<String, String> newMap = new HashMap<>();
+          for (final String entry : newMapEntrys) {
+            final String[] keyAndValue = entry.split(":");
+            final String child = keyAndValue[0];
+            final String parents = keyAndValue[1];
+            newMap.put(child, parents);
+          }
+
+          for (final Entry<String, String> entry : oldMap.entrySet()) {
+            if (!newMap.containsKey(entry.getKey())) {
+              if (entry.getValue().equals("DELETE")) {
+                newMap.remove(entry.getKey(), "DELETE");
+              } else {
+                newMap.put(entry.getKey(), "DELETE"); // DELETE is tombstone
+              }
+            }
+            // else {
+            // newMap.compute(entry.getKey(), (k, v) -> {
+            // if (v != entry.getValue()) {
+            // return "C~" + v; // Set flag
+            // } else {
+            // return "U~" + v; // Unsetflag
+            // }
+            // });
+            // }
+          }
+
+          return newMap.entrySet().stream()
+              .map(e -> e.getKey() + ':' + e.getValue())
+              .collect(Collectors.joining("+"));
+
+        }, Materialized.with(EventSerde.serde(), Serdes.String()));
+
+    sensorRegistryMetaTable.toStream()
+        .foreach((k, v) -> System.out.println("SRMT: " + k + ":" + v));
+
+    final KTable<String, String> childParentsTable2 = sensorRegistryMetaTable
+        .toStream()
+        .flatMap((key, value) -> {
+          if (value.equals("")) {
+            return List.of();
+          }
+          final String[] mapEntrys = value.split("\\+");
+          final Map<String, String> map = new HashMap<>();
+          for (final String entry : mapEntrys) {
+            final String[] keyAndValue = entry.split(":");
+            final String child = keyAndValue[0];
+            final String parents = keyAndValue[1]; // .equals("null") ? "DELETE" : keyAndValue[1];
+            map.put(child, parents);
+          }
+
+          return map.entrySet().stream()
+              .map(entry -> KeyValue.pair(entry.getKey(), entry.getValue()))
+              .collect(Collectors.toList());
+        })
+        .groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
+        .reduce((old, newValue) -> {
+          return newValue.equals("DELETE") ? null : newValue;
+        },
+            Materialized.with(Serdes.String(), Serdes.String()));
+
+
+    childParentsTable2.toStream()
+        .foreach((k, v) -> {
+          System.out.println("CPT: " + k + ":" + (v == null ? "_NULL_" : v));
+        });
+
+
+    // =======================
+
+
+    // final KTable<String, String> deletionsPre = childParentsChangelog
+    // .groupByKey(Grouped.with(Serdes.String(), Serdes.String()))
+    // .aggregate(() -> "#", (key, value, aggr) -> {
+    // final String[] split = aggr.split("#");
+    // if (aggr.equals("#") || value.equals(split[0])) {
+    // // Nothing has changed
+    // return value + "#";
+    // } else {
+    // final List<String> oldChildren = List.of(split[1].split(";"));
+    // final Set<String> newChildren = Set.of(value.split(";"));
+    // // Sets.difference(old, set2)
+    // final String changedChildren = oldChildren.stream()
+    // .filter(p -> !newChildren.contains(p))
+    // .collect(Collectors.joining(";"));
+    // return value + "#" + changedChildren;
+    // }
+    // }, Materialized.with(Serdes.String(), Serdes.String()));
+    // // deletionsPre.toStream().foreach((k, v) -> System.out.println("DTP: " + k + ':' + v));
+    // final KTable<String, String> deletions = deletionsPre.mapValues(v -> v.split("#", -1)[1]);
+
+
+    // deletions.toStream().foreach((k, v) -> System.out.println("DT: " + k + ':' + v));
+
+    // final KStream<String, ActivePowerRecord> deletionsStream = deletions
+    // .toStream()
+    // .filterNot((k, v) -> {
+    // return v.equals("");
+    // })
+    // .flatMap((k, v) -> {
+    // return List.of(v.split(";"))
+    // .stream()
+    // .map(p -> KeyValue.pair(v + "#" + p, (ActivePowerRecord) null))
+    // .collect(Collectors.toList());
+    // });
+
+    // deletionsStream.foreach((k, v) -> System.out.println("DS: " + k + ':' + v));
 
 
     // ===========
 
 
 
-    final KStream<String, ActivePowerRecord> inputStream = builder.stream(this.inputTopic, Consumed
+    // final KStream<String, ActivePowerRecord> inputStream = builder.stream(this.inputTopic,
+    // Consumed
+    // .with(Serdes.String(), IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
+
+    // inputStream.foreach((k, v) -> LOGGER.debug("Received record {}.", v));
+
+    final KTable<String, ActivePowerRecord> inputTable = builder.table(this.inputTopic, Consumed
         .with(Serdes.String(), IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
 
-    inputStream.foreach((k, v) -> LOGGER.debug("Received record {}.", v));
 
-    final KStream<String, ActivePowerRecord> flatMapped =
-        inputStream.flatMap((key, value) -> this.flatMap(value));
+
+    final KStream<String, ActivePowerRecord> flatMapped2 = inputTable
+        .join(childParentsTable2, (record, parents) -> Pair.of(parents, record))
+        .toStream()
+        .flatMap((k, v) -> {
+          final String[] parents = v.getLeft().split(";");
+          final ActivePowerRecord record = v.getRight();
+          return List.of(parents).stream()
+              .map(parent -> KeyValue.pair(record.getIdentifier() + "#" + parent, record))
+              .collect(Collectors.toList());
+        });
+
+    flatMapped2.foreach((k, v) -> System.out.println("FM: " + k + ':' + v));
+
+    //
+    // final KStream<String, ActivePowerRecord> flatMapped =
+    // inputStream.flatMap((key, value) -> this.flatMap(value));
 
     // final KStream<String, ActivePowerRecord> deletions = builder.stream("deletions", Consumed
     // .with(Serdes.String(), IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
 
     // final KStream<String, ActivePowerRecord> parentsChangelog = flatMapped.merge(deletions);
 
-    final KGroupedStream<String, ActivePowerRecord> groupedStream = flatMapped.groupByKey(Grouped
+    final KGroupedStream<String, ActivePowerRecord> groupedStream = flatMapped2.groupByKey(Grouped
         .with(Serdes.String(), IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
 
     final KTable<String, ActivePowerRecord> lastValueTable =
         groupedStream.reduce((aggValue, newValue) -> newValue, Materialized.with(Serdes.String(),
             IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
 
-    lastValueTable.toStream().foreach((k, v) -> System.out.println("LVT: " + k + ';' + v));
+    lastValueTable
+        .toStream()
+        .foreach((k, v) -> System.out.println("LVT: " + k + ';' + v));
 
     lastValueTable
-        .groupBy((k, v) -> KeyValue.pair(k.split("#")[1], v),
-            Grouped.with(Serdes.String(),
+        .groupBy(
+            (k, v) -> KeyValue.pair(k.split("#")[1], v),
+            Grouped.with(
+                Serdes.String(),
                 IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())))
-        .aggregate(() -> 0.0, (k, v, r) -> r + v.getValueInW(), (k, v, r) -> r - v.getValueInW(),
+        .aggregate(
+            () -> 0.0,
+            (k, v, r) -> r + v.getValueInW(), (k, v, r) -> r - v.getValueInW(),
             Materialized.with(Serdes.String(), Serdes.Double()))
-        .toStream().foreach((k, v) -> System.out.println(k + ';' + v));
+        .toStream()
+        .foreach((k, v) -> System.out.println(k + ';' + v));
+
+
     // ...
+
+    // ==================
 
     final KTable<String, AggregationHistory> aggregated = groupedStream.aggregate(
         () -> new AggregationHistory(this.sensorRegistry), (aggKey, newValue, aggValue) -> {
@@ -219,10 +380,10 @@ public class KafkaStreamsBuilder {
     // Cassandra Writer for ActivePowerRecord
     // final CassandraWriter<IMonitoringRecord> cassandraWriterForNormal =
     // this.buildCassandraWriter(ActivePowerRecord.class);
-    inputStream.foreach((key, record) -> {
-      LOGGER.debug("write to cassandra {}", record); // NOCS
-      // cassandraWriterForNormal.write(record);
-    });
+    // inputStream.foreach((key, record) -> {
+    // LOGGER.debug("write to cassandra {}", record); // NOCS
+    // // cassandraWriterForNormal.write(record);
+    // });
 
     return builder.build();
   }
