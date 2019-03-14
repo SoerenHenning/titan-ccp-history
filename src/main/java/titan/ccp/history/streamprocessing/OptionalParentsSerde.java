@@ -13,9 +13,14 @@ import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
 
-public class OptionalParentsSerde {
+/**
+ * {@link Serde} factory for an optional {@link Set} of parent identifiers.
+ */
+public final class OptionalParentsSerde {
 
   private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
+
+  private OptionalParentsSerde() {}
 
   public static Serde<Optional<Set<String>>> serde() {
     return Serdes.serdeFrom(new ParentsSerializer(), new ParentsDeserializer());
@@ -74,7 +79,7 @@ public class OptionalParentsSerde {
       final ByteBuffer buffer = this.byteBufferDeserializer.deserialize(topic, data);
 
       if (buffer == null) {
-        // TODO verify return null or Optional
+        // TODO return null
         return Optional.empty();
       }
 

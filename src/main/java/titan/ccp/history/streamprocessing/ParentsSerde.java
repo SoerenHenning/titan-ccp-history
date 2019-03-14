@@ -12,9 +12,14 @@ import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
 
-public class ParentsSerde {
+/**
+ * {@link Serde} factory for {@link Set} of parent identifiers.
+ */
+public final class ParentsSerde {
 
   private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
+
+  private ParentsSerde() {}
 
   public static Serde<Set<String>> serde() {
     return Serdes.serdeFrom(new ParentsSerializer(), new ParentsDeserializer());
@@ -33,11 +38,11 @@ public class ParentsSerde {
 
     @Override
     public byte[] serialize(final String topic, final Set<String> parents) {
-      final ByteBuffer buffer = ByteBuffer.allocateDirect(BYTE_BUFFER_CAPACITY);
-
       if (parents == null) {
         return null;
       }
+
+      final ByteBuffer buffer = ByteBuffer.allocateDirect(BYTE_BUFFER_CAPACITY);
 
       buffer.putInt(parents.size());
       for (final String parent : parents) {
@@ -70,7 +75,7 @@ public class ParentsSerde {
     public Set<String> deserialize(final String topic, final byte[] data) {
       final ByteBuffer buffer = this.byteBufferDeserializer.deserialize(topic, data);
 
-      if (data == null) {
+      if (buffer == null) {
         // Verify null/empty set
         return null;
       }
