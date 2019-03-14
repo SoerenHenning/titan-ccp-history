@@ -9,7 +9,11 @@ import org.apache.kafka.streams.processor.ProcessorContext;
 import org.apache.kafka.streams.state.KeyValueStore;
 import titan.ccp.models.records.ActivePowerRecord;
 
-public class JointFlatMapTransformer implements
+/**
+ * Transforms the join result of an {@link ActivePowerRecord} and the corresponding sensor parents
+ * to multiple of this {@link ActivePowerRecord} keyed by all sensor parents.
+ */
+public class JointFlatTransformer implements
     Transformer<String, Pair<Set<String>, ActivePowerRecord>, KeyValue<String, ActivePowerRecord>> {
 
   private final String stateStoreName;
@@ -17,7 +21,7 @@ public class JointFlatMapTransformer implements
   private ProcessorContext context;
   private KeyValueStore<String, Set<String>> state;
 
-  public JointFlatMapTransformer(final String stateStoreName) {
+  public JointFlatTransformer(final String stateStoreName) {
     this.stateStoreName = stateStoreName;
   }
 
@@ -29,26 +33,26 @@ public class JointFlatMapTransformer implements
   }
 
   @Override
-  public KeyValue<String, ActivePowerRecord> transform(final String key,
+  public KeyValue<String, ActivePowerRecord> transform(final String identifier,
       final Pair<Set<String>, ActivePowerRecord> jointValue) {
 
     final ActivePowerRecord record = jointValue == null ? null : jointValue.getRight();
     final Set<String> newParents = jointValue == null ? Set.of() : jointValue.getLeft();
-    final Set<String> oldParents = MoreObjects.firstNonNull(this.state.get(key), Set.of());
+    final Set<String> oldParents = MoreObjects.firstNonNull(this.state.get(identifier), Set.of());
 
     for (final String parent : newParents) {
       // Forward flat mapped record
-      this.forward(key, parent, record);
+      this.forward(identifier, parent, record);
     }
 
     if (!newParents.equals(oldParents)) {
       for (final String oldParent : oldParents) {
         if (!newParents.contains(oldParent)) {
           // Forward Delete
-          this.forward(key, oldParent, null);
+          this.forward(identifier, oldParent, null);
         }
       }
-      this.state.put(key, newParents);
+      this.state.put(identifier, newParents);
     }
 
     // Flat map results forwarded before

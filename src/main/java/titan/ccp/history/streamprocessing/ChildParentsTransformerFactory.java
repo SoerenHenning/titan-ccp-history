@@ -12,11 +12,17 @@ import org.apache.kafka.streams.state.Stores;
 import titan.ccp.configuration.events.Event;
 import titan.ccp.model.sensorregistry.SensorRegistry;
 
+/**
+ * Factory class configuration required by {@link ChildParentsTransformer}.
+ */
 public class ChildParentsTransformerFactory {
 
   private static final String STORE_NAME = "CHILD-PARENTS-TRANSFORM-STATE";
 
-  public TransformerSupplier<Event, SensorRegistry, KeyValue<String, Optional<Set<String>>>> getTransformerSupplier() {
+  /**
+   * Returns a {@link TransformerSupplier} for {@link ChildParentsTransformer}.
+   */
+  public TransformerSupplier<Event, SensorRegistry, KeyValue<String, Optional<Set<String>>>> getTransformerSupplier() { // NOCS
     return new TransformerSupplier<>() {
       @Override
       public ChildParentsTransformer get() {
@@ -25,6 +31,9 @@ public class ChildParentsTransformerFactory {
     };
   }
 
+  /**
+   * Returns a {@link StoreBuilder} for {@link ChildParentsTransformer}.
+   */
   public StoreBuilder<KeyValueStore<String, Set<String>>> getStoreBuilder() {
     return Stores.keyValueStoreBuilder(
         Stores.persistentKeyValueStore(STORE_NAME),
@@ -33,6 +42,9 @@ public class ChildParentsTransformerFactory {
         .withLoggingEnabled(Map.of());
   }
 
+  /**
+   * Returns the store name for {@link ChildParentsTransformer}.
+   */
   public String getStoreName() {
     return STORE_NAME;
   }

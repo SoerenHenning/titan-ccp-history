@@ -13,6 +13,12 @@ import titan.ccp.configuration.events.Event;
 import titan.ccp.model.sensorregistry.Sensor;
 import titan.ccp.model.sensorregistry.SensorRegistry;
 
+/**
+ * Transforms a {@link SensorRegistry} into key value pairs of Sensor identifiers and their parents'
+ * sensor identifiers. All pairs whose sensor's parents have changed since last iteration are
+ * forwarded. A mapping of an identifier to <code>null</code> means that the corresponding sensor
+ * does not longer exists in the sensor registry.
+ */
 public class ChildParentsTransformer implements
     Transformer<Event, SensorRegistry, KeyValue<String, Optional<Set<String>>>> {
 
@@ -37,7 +43,28 @@ public class ChildParentsTransformer implements
       final SensorRegistry registry) {
 
     // Values may be null for deleting a sensor
-    final Map<String, Set<String>> childParentsPairs = registry
+    final Map<String, Set<String>> childParentsPairs = this.constructChildParentsPairs(registry);
+
+    this.updateChildParentsPairs(childParentsPairs);
+
+    this.extractState(childParentsPairs);
+
+    this.forwardChildParentsPairs(childParentsPairs);
+
+    // Flat map results forwarded before
+    return null;
+  }
+
+  @Override
+  public void close() {
+    // Do nothing
+  }
+
+  /**
+   * Values may be <code>null</code>.
+   */
+  private Map<String, Set<String>> constructChildParentsPairs(final SensorRegistry registry) {
+    return registry
         .getMachineSensors()
         .stream()
         .collect(Collectors.toMap(
@@ -46,9 +73,9 @@ public class ChildParentsTransformer implements
                 .stream()
                 .map(Sensor::getIdentifier)
                 .collect(Collectors.toSet())));
+  }
 
-
-    // Old parents
+  private void updateChildParentsPairs(final Map<String, Set<String>> childParentsPairs) {
     final KeyValueIterator<String, Set<String>> oldChildParentsPairs = this.state.all();
     while (oldChildParentsPairs.hasNext()) {
       final KeyValue<String, Set<String>> oldChildParentPair = oldChildParentsPairs.next();
@@ -65,8 +92,9 @@ public class ChildParentsTransformer implements
       // Else: Later Perhaps: Mark changed parents
     }
     oldChildParentsPairs.close();
+  }
 
-    // update state
+  private void extractState(final Map<String, Set<String>> childParentsPairs) {
     for (final Map.Entry<String, Set<String>> childParentPair : childParentsPairs.entrySet()) {
       if (childParentPair.getValue() == null) {
         this.state.delete(childParentPair.getKey());
@@ -74,20 +102,14 @@ public class ChildParentsTransformer implements
         this.state.put(childParentPair.getKey(), childParentPair.getValue());
       }
     }
+  }
 
-    // forward
+  private void forwardChildParentsPairs(final Map<String, Set<String>> childParentsPairs) {
     for (final Map.Entry<String, Set<String>> childParentPair : childParentsPairs.entrySet()) {
       this.context.forward(childParentPair.getKey(),
           Optional.ofNullable(childParentPair.getValue()));
     }
-
-    // Flat map results forwarded before
-    return null;
   }
 
-  @Override
-  public void close() {
-    // Do nothing
-  }
 
 }

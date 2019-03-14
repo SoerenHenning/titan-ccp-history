@@ -16,6 +16,7 @@ import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
+import org.apache.kafka.streams.kstream.Produced;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import titan.ccp.common.cassandra.CassandraWriter;
@@ -28,6 +29,7 @@ import titan.ccp.configuration.events.EventSerde;
 import titan.ccp.model.sensorregistry.SensorRegistry;
 import titan.ccp.models.records.ActivePowerRecord;
 import titan.ccp.models.records.ActivePowerRecordFactory;
+import titan.ccp.models.records.AggregatedActivePowerRecord;
 import titan.ccp.models.records.AggregatedActivePowerRecordFactory;
 
 /**
@@ -35,11 +37,13 @@ import titan.ccp.models.records.AggregatedActivePowerRecordFactory;
  */
 public class KafkaStreamsBuilder {
 
-  private static final String APPLICATION_ID = "titanccp-aggregation-0.0.11";
+  private static final String APPLICATION_ID = "titanccp-aggregation-0.0.13";
 
   private static final int COMMIT_INTERVAL_MS = 1000;
 
   private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStreamsBuilder.class);
+
+  private final RecordAggregator recordAggregator = new RecordAggregator();
 
   private String bootstrapServers; // NOPMD
   private String inputTopic; // NOPMD
@@ -112,8 +116,8 @@ public class KafkaStreamsBuilder {
 
 
     // === Transformer
-    final JointFlatMapTransformerFactory jointFlatMapTransformerFactory =
-        new JointFlatMapTransformerFactory();
+    final JointFlatTransformerFactory jointFlatMapTransformerFactory =
+        new JointFlatTransformerFactory();
 
     // register store
     builder.addStateStore(jointFlatMapTransformerFactory.getStoreBuilder());
@@ -121,6 +125,7 @@ public class KafkaStreamsBuilder {
     final KTable<String, ActivePowerRecord> inputTable = builder.table(this.inputTopic, Consumed
         .with(Serdes.String(), IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
 
+    // TODO Debug only
     inputTable.toStream().foreach((k, v) -> System.out.println("INPUT: " + k + ':' + v));
 
     final KTable<String, ActivePowerRecord> lastValueTable = inputTable
@@ -144,21 +149,24 @@ public class KafkaStreamsBuilder {
         .foreach(
             (k, v) -> System.out.println("LVT: " + k + ':' + this.buildActivePowerRecordString(v)));
 
-    final KStream<String, Double> aggregations = lastValueTable
+    final KStream<String, AggregatedActivePowerRecord> aggregations = lastValueTable
         .groupBy(
             (k, v) -> KeyValue.pair(k.split("#")[1], v),
             Grouped.with(
                 Serdes.String(),
                 IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())))
         .aggregate(
-            () -> 0.0,
-            (k, v, r) -> r + v.getValueInW(), (k, v, r) -> r - v.getValueInW(),
-            Materialized.with(Serdes.String(), Serdes.Double()))
+            () -> null, this.recordAggregator::add, this.recordAggregator::substract,
+            Materialized.with(
+                Serdes.String(),
+                IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
         .toStream();
 
     // TODO DEBUG only
-    aggregations.foreach((k, v) -> System.out.println("AGG: " + k + ';' + v));
+    aggregations.foreach((k, v) -> System.out.println("AGG: " + k + ';' + v.getSumInW()));
 
+    aggregations.to(this.outputTopic, Produced.with(Serdes.String(),
+        IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())));
 
     // ...
 

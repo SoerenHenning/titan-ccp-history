@@ -11,19 +11,28 @@ import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.Stores;
 import titan.ccp.models.records.ActivePowerRecord;
 
-public class JointFlatMapTransformerFactory {
+/**
+ * Factory class configuration required by {@link JointFlatTransformerFactory}.
+ */
+public class JointFlatTransformerFactory {
 
   private static final String STORE_NAME = "JOINT-FLAT-MAP-TRANSFORM-STATE";
 
-  public TransformerSupplier<String, Pair<Set<String>, ActivePowerRecord>, KeyValue<String, ActivePowerRecord>> getTransformerSupplier() {
+  /**
+   * Returns a {@link TransformerSupplier} for {@link JointFlatTransformer}.
+   */
+  public TransformerSupplier<String, Pair<Set<String>, ActivePowerRecord>, KeyValue<String, ActivePowerRecord>> getTransformerSupplier() { // NOCS
     return new TransformerSupplier<>() {
       @Override
-      public JointFlatMapTransformer get() {
-        return new JointFlatMapTransformer(STORE_NAME);
+      public JointFlatTransformer get() {
+        return new JointFlatTransformer(STORE_NAME);
       }
     };
   }
 
+  /**
+   * Returns a {@link StoreBuilder} for {@link JointFlatTransformer}.
+   */
   public StoreBuilder<KeyValueStore<String, Set<String>>> getStoreBuilder() {
     return Stores.keyValueStoreBuilder(
         Stores.persistentKeyValueStore(STORE_NAME),
@@ -32,6 +41,9 @@ public class JointFlatMapTransformerFactory {
         .withLoggingEnabled(Map.of());
   }
 
+  /**
+   * Returns the store name for {@link JointFlatTransformer}.
+   */
   public String getStoreName() {
     return STORE_NAME;
   }
