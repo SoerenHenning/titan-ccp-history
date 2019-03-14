@@ -78,7 +78,7 @@ public class HistoryService {
         .outputTopic(this.configuration.getString(ConfigurationKeys.KAFKA_OUTPUT_TOPIC))
         .configurationTopic(
             this.configuration.getString(ConfigurationKeys.CONFIGURATION_KAFKA_TOPIC))
-        .sensorRegistry(this.sensorRegistry).cassandraSession(clusterSession.getSession()).build();
+        .cassandraSession(clusterSession.getSession()).build();
     kafkaStreams.start();
     // TODO stop missing
     // this.stopEvent.thenRun(() -> kafkaStreams.close())

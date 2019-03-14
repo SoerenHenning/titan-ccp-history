@@ -1,10 +1,8 @@
 package titan.ccp.history.streamprocessing; // NOPMD
 
 import com.datastax.driver.core.Session;
-import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-import java.util.stream.Collectors;
 import kieker.common.record.IMonitoringRecord;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.common.serialization.Serdes;
@@ -37,8 +35,6 @@ import titan.ccp.models.records.AggregatedActivePowerRecordFactory;
  */
 public class KafkaStreamsBuilder {
 
-
-
   private static final String APPLICATION_ID = "titanccp-aggregation-0.0.11";
 
   private static final int COMMIT_INTERVAL_MS = 1000;
@@ -49,15 +45,7 @@ public class KafkaStreamsBuilder {
   private String inputTopic; // NOPMD
   private String outputTopic; // NOPMD
   private String configurationTopic; // NOPMD
-  private final String aggregationStoreName = "stream-store"; // NOPMD
-
-  private SensorRegistry sensorRegistry; // NOPMD
   private Session cassandraSession; // NOPMD
-
-  public KafkaStreamsBuilder sensorRegistry(final SensorRegistry sensorRegistry) {
-    this.sensorRegistry = sensorRegistry;
-    return this;
-  }
 
   public KafkaStreamsBuilder cassandraSession(final Session cassandraSession) {
     this.cassandraSession = cassandraSession;
@@ -97,7 +85,9 @@ public class KafkaStreamsBuilder {
         builder.stream(this.configurationTopic, Consumed.with(EventSerde.serde(), Serdes.String()))
             .filter((key, value) -> key == Event.SENSOR_REGISTRY_CHANGED);
 
+    // TODO DEBUG
     configurationStream.foreach((k, v) -> System.out.println(k + ": " + v));
+
 
     // === Child Parents Transformer
     final ChildParentsTransformerFactory childParentsTransformerFactory =
@@ -120,6 +110,7 @@ public class KafkaStreamsBuilder {
     childParentsTable.toStream()
         .foreach((k, v) -> System.out.println("CPT: " + k + ':' + v));
 
+
     // === Transformer
     final JointFlatMapTransformerFactory jointFlatMapTransformerFactory =
         new JointFlatMapTransformerFactory();
@@ -129,7 +120,6 @@ public class KafkaStreamsBuilder {
 
     final KTable<String, ActivePowerRecord> inputTable = builder.table(this.inputTopic, Consumed
         .with(Serdes.String(), IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
-
 
     inputTable.toStream().foreach((k, v) -> System.out.println("INPUT: " + k + ':' + v));
 
@@ -147,9 +137,6 @@ public class KafkaStreamsBuilder {
             (aggValue, newValue) -> newValue,
             Materialized.with(Serdes.String(),
                 IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
-
-    // =======================
-
 
     // TODO Debug only
     lastValueTable
@@ -232,17 +219,7 @@ public class KafkaStreamsBuilder {
     return cassandraWriter;
   }
 
-  private Iterable<KeyValue<String, ActivePowerRecord>> flatMap(final ActivePowerRecord record) {
-    LOGGER.debug("Flat map record: {}", record); // TODO Temporary
-    final List<KeyValue<String, ActivePowerRecord>> result =
-        this.sensorRegistry.getSensorForIdentifier(record.getIdentifier()).stream()
-            .flatMap(s -> s.getParents().stream()).map(s -> s.getIdentifier())
-            .map(i -> KeyValue.pair(record.getIdentifier() + '#' + i, record))
-            .collect(Collectors.toList());
-    LOGGER.debug("Flat map result: {}", result); // TODO Temporary
-    return result;
-  }
-
+  // TODO Temp
   private String buildActivePowerRecordString(final ActivePowerRecord record) {
     return "{" + record.getIdentifier() + ';' + record.getTimestamp() + ';' + record.getValueInW()
         + '}';

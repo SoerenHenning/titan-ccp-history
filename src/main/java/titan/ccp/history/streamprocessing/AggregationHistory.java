@@ -12,6 +12,7 @@ import titan.ccp.models.records.AggregatedActivePowerRecord;
 /**
  * Manages the last value for an aggregation, i.e., a set of different sensors.
  */
+@Deprecated
 public class AggregationHistory {
   private final Map<String, Double> lastValues;
   private long timestamp;

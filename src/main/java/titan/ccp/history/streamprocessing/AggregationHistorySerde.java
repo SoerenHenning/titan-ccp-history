@@ -16,6 +16,7 @@ import titan.ccp.model.sensorregistry.SensorRegistry;
 /**
  * {@link Serde} for {@link AggregationHistory}.
  */
+@Deprecated
 public final class AggregationHistorySerde {
 
   private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
