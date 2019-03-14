@@ -1,5 +1,6 @@
 package titan.ccp.history.streamprocessing;
 
+import com.google.common.base.MoreObjects;
 import java.util.Set;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.streams.KeyValue;
@@ -9,12 +10,12 @@ import org.apache.kafka.streams.state.KeyValueStore;
 import titan.ccp.models.records.ActivePowerRecord;
 
 public class JointFlatMapTransformer implements
-    Transformer<String, Pair<String, ActivePowerRecord>, KeyValue<String, ActivePowerRecord>> {
+    Transformer<String, Pair<Set<String>, ActivePowerRecord>, KeyValue<String, ActivePowerRecord>> {
 
   private final String stateStoreName;
 
   private ProcessorContext context;
-  private KeyValueStore<String, String> state;
+  private KeyValueStore<String, Set<String>> state;
 
   public JointFlatMapTransformer(final String stateStoreName) {
     this.stateStoreName = stateStoreName;
@@ -24,35 +25,30 @@ public class JointFlatMapTransformer implements
   @SuppressWarnings("unchecked")
   public void init(final ProcessorContext context) {
     this.context = context;
-    this.state = (KeyValueStore<String, String>) context.getStateStore(this.stateStoreName);
+    this.state = (KeyValueStore<String, Set<String>>) context.getStateStore(this.stateStoreName);
   }
 
   @Override
   public KeyValue<String, ActivePowerRecord> transform(final String key,
-      final Pair<String, ActivePowerRecord> jointValue) {
+      final Pair<Set<String>, ActivePowerRecord> jointValue) {
 
-    final String parentsString = jointValue.getLeft();
-    final ActivePowerRecord record = jointValue.getRight();
-
-    final String oldParentsString = this.state.get(key);
-
-    // TODO Instead deserialize
-    final Set<String> newParents =
-        parentsString == null ? Set.of() : Set.of(parentsString.split(";"));
-    final Set<String> oldParents =
-        oldParentsString == null ? Set.of() : Set.of(oldParentsString.split(";"));
+    final ActivePowerRecord record = jointValue == null ? null : jointValue.getRight();
+    final Set<String> newParents = jointValue == null ? Set.of() : jointValue.getLeft();
+    final Set<String> oldParents = MoreObjects.firstNonNull(this.state.get(key), Set.of());
 
     for (final String parent : newParents) {
-      this.forward(record, parent);
+      // Forward flat mapped record
+      this.forward(key, parent, record);
     }
 
     if (!newParents.equals(oldParents)) {
       for (final String oldParent : oldParents) {
         if (!newParents.contains(oldParent)) {
-          this.forward(record, oldParent);
+          // Forward Delete
+          this.forward(key, oldParent, null);
         }
       }
-      this.state.put(key, parentsString); // TODO instead serialize
+      this.state.put(key, newParents);
     }
 
     // Flat map results forwarded before
@@ -64,8 +60,11 @@ public class JointFlatMapTransformer implements
     // Do nothing
   }
 
-  private void forward(final ActivePowerRecord record, final String parent) {
-    final String key = record.getIdentifier() + '#' + parent;
+
+
+  private void forward(final String identifier, final String parent,
+      final ActivePowerRecord record) {
+    final String key = identifier + '#' + parent;
     this.context.forward(key, record);
   }
 

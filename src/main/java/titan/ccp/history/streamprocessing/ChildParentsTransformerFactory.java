@@ -1,25 +1,26 @@
 package titan.ccp.history.streamprocessing;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.TransformerSupplier;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.Stores;
-import titan.ccp.models.records.ActivePowerRecord;
+import titan.ccp.configuration.events.Event;
+import titan.ccp.model.sensorregistry.SensorRegistry;
 
-public class JointFlatMapTransformerFactory {
+public class ChildParentsTransformerFactory {
 
-  private static final String STORE_NAME = "JOINT-FLAT-MAP-TRANSFORM-STATE";
+  private static final String STORE_NAME = "CHILD-PARENTS-TRANSFORM-STATE";
 
-  public TransformerSupplier<String, Pair<Set<String>, ActivePowerRecord>, KeyValue<String, ActivePowerRecord>> getTransformerSupplier() {
+  public TransformerSupplier<Event, SensorRegistry, KeyValue<String, Optional<Set<String>>>> getTransformerSupplier() {
     return new TransformerSupplier<>() {
       @Override
-      public JointFlatMapTransformer get() {
-        return new JointFlatMapTransformer(STORE_NAME);
+      public ChildParentsTransformer get() {
+        return new ChildParentsTransformer(STORE_NAME);
       }
     };
   }
