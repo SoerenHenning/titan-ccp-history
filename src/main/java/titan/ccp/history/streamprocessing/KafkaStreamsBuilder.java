@@ -189,25 +189,28 @@ public class KafkaStreamsBuilder {
     // .to(this.outputTopic, Produced.with(Serdes.String(),
     // IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())));
 
+    // Cassandra writing
+
     // Cassandra Writer for AggregatedActivePowerRecord
-    // final CassandraWriter<IMonitoringRecord> cassandraWriter =
-    // this.buildCassandraWriter(AggregatedActivePowerRecord.class);
+    final CassandraWriter<IMonitoringRecord> cassandraWriter =
+        this.buildCassandraWriter(AggregatedActivePowerRecord.class);
     builder
-        .stream(this.outputTopic,
-            Consumed.with(Serdes.String(),
-                IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
+        .stream(this.outputTopic, Consumed.with(
+            Serdes.String(),
+            IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
         .foreach((key, record) -> {
           LOGGER.debug("write to cassandra {}", record); // NOCS
-          // cassandraWriter.write(record);
+          cassandraWriter.write(record);
         });
 
     // Cassandra Writer for ActivePowerRecord
-    // final CassandraWriter<IMonitoringRecord> cassandraWriterForNormal =
-    // this.buildCassandraWriter(ActivePowerRecord.class);
-    // inputStream.foreach((key, record) -> {
-    // LOGGER.debug("write to cassandra {}", record); // NOCS
-    // // cassandraWriterForNormal.write(record);
-    // });
+    final CassandraWriter<IMonitoringRecord> cassandraWriterForNormal =
+        this.buildCassandraWriter(ActivePowerRecord.class);
+    inputTable.toStream()
+        .foreach((key, record) -> {
+          LOGGER.debug("write to cassandra {}", record); // NOCS
+          cassandraWriterForNormal.write(record);
+        });
 
     return builder.build();
   }
