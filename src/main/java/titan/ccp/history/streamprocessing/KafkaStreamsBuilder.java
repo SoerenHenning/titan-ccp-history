@@ -168,27 +168,8 @@ public class KafkaStreamsBuilder {
     aggregations.to(this.outputTopic, Produced.with(Serdes.String(),
         IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())));
 
-    // ...
 
     // ==================
-
-    // final KTable<String, AggregationHistory> aggregated = groupedStream.aggregate(
-    // () -> new AggregationHistory(this.sensorRegistry), (aggKey, newValue, aggValue) -> {
-    // aggValue.update(newValue);
-    // LOGGER.debug("update history {}", aggValue);
-    // return aggValue;
-    // },
-    // Materialized
-    // .<String, AggregationHistory, KeyValueStore<Bytes, byte[]>>as(this.aggregationStoreName)
-    // .withKeySerde(Serdes.String())
-    // .withValueSerde(AggregationHistorySerde.serde(this.sensorRegistry)));
-    //
-    // aggregated
-    // .toStream()
-    // .map((key, value) -> KeyValue.pair(key, value.toRecord(key)))
-    // .to(this.outputTopic, Produced.with(Serdes.String(),
-    // IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())));
-
     // Cassandra writing
 
     // Cassandra Writer for AggregatedActivePowerRecord
