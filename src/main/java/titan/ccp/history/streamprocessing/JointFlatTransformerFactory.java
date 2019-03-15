@@ -2,7 +2,6 @@ package titan.ccp.history.streamprocessing;
 
 import java.util.Map;
 import java.util.Set;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.TransformerSupplier;
@@ -21,7 +20,7 @@ public class JointFlatTransformerFactory {
   /**
    * Returns a {@link TransformerSupplier} for {@link JointFlatTransformer}.
    */
-  public TransformerSupplier<String, Pair<Set<String>, ActivePowerRecord>, KeyValue<String, ActivePowerRecord>> getTransformerSupplier() { // NOCS
+  public TransformerSupplier<String, JointRecordParents, KeyValue<SensorParentKey, ActivePowerRecord>> getTransformerSupplier() { // NOCS
     return new TransformerSupplier<>() {
       @Override
       public JointFlatTransformer get() {

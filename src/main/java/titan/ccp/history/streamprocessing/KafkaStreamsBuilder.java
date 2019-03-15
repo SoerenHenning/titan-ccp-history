@@ -4,7 +4,6 @@ import com.datastax.driver.core.Session;
 import java.util.Properties;
 import java.util.Set;
 import kieker.common.record.IMonitoringRecord;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
@@ -128,19 +127,20 @@ public class KafkaStreamsBuilder {
     // TODO Debug only
     inputTable.toStream().foreach((k, v) -> System.out.println("INPUT: " + k + ':' + v));
 
-    final KTable<String, ActivePowerRecord> lastValueTable = inputTable
-        .join(childParentsTable, (record, parents) -> Pair.of(parents, record))
+    final KTable<SensorParentKey, ActivePowerRecord> lastValueTable = inputTable
+        .join(childParentsTable, (record, parents) -> new JointRecordParents(parents, record))
         .toStream()
         .transform(
             jointFlatMapTransformerFactory.getTransformerSupplier(),
             jointFlatMapTransformerFactory.getStoreName())
         .groupByKey(Grouped.with(
-            Serdes.String(),
+            SensorParentKeySerde.serde(),
             IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())))
         .reduce(
             // TODO Also deduplicate here?
             (aggValue, newValue) -> newValue,
-            Materialized.with(Serdes.String(),
+            Materialized.with(
+                SensorParentKeySerde.serde(),
                 IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
 
     // TODO Debug only
@@ -151,7 +151,7 @@ public class KafkaStreamsBuilder {
 
     final KStream<String, AggregatedActivePowerRecord> aggregations = lastValueTable
         .groupBy(
-            (k, v) -> KeyValue.pair(k.split("#")[1], v),
+            (k, v) -> KeyValue.pair(k.getParent(), v),
             Grouped.with(
                 Serdes.String(),
                 IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())))

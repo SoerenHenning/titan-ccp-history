@@ -2,7 +2,6 @@ package titan.ccp.history.streamprocessing;
 
 import com.google.common.base.MoreObjects;
 import java.util.Set;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.Transformer;
 import org.apache.kafka.streams.processor.ProcessorContext;
@@ -14,7 +13,7 @@ import titan.ccp.models.records.ActivePowerRecord;
  * to multiple of this {@link ActivePowerRecord} keyed by all sensor parents.
  */
 public class JointFlatTransformer implements
-    Transformer<String, Pair<Set<String>, ActivePowerRecord>, KeyValue<String, ActivePowerRecord>> {
+    Transformer<String, JointRecordParents, KeyValue<SensorParentKey, ActivePowerRecord>> {
 
   private final String stateStoreName;
 
@@ -33,11 +32,11 @@ public class JointFlatTransformer implements
   }
 
   @Override
-  public KeyValue<String, ActivePowerRecord> transform(final String identifier,
-      final Pair<Set<String>, ActivePowerRecord> jointValue) {
+  public KeyValue<SensorParentKey, ActivePowerRecord> transform(final String identifier,
+      final JointRecordParents jointValue) {
 
-    final ActivePowerRecord record = jointValue == null ? null : jointValue.getRight();
-    final Set<String> newParents = jointValue == null ? Set.of() : jointValue.getLeft();
+    final ActivePowerRecord record = jointValue == null ? null : jointValue.getRecord();
+    final Set<String> newParents = jointValue == null ? Set.of() : jointValue.getParents();
     final Set<String> oldParents = MoreObjects.firstNonNull(this.state.get(identifier), Set.of());
 
     for (final String parent : newParents) {
@@ -68,7 +67,7 @@ public class JointFlatTransformer implements
 
   private void forward(final String identifier, final String parent,
       final ActivePowerRecord record) {
-    final String key = identifier + '#' + parent;
+    final SensorParentKey key = new SensorParentKey(identifier, parent);
     this.context.forward(key, record);
   }
 
