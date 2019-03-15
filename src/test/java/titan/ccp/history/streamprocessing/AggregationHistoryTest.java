@@ -7,6 +7,7 @@ import org.junit.Test;
 import titan.ccp.model.sensorregistry.MutableSensorRegistry;
 import titan.ccp.models.records.ActivePowerRecord;
 
+@Deprecated
 public class AggregationHistoryTest {
 
   private static final String CHILD_Sensor_ID_1 = "child1";
