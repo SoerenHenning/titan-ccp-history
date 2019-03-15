@@ -15,7 +15,7 @@ public class OptionalParentsSerdeTest {
     final Optional<Set<String>> optionalParents = Optional.of(parents);
     final SerdeTester<Optional<Set<String>>> tester =
         this.serdeTesterFactory.create(optionalParents);
-    tester.test(o -> o);
+    tester.test();
   }
 
   @Test
