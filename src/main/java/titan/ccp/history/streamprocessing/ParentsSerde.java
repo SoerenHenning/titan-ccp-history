@@ -3,8 +3,7 @@ package titan.ccp.history.streamprocessing;
 import java.util.HashSet;
 import java.util.Set;
 import org.apache.kafka.common.serialization.Serde;
-import titan.ccp.common.kafka.simpleserdes.BufferDeserializer;
-import titan.ccp.common.kafka.simpleserdes.BufferSerializer;
+import titan.ccp.common.kafka.simpleserdes.BufferSerde;
 import titan.ccp.common.kafka.simpleserdes.ReadBuffer;
 import titan.ccp.common.kafka.simpleserdes.SimpleSerdes;
 import titan.ccp.common.kafka.simpleserdes.WriteBuffer;
@@ -12,9 +11,7 @@ import titan.ccp.common.kafka.simpleserdes.WriteBuffer;
 /**
  * {@link Serde} factory for {@link Set} of parent identifiers.
  */
-public final class ParentsSerde
-    implements BufferSerializer<Set<String>>, BufferDeserializer<Set<String>> {
-  // public final class ParentsSerde implements BufferSerde<Set<String>> {
+public final class ParentsSerde implements BufferSerde<Set<String>> {
 
   private ParentsSerde() {}
 
@@ -38,9 +35,7 @@ public final class ParentsSerde
   }
 
   public static Serde<Set<String>> serde() {
-    final ParentsSerde parentsSerde = new ParentsSerde();
-    return SimpleSerdes.create(parentsSerde, parentsSerde);
-    // return SimpleSerdes.create(new ParentsSerde()); //TODO
+    return SimpleSerdes.create(new ParentsSerde());
   }
 
 }

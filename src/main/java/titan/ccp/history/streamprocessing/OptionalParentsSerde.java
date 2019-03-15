@@ -4,8 +4,7 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.kafka.common.serialization.Serde;
-import titan.ccp.common.kafka.simpleserdes.BufferDeserializer;
-import titan.ccp.common.kafka.simpleserdes.BufferSerializer;
+import titan.ccp.common.kafka.simpleserdes.BufferSerde;
 import titan.ccp.common.kafka.simpleserdes.ReadBuffer;
 import titan.ccp.common.kafka.simpleserdes.SimpleSerdes;
 import titan.ccp.common.kafka.simpleserdes.WriteBuffer;
@@ -13,9 +12,7 @@ import titan.ccp.common.kafka.simpleserdes.WriteBuffer;
 /**
  * {@link Serde} factory for an optional {@link Set} of parent identifiers.
  */
-public final class OptionalParentsSerde
-    implements BufferSerializer<Optional<Set<String>>>, BufferDeserializer<Optional<Set<String>>> {
-  // public final class OptionalParentsSerde implements BufferSerde<Optional<Set<String>>> {
+public final class OptionalParentsSerde implements BufferSerde<Optional<Set<String>>> {
 
   private OptionalParentsSerde() {}
 
@@ -49,9 +46,7 @@ public final class OptionalParentsSerde
   }
 
   public static Serde<Optional<Set<String>>> serde() {
-    final OptionalParentsSerde parentsSerde = new OptionalParentsSerde();
-    return SimpleSerdes.create(parentsSerde, parentsSerde);
-    // return Serdes.serdeFrom(new ParentsSerializer(), new ParentsDeserializer());
+    return SimpleSerdes.create(new OptionalParentsSerde());
   }
 
 }
