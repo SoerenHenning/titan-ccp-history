@@ -26,6 +26,7 @@ import titan.ccp.common.kieker.kafka.IMonitoringRecordSerde;
 import titan.ccp.configuration.events.Event;
 import titan.ccp.configuration.events.EventSerde;
 import titan.ccp.model.sensorregistry.SensorRegistry;
+import titan.ccp.model.sensorregistry.client.SensorRegistryRequester;
 import titan.ccp.models.records.ActivePowerRecord;
 import titan.ccp.models.records.ActivePowerRecordFactory;
 import titan.ccp.models.records.AggregatedActivePowerRecord;
@@ -36,7 +37,7 @@ import titan.ccp.models.records.AggregatedActivePowerRecordFactory;
  */
 public class KafkaStreamsBuilder {
 
-  private static final String APPLICATION_ID = "titanccp-aggregation-0.0.13";
+  private static final String APPLICATION_ID = "titanccp-aggregation-0.0.16";
 
   private static final int COMMIT_INTERVAL_MS = 1000;
 
@@ -49,6 +50,7 @@ public class KafkaStreamsBuilder {
   private String outputTopic; // NOPMD
   private String configurationTopic; // NOPMD
   private Session cassandraSession; // NOPMD
+  private SensorRegistryRequester registryRequester; // NOPMD
 
   public KafkaStreamsBuilder cassandraSession(final Session cassandraSession) {
     this.cassandraSession = cassandraSession;
@@ -75,6 +77,11 @@ public class KafkaStreamsBuilder {
     return this;
   }
 
+  public KafkaStreamsBuilder registryRequester(final SensorRegistryRequester registryRequester) {
+    this.registryRequester = registryRequester;
+    return this;
+  }
+
   public KafkaStreams build() {
     return new KafkaStreams(this.buildTopology(), this.buildProperties());
   }
@@ -94,7 +101,7 @@ public class KafkaStreamsBuilder {
 
     // === Child Parents Transformer
     final ChildParentsTransformerFactory childParentsTransformerFactory =
-        new ChildParentsTransformerFactory();
+        new ChildParentsTransformerFactory(this.registryRequester);
 
     // register store
     builder.addStateStore(childParentsTransformerFactory.getStoreBuilder());

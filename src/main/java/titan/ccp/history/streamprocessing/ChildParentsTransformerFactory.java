@@ -1,6 +1,5 @@
 package titan.ccp.history.streamprocessing;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.kafka.common.serialization.Serdes;
@@ -11,6 +10,7 @@ import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.Stores;
 import titan.ccp.configuration.events.Event;
 import titan.ccp.model.sensorregistry.SensorRegistry;
+import titan.ccp.model.sensorregistry.client.SensorRegistryRequester;
 
 /**
  * Factory class configuration required by {@link ChildParentsTransformer}.
@@ -19,6 +19,12 @@ public class ChildParentsTransformerFactory {
 
   private static final String STORE_NAME = "CHILD-PARENTS-TRANSFORM-STATE";
 
+  private final SensorRegistryRequester registryRequester;
+
+  public ChildParentsTransformerFactory(final SensorRegistryRequester registryRequester) {
+    this.registryRequester = registryRequester;
+  }
+
   /**
    * Returns a {@link TransformerSupplier} for {@link ChildParentsTransformer}.
    */
@@ -26,7 +32,8 @@ public class ChildParentsTransformerFactory {
     return new TransformerSupplier<>() {
       @Override
       public ChildParentsTransformer get() {
-        return new ChildParentsTransformer(STORE_NAME);
+        return new ChildParentsTransformer(STORE_NAME,
+            ChildParentsTransformerFactory.this.registryRequester);
       }
     };
   }
@@ -39,7 +46,8 @@ public class ChildParentsTransformerFactory {
         Stores.persistentKeyValueStore(STORE_NAME),
         Serdes.String(),
         ParentsSerde.serde())
-        .withLoggingEnabled(Map.of());
+        .withLoggingDisabled();
+    // .withLoggingEnabled(Map.of());
   }
 
   /**
