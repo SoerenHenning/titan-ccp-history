@@ -1,6 +1,9 @@
 package titan.ccp.history.streamprocessing;
 
 import com.google.common.base.MoreObjects;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.Transformer;
@@ -13,11 +16,11 @@ import titan.ccp.models.records.ActivePowerRecord;
  * to multiple of this {@link ActivePowerRecord} keyed by all sensor parents.
  */
 public class JointFlatTransformer implements
-    Transformer<String, JointRecordParents, KeyValue<SensorParentKey, ActivePowerRecord>> {
+    Transformer<String, JointRecordParents, Iterable<KeyValue<SensorParentKey, ActivePowerRecord>>> { // NOCS
 
   private final String stateStoreName;
 
-  private ProcessorContext context;
+  // private ProcessorContext context;
   private KeyValueStore<String, Set<String>> state;
 
   public JointFlatTransformer(final String stateStoreName) {
@@ -27,35 +30,36 @@ public class JointFlatTransformer implements
   @Override
   @SuppressWarnings("unchecked")
   public void init(final ProcessorContext context) {
-    this.context = context;
+    // this.context = context;
     this.state = (KeyValueStore<String, Set<String>>) context.getStateStore(this.stateStoreName);
   }
 
   @Override
-  public KeyValue<SensorParentKey, ActivePowerRecord> transform(final String identifier,
+  public Iterable<KeyValue<SensorParentKey, ActivePowerRecord>> transform(final String identifier,
       final JointRecordParents jointValue) {
 
     final ActivePowerRecord record = jointValue == null ? null : jointValue.getRecord();
     final Set<String> newParents = jointValue == null ? Set.of() : jointValue.getParents();
     final Set<String> oldParents = MoreObjects.firstNonNull(this.state.get(identifier), Set.of());
 
+    final TransformedResults transformedResults = new TransformedResults();
+
     for (final String parent : newParents) {
       // Forward flat mapped record
-      this.forward(identifier, parent, record);
+      transformedResults.add(identifier, parent, record);
     }
 
     if (!newParents.equals(oldParents)) {
       for (final String oldParent : oldParents) {
         if (!newParents.contains(oldParent)) {
           // Forward Delete
-          this.forward(identifier, oldParent, null);
+          transformedResults.add(identifier, oldParent, null);
         }
       }
       this.state.put(identifier, newParents);
     }
 
-    // Flat map results forwarded before
-    return null;
+    return transformedResults;
   }
 
   @Override
@@ -64,11 +68,21 @@ public class JointFlatTransformer implements
   }
 
 
+  private static class TransformedResults
+      implements Iterable<KeyValue<SensorParentKey, ActivePowerRecord>> {
 
-  private void forward(final String identifier, final String parent,
-      final ActivePowerRecord record) {
-    final SensorParentKey key = new SensorParentKey(identifier, parent);
-    this.context.forward(key, record);
+    private final List<KeyValue<SensorParentKey, ActivePowerRecord>> results = new ArrayList<>();
+
+    public void add(final String identifier, final String parent, final ActivePowerRecord record) {
+      final SensorParentKey key = new SensorParentKey(identifier, parent);
+      this.results.add(KeyValue.pair(key, record));
+    }
+
+    @Override
+    public Iterator<KeyValue<SensorParentKey, ActivePowerRecord>> iterator() {
+      return this.results.iterator();
+    }
+
   }
 
 }

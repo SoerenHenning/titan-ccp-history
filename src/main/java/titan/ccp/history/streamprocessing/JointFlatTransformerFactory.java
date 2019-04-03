@@ -20,7 +20,7 @@ public class JointFlatTransformerFactory {
   /**
    * Returns a {@link TransformerSupplier} for {@link JointFlatTransformer}.
    */
-  public TransformerSupplier<String, JointRecordParents, KeyValue<SensorParentKey, ActivePowerRecord>> getTransformerSupplier() { // NOCS
+  public TransformerSupplier<String, JointRecordParents, Iterable<KeyValue<SensorParentKey, ActivePowerRecord>>> getTransformerSupplier() { // NOCS
     return new TransformerSupplier<>() {
       @Override
       public JointFlatTransformer get() {
