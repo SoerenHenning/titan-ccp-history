@@ -35,7 +35,7 @@ allprojects {
 dependencies {
     compile('org.industrial-devops:titan-ccp-common:0.0.1-SNAPSHOT') { changing = true }
     compile 'net.kieker-monitoring:kieker:1.14-SNAPSHOT'
-    compile 'org.apache.kafka:kafka-streams:2.1.0'
+    compile 'org.apache.kafka:kafka-streams:2.2.0'
     compile 'com.sparkjava:spark-core:2.7.2'
 	compile 'com.google.code.gson:gson:2.8.2'
     compile 'com.google.guava:guava:20.0'
