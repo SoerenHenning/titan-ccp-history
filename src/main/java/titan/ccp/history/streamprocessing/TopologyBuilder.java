@@ -115,7 +115,7 @@ public class TopologyBuilder {
 
     return configurationStream
         .mapValues(data -> SensorRegistry.fromJson(data))
-        .transform(
+        .flatTransform(
             childParentsTransformerFactory.getTransformerSupplier(),
             childParentsTransformerFactory.getStoreName())
         .groupByKey(Grouped.with(Serdes.String(), OptionalParentsSerde.serde()))

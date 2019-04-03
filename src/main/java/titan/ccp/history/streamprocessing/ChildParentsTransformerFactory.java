@@ -22,7 +22,7 @@ public class ChildParentsTransformerFactory {
   /**
    * Returns a {@link TransformerSupplier} for {@link ChildParentsTransformer}.
    */
-  public TransformerSupplier<Event, SensorRegistry, KeyValue<String, Optional<Set<String>>>> getTransformerSupplier() { // NOCS
+  public TransformerSupplier<Event, SensorRegistry, Iterable<KeyValue<String, Optional<Set<String>>>>> getTransformerSupplier() { // NOCS
     return new TransformerSupplier<>() {
       @Override
       public ChildParentsTransformer get() {
