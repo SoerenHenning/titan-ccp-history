@@ -11,7 +11,8 @@ import org.apache.kafka.streams.StreamsConfig;
  */
 public class KafkaStreamsBuilder {
 
-  private static final String APPLICATION_ID = "titanccp-aggregation-0.0.16";
+  private static final String APPLICATION_NAME = "titan-ccp-history";
+  private static final String APPLICATION_VERSION = "0.0.1";
 
   private static final int COMMIT_INTERVAL_MS = 1000;
 
@@ -67,7 +68,8 @@ public class KafkaStreamsBuilder {
 
   private Properties buildProperties() {
     final Properties properties = new Properties();
-    properties.put(StreamsConfig.APPLICATION_ID_CONFIG, APPLICATION_ID); // TODO as parameter
+    properties.put(StreamsConfig.APPLICATION_ID_CONFIG,
+        APPLICATION_NAME + '-' + APPLICATION_VERSION); // TODO as parameter
     properties.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, COMMIT_INTERVAL_MS); // TODO as param.
     properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, this.bootstrapServers);
     return properties;
