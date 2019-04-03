@@ -1,23 +1,17 @@
 package titan.ccp.history.streamprocessing;
 
-import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.kstream.Transformer;
-import org.apache.kafka.streams.processor.Cancellable;
 import org.apache.kafka.streams.processor.ProcessorContext;
-import org.apache.kafka.streams.processor.PunctuationType;
 import org.apache.kafka.streams.state.KeyValueIterator;
 import org.apache.kafka.streams.state.KeyValueStore;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import titan.ccp.configuration.events.Event;
 import titan.ccp.model.sensorregistry.Sensor;
 import titan.ccp.model.sensorregistry.SensorRegistry;
-import titan.ccp.model.sensorregistry.client.SensorRegistryRequester;
 
 /**
  * Transforms a {@link SensorRegistry} into key value pairs of Sensor identifiers and their parents'
@@ -28,20 +22,13 @@ import titan.ccp.model.sensorregistry.client.SensorRegistryRequester;
 public class ChildParentsTransformer implements
     Transformer<Event, SensorRegistry, KeyValue<String, Optional<Set<String>>>> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ChildParentsTransformer.class);
-
   private final String stateStoreName;
-  private final SensorRegistryRequester registryRequester;
 
   private ProcessorContext context;
   private KeyValueStore<String, Set<String>> state;
 
-  private Cancellable initialRegistryRequester;
-
-  public ChildParentsTransformer(final String stateStoreName,
-      final SensorRegistryRequester registryRequester) {
+  public ChildParentsTransformer(final String stateStoreName) {
     this.stateStoreName = stateStoreName;
-    this.registryRequester = registryRequester;
   }
 
   @Override
@@ -49,23 +36,6 @@ public class ChildParentsTransformer implements
   public void init(final ProcessorContext context) {
     this.context = context;
     this.state = (KeyValueStore<String, Set<String>>) context.getStateStore(this.stateStoreName);
-
-    this.initialRegistryRequester =
-        context.schedule(Duration.ofMillis(0), PunctuationType.WALL_CLOCK_TIME, t -> {
-          // Currently block until sensor registry is available. This can later be changed to
-          // request
-          // the registry asynchronously and to abort the request when a new change event arrives
-          // before.
-          // However, we have to be careful with starting, stopping and moving the application. In
-          // particular, aborting the request also on close would be required.
-          LOGGER.info("Request sensor registry");
-          final SensorRegistry registry = this.registryRequester.request().join();
-          final Map<String, Set<String>> childParentsPairs =
-              this.constructChildParentsPairs(registry);
-          this.updateState(childParentsPairs);
-          this.forwardChildParentsPairs(childParentsPairs);
-          this.initialRegistryRequester.cancel();
-        });
   }
 
   @Override

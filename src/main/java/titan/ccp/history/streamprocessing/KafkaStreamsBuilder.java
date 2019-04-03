@@ -1,36 +1,10 @@
-package titan.ccp.history.streamprocessing; // NOPMD
+package titan.ccp.history.streamprocessing;
 
 import com.datastax.driver.core.Session;
+import java.util.Objects;
 import java.util.Properties;
-import java.util.Set;
-import kieker.common.record.IMonitoringRecord;
-import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
-import org.apache.kafka.streams.KeyValue;
-import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.Topology;
-import org.apache.kafka.streams.kstream.Consumed;
-import org.apache.kafka.streams.kstream.Grouped;
-import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KTable;
-import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.Produced;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import titan.ccp.common.cassandra.CassandraWriter;
-import titan.ccp.common.cassandra.ExplicitPrimaryKeySelectionStrategy;
-import titan.ccp.common.cassandra.PredefinedTableNameMappers;
-import titan.ccp.common.kieker.cassandra.KiekerDataAdapter;
-import titan.ccp.common.kieker.kafka.IMonitoringRecordSerde;
-import titan.ccp.configuration.events.Event;
-import titan.ccp.configuration.events.EventSerde;
-import titan.ccp.model.sensorregistry.SensorRegistry;
-import titan.ccp.model.sensorregistry.client.SensorRegistryRequester;
-import titan.ccp.models.records.ActivePowerRecord;
-import titan.ccp.models.records.ActivePowerRecordFactory;
-import titan.ccp.models.records.AggregatedActivePowerRecord;
-import titan.ccp.models.records.AggregatedActivePowerRecordFactory;
 
 /**
  * Builder for the Kafka Streams configuration.
@@ -41,16 +15,13 @@ public class KafkaStreamsBuilder {
 
   private static final int COMMIT_INTERVAL_MS = 1000;
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStreamsBuilder.class);
-
-  private final RecordAggregator recordAggregator = new RecordAggregator();
+  // private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStreamsBuilder.class);
 
   private String bootstrapServers; // NOPMD
   private String inputTopic; // NOPMD
   private String outputTopic; // NOPMD
   private String configurationTopic; // NOPMD
   private Session cassandraSession; // NOPMD
-  private SensorRegistryRequester registryRequester; // NOPMD
 
   public KafkaStreamsBuilder cassandraSession(final Session cassandraSession) {
     this.cassandraSession = cassandraSession;
@@ -77,156 +48,25 @@ public class KafkaStreamsBuilder {
     return this;
   }
 
-  public KafkaStreamsBuilder registryRequester(final SensorRegistryRequester registryRequester) {
-    this.registryRequester = registryRequester;
-    return this;
-  }
-
+  /**
+   * Builds the {@link KafkaStreams} instance.
+   */
   public KafkaStreams build() {
-    return new KafkaStreams(this.buildTopology(), this.buildProperties());
-  }
-
-  private Topology buildTopology() {
-    final StreamsBuilder builder = new StreamsBuilder();
-
-    LOGGER.info("Listening for records at topic '{}'", this.inputTopic);
-
-    final KStream<Event, String> configurationStream =
-        builder.stream(this.configurationTopic, Consumed.with(EventSerde.serde(), Serdes.String()))
-            .filter((key, value) -> key == Event.SENSOR_REGISTRY_CHANGED);
-
-    // TODO DEBUG
-    configurationStream.foreach((k, v) -> System.out.println(k + ": " + v));
-
-
-    // === Child Parents Transformer
-    final ChildParentsTransformerFactory childParentsTransformerFactory =
-        new ChildParentsTransformerFactory(this.registryRequester);
-
-    // register store
-    builder.addStateStore(childParentsTransformerFactory.getStoreBuilder());
-
-    final KTable<String, Set<String>> childParentsTable = configurationStream
-        .mapValues(data -> SensorRegistry.fromJson(data))
-        .transform(
-            childParentsTransformerFactory.getTransformerSupplier(),
-            childParentsTransformerFactory.getStoreName())
-        .groupByKey(Grouped.with(Serdes.String(), OptionalParentsSerde.serde()))
-        .aggregate(
-            () -> Set.<String>of(),
-            (key, newValue, oldValue) -> newValue.orElse(null),
-            Materialized.with(Serdes.String(), ParentsSerde.serde()));
-
-    childParentsTable.toStream()
-        .foreach((k, v) -> System.out.println("CPT: " + k + ':' + v));
-
-
-    // === Transformer
-    final JointFlatTransformerFactory jointFlatMapTransformerFactory =
-        new JointFlatTransformerFactory();
-
-    // register store
-    builder.addStateStore(jointFlatMapTransformerFactory.getStoreBuilder());
-
-    final KTable<String, ActivePowerRecord> inputTable = builder.table(this.inputTopic, Consumed
-        .with(Serdes.String(), IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
-
-    // TODO Debug only
-    inputTable.toStream().foreach((k, v) -> System.out.println("INPUT: " + k + ':' + v));
-
-    final KTable<SensorParentKey, ActivePowerRecord> lastValueTable = inputTable
-        .join(childParentsTable, (record, parents) -> new JointRecordParents(parents, record))
-        .toStream()
-        .transform(
-            jointFlatMapTransformerFactory.getTransformerSupplier(),
-            jointFlatMapTransformerFactory.getStoreName())
-        .groupByKey(Grouped.with(
-            SensorParentKeySerde.serde(),
-            IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())))
-        .reduce(
-            // TODO Also deduplicate here?
-            (aggValue, newValue) -> newValue,
-            Materialized.with(
-                SensorParentKeySerde.serde(),
-                IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
-
-    // TODO Debug only
-    lastValueTable
-        .toStream()
-        .foreach(
-            (k, v) -> System.out.println("LVT: " + k + ':' + this.buildActivePowerRecordString(v)));
-
-    final KStream<String, AggregatedActivePowerRecord> aggregations = lastValueTable
-        .groupBy(
-            (k, v) -> KeyValue.pair(k.getParent(), v),
-            Grouped.with(
-                Serdes.String(),
-                IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())))
-        .aggregate(
-            () -> null, this.recordAggregator::add, this.recordAggregator::substract,
-            Materialized.with(
-                Serdes.String(),
-                IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
-        .toStream();
-
-    // TODO DEBUG only
-    aggregations.foreach((k, v) -> System.out.println("AGG: " + k + ';' + v.getSumInW()));
-
-    aggregations.to(this.outputTopic, Produced.with(Serdes.String(),
-        IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())));
-
-
-    // ==================
-    // Cassandra writing
-
-    // Cassandra Writer for AggregatedActivePowerRecord
-    final CassandraWriter<IMonitoringRecord> cassandraWriter =
-        this.buildCassandraWriter(AggregatedActivePowerRecord.class);
-    builder
-        .stream(this.outputTopic, Consumed.with(
-            Serdes.String(),
-            IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
-        .foreach((key, record) -> {
-          LOGGER.debug("write to cassandra {}", record); // NOCS
-          cassandraWriter.write(record);
-        });
-
-    // Cassandra Writer for ActivePowerRecord
-    final CassandraWriter<IMonitoringRecord> cassandraWriterForNormal =
-        this.buildCassandraWriter(ActivePowerRecord.class);
-    inputTable.toStream()
-        .foreach((key, record) -> {
-          LOGGER.debug("write to cassandra {}", record); // NOCS
-          cassandraWriterForNormal.write(record);
-        });
-
-    return builder.build();
-  }
-
-  private CassandraWriter<IMonitoringRecord> buildCassandraWriter(
-      final Class<? extends IMonitoringRecord> recordClass) {
-    final ExplicitPrimaryKeySelectionStrategy primaryKeySelectionStrategy =
-        new ExplicitPrimaryKeySelectionStrategy();
-    primaryKeySelectionStrategy.registerPartitionKeys(recordClass.getSimpleName(), "identifier");
-    primaryKeySelectionStrategy.registerClusteringColumns(recordClass.getSimpleName(), "timestamp");
-
-    final CassandraWriter<IMonitoringRecord> cassandraWriter =
-        CassandraWriter.builder(this.cassandraSession, new KiekerDataAdapter())
-            .tableNameMapper(PredefinedTableNameMappers.SIMPLE_CLASS_NAME)
-            .primaryKeySelectionStrategy(primaryKeySelectionStrategy).build();
-
-    return cassandraWriter;
-  }
-
-  // TODO Temp
-  private String buildActivePowerRecordString(final ActivePowerRecord record) {
-    return "{" + record.getIdentifier() + ';' + record.getTimestamp() + ';' + record.getValueInW()
-        + '}';
+    Objects.requireNonNull(this.inputTopic, "Input topic has not been set.");
+    Objects.requireNonNull(this.outputTopic, "Output topic has not been set.");
+    Objects.requireNonNull(this.configurationTopic, "Configuration topic has not been set.");
+    Objects.requireNonNull(this.cassandraSession, "Cassandra session has not been set.");
+    // TODO log parameters
+    final TopologyBuilder topologyBuilder = new TopologyBuilder(
+        this.inputTopic,
+        this.outputTopic,
+        this.configurationTopic,
+        this.cassandraSession);
+    return new KafkaStreams(topologyBuilder.build(), this.buildProperties());
   }
 
   private Properties buildProperties() {
     final Properties properties = new Properties();
-    // TODO as parameter
     properties.put(StreamsConfig.APPLICATION_ID_CONFIG, APPLICATION_ID); // TODO as parameter
     properties.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, COMMIT_INTERVAL_MS); // TODO as param.
     properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, this.bootstrapServers);

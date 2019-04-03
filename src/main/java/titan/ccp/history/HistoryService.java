@@ -7,9 +7,6 @@ import titan.ccp.common.cassandra.SessionBuilder.ClusterSession;
 import titan.ccp.common.configuration.Configurations;
 import titan.ccp.history.api.RestApiServer;
 import titan.ccp.history.streamprocessing.KafkaStreamsBuilder;
-import titan.ccp.model.sensorregistry.client.HttpSensorRegistryRequester;
-import titan.ccp.model.sensorregistry.client.RetryingSensorRegistryRequester;
-import titan.ccp.model.sensorregistry.client.SensorRegistryRequester;
 
 /**
  * A microservice that manages the history and, therefore, stores and aggregates incoming
@@ -21,24 +18,24 @@ public class HistoryService {
   // private static final Logger LOGGER = LoggerFactory.getLogger(HistoryService.class);
 
   private final Configuration config = Configurations.create();
-  private final SensorRegistryRequester sensorRegistryRequester;
+  // private final SensorRegistryRequester sensorRegistryRequester;
   // private final ProxySensorRegistry sensorRegistry = new ProxySensorRegistry();
   // private final KafkaStreams kafkaStreams;
   // private final RestApiServer restApiServer;
 
   // private final CompletableFuture<Void> stopEvent = new CompletableFuture();
 
-  /**
-   * Create a History service using a configuration via external parameters. These can be an
-   * {@code application.properties} file or environment variables.
-   */
-  public HistoryService() {
-    this.sensorRegistryRequester =
-        new RetryingSensorRegistryRequester(new HttpSensorRegistryRequester(
-            this.config.getString(ConfigurationKeys.CONFIGURATION_HOST),
-            this.config.getInt(ConfigurationKeys.CONFIGURATION_PORT)));
-    // this.restApiServer = new RestApiServer(session);
-  }
+  /// **
+  // * Create a History service using a configuration via external parameters. These can be an
+  // * {@code application.properties} file or environment variables.
+  // */
+  // public HistoryService() {
+  // this.sensorRegistryRequester =
+  // new RetryingSensorRegistryRequester(new HttpSensorRegistryRequester(
+  // this.config.getString(ConfigurationKeys.CONFIGURATION_HOST),
+  // this.config.getInt(ConfigurationKeys.CONFIGURATION_PORT)));
+  // this.restApiServer = new RestApiServer(session);
+  // }
 
   /**
    * Start the service.
@@ -64,7 +61,7 @@ public class HistoryService {
         .outputTopic(this.config.getString(ConfigurationKeys.KAFKA_OUTPUT_TOPIC))
         .configurationTopic(this.config.getString(ConfigurationKeys.CONFIGURATION_KAFKA_TOPIC))
         .cassandraSession(clusterSession.getSession())
-        .registryRequester(this.sensorRegistryRequester)
+        // .registryRequester(this.sensorRegistryRequester)
         .build();
     kafkaStreams.start();
     // TODO stop missing
