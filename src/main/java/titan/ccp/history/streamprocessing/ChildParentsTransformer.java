@@ -24,7 +24,7 @@ public class ChildParentsTransformer implements
 
   private final String stateStoreName;
 
-  private ProcessorContext context;
+  // private ProcessorContext context;
   private KeyValueStore<String, Set<String>> state;
 
   public ChildParentsTransformer(final String stateStoreName) {
@@ -34,7 +34,7 @@ public class ChildParentsTransformer implements
   @Override
   @SuppressWarnings("unchecked")
   public void init(final ProcessorContext context) {
-    this.context = context;
+    // this.context = context;
     this.state = (KeyValueStore<String, Set<String>>) context.getStateStore(this.stateStoreName);
   }
 
