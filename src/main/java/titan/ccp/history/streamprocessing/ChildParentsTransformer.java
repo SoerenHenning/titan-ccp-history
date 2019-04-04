@@ -20,11 +20,11 @@ import titan.ccp.model.sensorregistry.SensorRegistry;
  * does not longer exists in the sensor registry.
  */
 public class ChildParentsTransformer implements
-    Transformer<Event, SensorRegistry, KeyValue<String, Optional<Set<String>>>> {
+    Transformer<Event, SensorRegistry, Iterable<KeyValue<String, Optional<Set<String>>>>> {
 
   private final String stateStoreName;
 
-  private ProcessorContext context;
+  // private ProcessorContext context;
   private KeyValueStore<String, Set<String>> state;
 
   public ChildParentsTransformer(final String stateStoreName) {
@@ -34,12 +34,12 @@ public class ChildParentsTransformer implements
   @Override
   @SuppressWarnings("unchecked")
   public void init(final ProcessorContext context) {
-    this.context = context;
+    // this.context = context;
     this.state = (KeyValueStore<String, Set<String>>) context.getStateStore(this.stateStoreName);
   }
 
   @Override
-  public KeyValue<String, Optional<Set<String>>> transform(final Event event,
+  public Iterable<KeyValue<String, Optional<Set<String>>>> transform(final Event event,
       final SensorRegistry registry) {
 
     // Values may later be null for deleting a sensor
@@ -49,10 +49,11 @@ public class ChildParentsTransformer implements
 
     this.updateState(childParentsPairs);
 
-    this.forwardChildParentsPairs(childParentsPairs);
-
-    // Flat map results forwarded before
-    return null;
+    return childParentsPairs
+        .entrySet()
+        .stream()
+        .map(e -> KeyValue.pair(e.getKey(), Optional.ofNullable(e.getValue())))
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -100,13 +101,5 @@ public class ChildParentsTransformer implements
       }
     }
   }
-
-  private void forwardChildParentsPairs(final Map<String, Set<String>> childParentsPairs) {
-    for (final Map.Entry<String, Set<String>> childParentPair : childParentsPairs.entrySet()) {
-      this.context.forward(childParentPair.getKey(),
-          Optional.ofNullable(childParentPair.getValue()));
-    }
-  }
-
 
 }

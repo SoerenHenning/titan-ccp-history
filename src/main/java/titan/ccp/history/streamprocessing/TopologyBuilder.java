@@ -115,7 +115,7 @@ public class TopologyBuilder {
 
     return configurationStream
         .mapValues(data -> SensorRegistry.fromJson(data))
-        .transform(
+        .flatTransform(
             childParentsTransformerFactory.getTransformerSupplier(),
             childParentsTransformerFactory.getStoreName())
         .groupByKey(Grouped.with(Serdes.String(), OptionalParentsSerde.serde()))
@@ -136,7 +136,7 @@ public class TopologyBuilder {
     return inputTable
         .join(parentSensorTable, (record, parents) -> new JointRecordParents(parents, record))
         .toStream()
-        .transform(
+        .flatTransform(
             jointFlatMapTransformerFactory.getTransformerSupplier(),
             jointFlatMapTransformerFactory.getStoreName())
         .groupByKey(Grouped.with(
