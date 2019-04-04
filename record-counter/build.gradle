@@ -31,6 +31,7 @@ dependencies {
 mainClassName = "titan.ccp.history.recordcounter.RecordCounter"
 
 pmd {
+  ruleSets = [] // Gradle requires to clean the rule sets first
   ruleSetFiles = files("../config/pmd.xml")
   ignoreFailures = false
   toolVersion = "6.7.0"
