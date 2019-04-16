@@ -14,7 +14,7 @@ public class KafkaStreamsBuilder {
   private static final String APPLICATION_NAME = "titan-ccp-history";
   private static final String APPLICATION_VERSION = "0.0.1";
 
-  private static final int COMMIT_INTERVAL_MS = 1000;
+  private static final int COMMIT_INTERVAL_MS = 0;
 
   // private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStreamsBuilder.class);
 
