@@ -71,6 +71,8 @@ public class TopologyBuilder {
     // 2. Build Input Table
     final KTable<String, ActivePowerRecord> inputTable = this.buildInputTable();
 
+    inputTable.toStream().peek((k, v) -> LOGGER.info("input table {}:{}", k, v));
+
     // 3. Build Last Value Table from Input and Parent-Sensor Table
     final KTable<SensorParentKey, ActivePowerRecord> lastValueTable =
         this.buildLastValueTable(parentSensorTable, inputTable);
