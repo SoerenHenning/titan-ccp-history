@@ -183,7 +183,7 @@ public class TopologyBuilder {
     inputTable
         .toStream()
         // TODO Logging
-        .peek((k, record) -> LOGGER.debug("Write ActivePowerRecord to Cassandra {}", record))
+        .peek((k, record) -> LOGGER.info("Write ActivePowerRecord to Cassandra {}", record))
         .foreach((key, record) -> cassandraWriterForNormal.write(record));
 
     // Cassandra Writer for AggregatedActivePowerRecord
@@ -193,7 +193,7 @@ public class TopologyBuilder {
         .stream(this.outputTopic, Consumed.with(
             Serdes.String(),
             IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
-        .peek((k, record) -> LOGGER.debug("Write AggregatedActivePowerRecord to Cassandra {}",
+        .peek((k, record) -> LOGGER.info("Write AggregatedActivePowerRecord to Cassandra {}",
             record))
         .foreach((key, record) -> cassandraWriter.write(record));
   }
