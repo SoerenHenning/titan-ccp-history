@@ -45,12 +45,15 @@ public class ActivePowerRepository<T> {
     this.valueAccessor = valueAccessor;
   }
 
-  // BETTER access recordFields
+  /**
+   * Create a new {@link ActivePowerRepository}.
+   */
   public ActivePowerRepository(final Session cassandraSession, final String tableName,
-      final IRecordFactory<T> recordFactory, final String[] recordFields,
-      final ToDoubleFunction<T> valueAccessor) {
-    this(cassandraSession, tableName,
-        row -> recordFactory.create(new CassandraDeserializer(row, recordFields)), valueAccessor);
+      final IRecordFactory<T> recordFactory, final ToDoubleFunction<T> valueAccessor) {
+    this(cassandraSession,
+        tableName,
+        row -> recordFactory.create(new CassandraDeserializer(row, recordFactory.getValueNames())),
+        valueAccessor);
   }
 
   /**
@@ -176,10 +179,10 @@ public class ActivePowerRepository<T> {
    */
   public static ActivePowerRepository<AggregatedActivePowerRecord> forAggregated(
       final Session cassandraSession) {
-    return new ActivePowerRepository<>(cassandraSession,
-        AggregatedActivePowerRecord.class.getSimpleName(), new AggregatedActivePowerRecordFactory(),
-        // BETTER enhance Kieker to support something better
-        new AggregatedActivePowerRecord("", 0, 0, 0, 0, 0, 0).getValueNames(),
+    return new ActivePowerRepository<>(
+        cassandraSession,
+        AggregatedActivePowerRecord.class.getSimpleName(),
+        new AggregatedActivePowerRecordFactory(),
         record -> record.getSumInW());
   }
 
@@ -187,10 +190,11 @@ public class ActivePowerRepository<T> {
    * Create an {@link ActivePowerRepository} for {@link ActivePowerRecord}s.
    */
   public static ActivePowerRepository<ActivePowerRecord> forNormal(final Session cassandraSession) {
-    return new ActivePowerRepository<>(cassandraSession, ActivePowerRecord.class.getSimpleName(),
+    return new ActivePowerRepository<>(
+        cassandraSession,
+        ActivePowerRecord.class.getSimpleName(),
         new ActivePowerRecordFactory(),
-        // // BETTER enhance Kieker to support something better
-        new ActivePowerRecord("", 0, 0).getValueNames(), record -> record.getValueInW());
+        record -> record.getValueInW());
   }
 
 }
