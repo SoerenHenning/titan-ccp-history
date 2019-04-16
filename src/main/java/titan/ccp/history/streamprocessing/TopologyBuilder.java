@@ -116,6 +116,7 @@ public class TopologyBuilder {
     this.builder.addStateStore(childParentsTransformerFactory.getStoreBuilder());
 
     return configurationStream
+        .peek((k, v) -> LOGGER.info("sensor registry new {}:{}", k, v))
         .mapValues(data -> SensorRegistry.fromJson(data))
         .flatTransform(
             childParentsTransformerFactory.getTransformerSupplier(),
@@ -138,6 +139,7 @@ public class TopologyBuilder {
     return inputTable
         .join(parentSensorTable, (record, parents) -> new JointRecordParents(parents, record))
         .toStream()
+        .peek((k, v) -> LOGGER.info("join result {}:{}", k, v))
         .flatTransform(
             jointFlatMapTransformerFactory.getTransformerSupplier(),
             jointFlatMapTransformerFactory.getStoreName())
@@ -165,7 +167,8 @@ public class TopologyBuilder {
             Materialized.with(
                 Serdes.String(),
                 IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
-        .toStream();
+        .toStream()
+        .peek((k, v) -> LOGGER.info("aggr result {}:{}", k, v));
   }
 
   private void exposeOutputStream(final KStream<String, AggregatedActivePowerRecord> aggregations) {
