@@ -70,7 +70,8 @@ public class HistoryService {
     // Create Rest API
     // TODO use builder
     if (this.config.getBoolean(ConfigurationKeys.WEBSERVER_ENABLE)) {
-      final RestApiServer restApiServer = new RestApiServer(clusterSession.getSession(),
+      final RestApiServer restApiServer = new RestApiServer(
+          clusterSession.getSession(),
           this.config.getInt(ConfigurationKeys.WEBSERVER_PORT),
           this.config.getBoolean(ConfigurationKeys.WEBSERVER_CORS));
       restApiServer.start();

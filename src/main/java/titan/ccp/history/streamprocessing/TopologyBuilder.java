@@ -13,6 +13,8 @@ import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
 import org.apache.kafka.streams.kstream.Materialized;
 import org.apache.kafka.streams.kstream.Produced;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import titan.ccp.common.cassandra.CassandraWriter;
 import titan.ccp.common.cassandra.ExplicitPrimaryKeySelectionStrategy;
 import titan.ccp.common.cassandra.PredefinedTableNameMappers;
@@ -37,7 +39,7 @@ import titan.ccp.models.records.AggregatedActivePowerRecordFactory;
  */
 public class TopologyBuilder {
 
-  // private static final Logger LOGGER = LoggerFactory.getLogger(TopologyBuilder.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(TopologyBuilder.class);
 
   private final String inputTopic;
   private final String outputTopic;
@@ -180,7 +182,8 @@ public class TopologyBuilder {
         this.buildCassandraWriter(ActivePowerRecord.class);
     inputTable
         .toStream()
-        // LOGGER.debug("write to cassandra {}", record); // NOCS
+        // TODO Logging
+        .peek((k, record) -> LOGGER.debug("Write ActivePowerRecord to Cassandra {}", record))
         .foreach((key, record) -> cassandraWriterForNormal.write(record));
 
     // Cassandra Writer for AggregatedActivePowerRecord
@@ -190,7 +193,8 @@ public class TopologyBuilder {
         .stream(this.outputTopic, Consumed.with(
             Serdes.String(),
             IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
-        // LOGGER.debug("write to cassandra {}", record); // NOCS
+        .peek((k, record) -> LOGGER.debug("Write AggregatedActivePowerRecord to Cassandra {}",
+            record))
         .foreach((key, record) -> cassandraWriter.write(record));
   }
 
