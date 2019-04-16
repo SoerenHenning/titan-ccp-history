@@ -68,6 +68,8 @@ public class TopologyBuilder {
     // 1. Build Parent-Sensor Table
     final KTable<String, Set<String>> parentSensorTable = this.buildParentSensorTable();
 
+    parentSensorTable.toStream().peek((k, v) -> LOGGER.info("parent sensor table {}:{}", k, v));
+
     // 2. Build Input Table
     final KTable<String, ActivePowerRecord> inputTable = this.buildInputTable();
 
