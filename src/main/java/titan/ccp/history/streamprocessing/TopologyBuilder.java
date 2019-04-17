@@ -171,7 +171,10 @@ public class TopologyBuilder {
                 Serdes.String(),
                 IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
         .toStream()
-        .peek((k, v) -> LOGGER.info("aggr result {}:{}", k, this.recordToString(v)));
+        .peek((k, v) -> LOGGER.info("aggr result {}:{}", k, this.recordToString(v)))
+        // TODO TODO timestamp -1 indicates that this record is emitted by an substract event
+        .filter((k, record) -> record.getTimestamp() != -1)
+        .peek((k, v) -> LOGGER.info("forward aggr result {}:{}", k, this.recordToString(v)));
   }
 
   private void exposeOutputStream(final KStream<String, AggregatedActivePowerRecord> aggregations) {
