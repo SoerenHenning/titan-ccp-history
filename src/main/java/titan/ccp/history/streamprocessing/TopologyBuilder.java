@@ -49,7 +49,6 @@ public class TopologyBuilder {
   private final StreamsBuilder builder = new StreamsBuilder();
   private final RecordAggregator recordAggregator = new RecordAggregator();
 
-
   /**
    * Create a new {@link TopologyBuilder} using the given topics.
    */
@@ -172,7 +171,7 @@ public class TopologyBuilder {
                 Serdes.String(),
                 IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
         .toStream()
-        .peek((k, v) -> LOGGER.info("aggr result {}:{}", k, v));
+        .peek((k, v) -> LOGGER.info("aggr result {}:{}", k, this.recordToString(v)));
   }
 
   private void exposeOutputStream(final KStream<String, AggregatedActivePowerRecord> aggregations) {
@@ -190,7 +189,8 @@ public class TopologyBuilder {
     inputTable
         .toStream()
         // TODO Logging
-        .peek((k, record) -> LOGGER.info("Write ActivePowerRecord to Cassandra {}", record))
+        .peek((k, record) -> LOGGER.info("Write ActivePowerRecord to Cassandra {}",
+            this.recordToString(record)))
         .foreach((key, record) -> cassandraWriterForNormal.write(record));
 
     // Cassandra Writer for AggregatedActivePowerRecord
@@ -201,7 +201,7 @@ public class TopologyBuilder {
             Serdes.String(),
             IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
         .peek((k, record) -> LOGGER.info("Write AggregatedActivePowerRecord to Cassandra {}",
-            record))
+            this.recordToString(record)))
         .foreach((key, record) -> cassandraWriter.write(record));
   }
 
@@ -220,10 +220,22 @@ public class TopologyBuilder {
     return cassandraWriter;
   }
 
-  // TODO Temp
-  // private String buildActivePowerRecordString(final ActivePowerRecord record) {
-  // return "{" + record.getIdentifier() + ';' + record.getTimestamp() + ';' + record.getValueInW()
-  // + '}';
-  // }
+  private String recordToString(final ActivePowerRecord record) {
+    return '{'
+        + record.getIdentifier() + ';'
+        + record.getTimestamp() + ';'
+        + record.getValueInW() + '}';
+  }
+
+  private String recordToString(final AggregatedActivePowerRecord record) {
+    return '{'
+        + record.getIdentifier() + ';'
+        + record.getTimestamp() + ';'
+        + record.getMinInW() + ';'
+        + record.getMaxInW() + ';'
+        + record.getCount() + ';'
+        + record.getSumInW() + ';'
+        + record.getAverageInW() + '}';
+  }
 
 }
