@@ -165,7 +165,9 @@ public class TopologyBuilder {
             Materialized.with(
                 Serdes.String(),
                 IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
-        .toStream();
+        .toStream()
+        // TODO TODO timestamp -1 indicates that this record is emitted by an substract event
+        .filter((k, record) -> record.getTimestamp() != -1);
   }
 
   private void exposeOutputStream(final KStream<String, AggregatedActivePowerRecord> aggregations) {

@@ -15,9 +15,10 @@ public class RecordAggregator {
       final ActivePowerRecord record, final AggregatedActivePowerRecord aggregated) {
     final long count = (aggregated == null ? 0 : aggregated.getCount()) + 1;
     final double sum = (aggregated == null ? 0.0 : aggregated.getSumInW()) + record.getValueInW();
+    final double average = count == 0 ? 0.0 : sum / count;
     return new AggregatedActivePowerRecord(
         identifier, record.getTimestamp(),
-        0.0, 0.0, count, sum, sum / count);
+        0.0, 0.0, count, sum, average);
   }
 
   /**
@@ -27,9 +28,11 @@ public class RecordAggregator {
       final ActivePowerRecord record, final AggregatedActivePowerRecord aggregated) {
     final long count = aggregated.getCount() - 1;
     final double sum = aggregated.getSumInW() - record.getValueInW();
+    final double average = count == 0 ? 0.0 : sum / count;
     return new AggregatedActivePowerRecord(
-        identifier, aggregated.getTimestamp(),
-        0.0, 0.0, count, sum, sum / count);
+        // TODO TODO timestamp -1 indicates that this record is emitted by an substract event
+        identifier, -1,
+        0.0, 0.0, count, sum, average);
   }
 
 }
