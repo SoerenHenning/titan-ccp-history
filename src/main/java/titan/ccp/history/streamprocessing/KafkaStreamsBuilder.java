@@ -14,15 +14,15 @@ public class KafkaStreamsBuilder {
   private static final String APPLICATION_NAME = "titan-ccp-history";
   private static final String APPLICATION_VERSION = "0.0.1";
 
-  private static final int COMMIT_INTERVAL_MS = 1000;
-
   // private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStreamsBuilder.class);
 
+  private Session cassandraSession; // NOPMD
   private String bootstrapServers; // NOPMD
   private String inputTopic; // NOPMD
   private String outputTopic; // NOPMD
   private String configurationTopic; // NOPMD
-  private Session cassandraSession; // NOPMD
+  private int commitIntervalMs = -1; // NOPMD
+  private int cacheMaxBytesBuffering = -1; // NOPMD
 
   public KafkaStreamsBuilder cassandraSession(final Session cassandraSession) {
     this.cassandraSession = cassandraSession;
@@ -50,6 +50,32 @@ public class KafkaStreamsBuilder {
   }
 
   /**
+   * Sets the Kafka Streams property for the frequency with which to save the position (offsets in
+   * source topics) of tasks (commit.interval.ms). Must be zero for processing all record, for
+   * example, when processing bulks of records. Can be minus one for using the default.
+   */
+  public KafkaStreamsBuilder commitIntervalMs(final int commitIntervalMs) {
+    if (commitIntervalMs < -1) {
+      throw new IllegalArgumentException("Commit interval must be greater or equal -1.");
+    }
+    this.commitIntervalMs = commitIntervalMs;
+    return this;
+  }
+
+  /**
+   * Sets the Kafka Streams property for maximum number of memory bytes to be used for record caches
+   * across all threads (cache.max.bytes.buffering). Must be zero for processing all record, for
+   * example, when processing bulks of records. Can be minus one for using the default.
+   */
+  public KafkaStreamsBuilder cacheMaxBytesBuffering(final int cacheMaxBytesBuffering) {
+    if (cacheMaxBytesBuffering < -1) {
+      throw new IllegalArgumentException("Cache max bytes buffering must be greater or equal -1.");
+    }
+    this.cacheMaxBytesBuffering = cacheMaxBytesBuffering;
+    return this;
+  }
+
+  /**
    * Builds the {@link KafkaStreams} instance.
    */
   public KafkaStreams build() {
@@ -68,10 +94,15 @@ public class KafkaStreamsBuilder {
 
   private Properties buildProperties() {
     final Properties properties = new Properties();
+    properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, this.bootstrapServers);
     properties.put(StreamsConfig.APPLICATION_ID_CONFIG,
         APPLICATION_NAME + '-' + APPLICATION_VERSION); // TODO as parameter
-    properties.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, COMMIT_INTERVAL_MS); // TODO as param.
-    properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, this.bootstrapServers);
+    if (this.commitIntervalMs >= 0) {
+      properties.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, this.commitIntervalMs);
+    }
+    if (this.cacheMaxBytesBuffering >= 0) {
+      properties.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, this.cacheMaxBytesBuffering);
+    }
     return properties;
   }
 

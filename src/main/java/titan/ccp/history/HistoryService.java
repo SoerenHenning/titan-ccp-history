@@ -56,11 +56,13 @@ public class HistoryService {
 
     // Create Kafka Streams Application
     final KafkaStreams kafkaStreams = new KafkaStreamsBuilder()
+        .cassandraSession(clusterSession.getSession())
         .bootstrapServers(this.config.getString(ConfigurationKeys.KAFKA_BOOTSTRAP_SERVERS))
         .inputTopic(this.config.getString(ConfigurationKeys.KAFKA_INPUT_TOPIC))
         .outputTopic(this.config.getString(ConfigurationKeys.KAFKA_OUTPUT_TOPIC))
         .configurationTopic(this.config.getString(ConfigurationKeys.CONFIGURATION_KAFKA_TOPIC))
-        .cassandraSession(clusterSession.getSession())
+        .commitIntervalMs(this.config.getInt(ConfigurationKeys.COMMIT_INTERVAL_MS))
+        .cacheMaxBytesBuffering(this.config.getInt(ConfigurationKeys.CACHE_MAX_BYTES_BUFFERING))
         // .registryRequester(this.sensorRegistryRequester)
         .build();
     kafkaStreams.start();
