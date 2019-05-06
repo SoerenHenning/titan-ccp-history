@@ -61,6 +61,7 @@ public class HistoryService {
         .inputTopic(this.config.getString(ConfigurationKeys.KAFKA_INPUT_TOPIC))
         .outputTopic(this.config.getString(ConfigurationKeys.KAFKA_OUTPUT_TOPIC))
         .configurationTopic(this.config.getString(ConfigurationKeys.CONFIGURATION_KAFKA_TOPIC))
+        .numThreads(this.config.getInt(ConfigurationKeys.NUM_THREADS))
         .commitIntervalMs(this.config.getInt(ConfigurationKeys.COMMIT_INTERVAL_MS))
         .cacheMaxBytesBuffering(this.config.getInt(ConfigurationKeys.CACHE_MAX_BYTES_BUFFERING))
         // .registryRequester(this.sensorRegistryRequester)

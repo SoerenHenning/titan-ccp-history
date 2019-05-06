@@ -21,6 +21,7 @@ public class KafkaStreamsBuilder {
   private String inputTopic; // NOPMD
   private String outputTopic; // NOPMD
   private String configurationTopic; // NOPMD
+  private int numThreads = -1; // NOPMD
   private int commitIntervalMs = -1; // NOPMD
   private int cacheMaxBytesBuffering = -1; // NOPMD
 
@@ -46,6 +47,18 @@ public class KafkaStreamsBuilder {
 
   public KafkaStreamsBuilder bootstrapServers(final String bootstrapServers) {
     this.bootstrapServers = bootstrapServers;
+    return this;
+  }
+
+  /**
+   * Sets the Kafka Streams property for the number of threads (num.stream.threads). Can be minus
+   * one for using the default.
+   */
+  public KafkaStreamsBuilder numThreads(final int numThreads) {
+    if (numThreads < -1 || numThreads == 0) {
+      throw new IllegalArgumentException("Number of threads must be greater 0 or -1.");
+    }
+    this.numThreads = numThreads;
     return this;
   }
 
@@ -97,6 +110,9 @@ public class KafkaStreamsBuilder {
     properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, this.bootstrapServers);
     properties.put(StreamsConfig.APPLICATION_ID_CONFIG,
         APPLICATION_NAME + '-' + APPLICATION_VERSION); // TODO as parameter
+    if (this.numThreads > 0) {
+      properties.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, this.numThreads);
+    }
     if (this.commitIntervalMs >= 0) {
       properties.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, this.commitIntervalMs);
     }
