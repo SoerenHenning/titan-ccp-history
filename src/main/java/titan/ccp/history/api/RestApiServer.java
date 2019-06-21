@@ -96,7 +96,7 @@ public class RestApiServer {
       final String identifier = request.params("identifier");
       final long after = NumberUtils.toLong(request.queryParams("after"), 0);
       final int pointsToSmooth = NumberUtils.toInt(request.queryParams("pointsToSmooth"), 10); // NOCS
-      return this.aggregatedRepository.getTrend(identifier, after, pointsToSmooth);
+      return this.normalRepository.getTrend(identifier, after, pointsToSmooth);
     }, this.gson::toJson);
 
     this.webService.get("/power-consumption/:identifier/count", (request, response) -> {
