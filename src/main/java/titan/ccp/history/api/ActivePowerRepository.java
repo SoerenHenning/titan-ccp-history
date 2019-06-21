@@ -13,6 +13,8 @@ import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 import kieker.common.record.factory.IRecordFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import titan.ccp.common.kieker.cassandra.CassandraDeserializer;
 import titan.ccp.models.records.ActivePowerRecord;
 import titan.ccp.models.records.ActivePowerRecordFactory;
@@ -25,6 +27,8 @@ import titan.ccp.models.records.AggregatedActivePowerRecordFactory;
  * @param <T> type of records in this repository
  */
 public class ActivePowerRepository<T> {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(ActivePowerRepository.class);
 
   private static final String TIMESTAMP_KEY = "timestamp";
   private static final String IDENTIFIER_KEY = "identifier";
@@ -83,9 +87,11 @@ public class ActivePowerRepository<T> {
    * Get the latests records.
    */
   public List<T> getLatest(final String identifier, final int count) {
-    final Statement statement = QueryBuilder.select().all().from(this.tableName)
+    final Statement statement = QueryBuilder.select().all()
+        .from(this.tableName)
         .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
-        .orderBy(QueryBuilder.desc(TIMESTAMP_KEY)).limit(count);
+        .orderBy(QueryBuilder.desc(TIMESTAMP_KEY))
+        .limit(count);
 
     return this.get(statement);
   }
@@ -95,9 +101,11 @@ public class ActivePowerRepository<T> {
    * decreased over time.
    */
   public double getTrend(final String identifier, final long after, final int pointsToSmooth) {
-    final Statement startStatement = QueryBuilder.select().all().from(this.tableName) // NOPMD
+    final Statement startStatement = QueryBuilder.select().all() // NOPMD
+        .from(this.tableName)
         .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
-        .and(QueryBuilder.gt(TIMESTAMP_KEY, after)).limit(pointsToSmooth);
+        .and(QueryBuilder.gt(TIMESTAMP_KEY, after))
+        .limit(pointsToSmooth);
     final List<T> first = this.get(startStatement);
     final List<T> latest = this.getLatest(identifier, pointsToSmooth);
 
@@ -107,6 +115,9 @@ public class ActivePowerRepository<T> {
     if (start.isPresent() && end.isPresent()) {
       return start.getAsDouble() > 0.0 ? end.getAsDouble() / start.getAsDouble() : 1;
     } else {
+      LOGGER.warn(
+          "Trend could not be computed for interval start={}, end={} and pointsToSmooth={}.", start,
+          end, pointsToSmooth);
       return -1;
     }
 
