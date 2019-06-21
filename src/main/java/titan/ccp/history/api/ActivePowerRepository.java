@@ -116,8 +116,8 @@ public class ActivePowerRepository<T> {
       return start.getAsDouble() > 0.0 ? end.getAsDouble() / start.getAsDouble() : 1;
     } else {
       LOGGER.warn(
-          "Trend could not be computed for interval start={}, end={} and pointsToSmooth={}.", start,
-          end, pointsToSmooth);
+          "Trend could not be computed for interval after={} and pointsToSmooth={}. Getting start={} and end={}.", // NOCS
+          after, pointsToSmooth, start, end);
       return -1;
     }
 
