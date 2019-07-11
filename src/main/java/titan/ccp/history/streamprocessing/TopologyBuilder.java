@@ -185,7 +185,8 @@ public class TopologyBuilder {
     inputTable
         .toStream()
         // TODO Logging
-        .peek((k, record) -> LOGGER.info("Write ActivePowerRecord to Cassandra {}", record))
+        .peek((k, record) -> LOGGER.info("Write ActivePowerRecord to Cassandra {}",
+            this.buildActivePowerRecordString(record)))
         .foreach((key, record) -> cassandraWriterForNormal.write(record));
 
     // Cassandra Writer for AggregatedActivePowerRecord
@@ -196,7 +197,7 @@ public class TopologyBuilder {
             Serdes.String(),
             IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
         .peek((k, record) -> LOGGER.info("Write AggregatedActivePowerRecord to Cassandra {}",
-            record))
+            this.buildAggActivePowerRecordString(record)))
         .foreach((key, record) -> cassandraWriter.write(record));
   }
 
@@ -216,9 +217,15 @@ public class TopologyBuilder {
   }
 
   // TODO Temp
-  // private String buildActivePowerRecordString(final ActivePowerRecord record) {
-  // return "{" + record.getIdentifier() + ';' + record.getTimestamp() + ';' + record.getValueInW()
-  // + '}';
-  // }
+  private String buildActivePowerRecordString(final ActivePowerRecord record) {
+    return "{" + record.getIdentifier() + ';' + record.getTimestamp() + ';' + record.getValueInW()
+        + '}';
+  }
+
+  // TODO Temp
+  private String buildAggActivePowerRecordString(final AggregatedActivePowerRecord record) {
+    return "{" + record.getIdentifier() + ';' + record.getTimestamp() + ';' + record.getSumInW()
+        + '}';
+  }
 
 }
