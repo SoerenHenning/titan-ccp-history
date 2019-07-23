@@ -19,6 +19,8 @@ public final class ConfigurationKeys {
 
   public static final String WEBSERVER_CORS = "webserver.cors";
 
+  public static final String WEBSERVER_GZIP = "webserver.gzip";
+
   public static final String CONFIGURATION_HOST = "configuration.host";
 
   public static final String CONFIGURATION_PORT = "configuration.port";

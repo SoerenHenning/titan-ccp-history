@@ -77,7 +77,8 @@ public class HistoryService {
       final RestApiServer restApiServer = new RestApiServer(
           clusterSession.getSession(),
           this.config.getInt(ConfigurationKeys.WEBSERVER_PORT),
-          this.config.getBoolean(ConfigurationKeys.WEBSERVER_CORS));
+          this.config.getBoolean(ConfigurationKeys.WEBSERVER_CORS),
+          this.config.getBoolean(ConfigurationKeys.WEBSERVER_GZIP));
       restApiServer.start();
       // TODO stop missing
     }

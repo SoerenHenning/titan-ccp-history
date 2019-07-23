@@ -27,16 +27,19 @@ public class RestApiServer {
   private final Service webService;
 
   private final boolean enableCors;
+  private final boolean enableGzip;
 
   /**
    * Creates a new API server using the passed parameters.
    */
-  public RestApiServer(final Session cassandraSession, final int port, final boolean enableCors) {
+  public RestApiServer(final Session cassandraSession, final int port, final boolean enableCors,
+      final boolean enableGzip) {
     this.aggregatedRepository = ActivePowerRepository.forAggregated(cassandraSession);
     this.normalRepository = ActivePowerRepository.forNormal(cassandraSession);
     LOGGER.info("Instantiate API server.");
     this.webService = Service.ignite().port(port);
     this.enableCors = enableCors;
+    this.enableGzip = enableGzip;
   }
 
   /**
@@ -149,6 +152,9 @@ public class RestApiServer {
 
     this.webService.after((request, response) -> {
       response.type("application/json");
+      if (this.enableGzip) {
+        response.header("Content-Encoding", "gzip");
+      }
     });
 
   }
