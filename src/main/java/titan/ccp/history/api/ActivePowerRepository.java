@@ -50,8 +50,7 @@ public class ActivePowerRepository<T> {
    */
   public ActivePowerRepository(final Session cassandraSession, final String tableName,
       final IRecordFactory<T> recordFactory, final ToDoubleFunction<T> valueAccessor) {
-    this(cassandraSession,
-        tableName,
+    this(cassandraSession, tableName,
         row -> recordFactory.create(new CassandraDeserializer(row, recordFactory.getValueNames())),
         valueAccessor);
   }
@@ -59,10 +58,21 @@ public class ActivePowerRepository<T> {
   /**
    * Get all selected records.
    */
-  public List<T> get(final String identifier, final long after) {
+  public List<T> get(final String identifier, final long from) {
     final Statement statement = QueryBuilder.select().all().from(this.tableName)
         .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
-        .and(QueryBuilder.gt(TIMESTAMP_KEY, after));
+        .and(QueryBuilder.gt(TIMESTAMP_KEY, from));
+
+    return this.get(statement);
+  }
+
+  /**
+   * Get all selected records.
+   */
+  public List<T> getRange(final String identifier, final long from, final long to) {
+    final Statement statement = QueryBuilder.select().all().from(this.tableName)
+        .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
+        .and(QueryBuilder.gt(TIMESTAMP_KEY, from)).and(QueryBuilder.lt(TIMESTAMP_KEY, to));
 
     return this.get(statement);
   }
@@ -91,15 +101,31 @@ public class ActivePowerRepository<T> {
   }
 
   /**
+   * Get the latests records.
+   */
+  public List<T> getLatestBeforeTo(final String identifier, final int count, final long to) {
+    final Statement statement = QueryBuilder.select().all().from(this.tableName)
+        .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier)).and(QueryBuilder.lt(TIMESTAMP_KEY, to))
+        .orderBy(QueryBuilder.desc(TIMESTAMP_KEY)).limit(count);
+
+    return this.get(statement);
+  }
+
+
+
+  /**
    * Compute a trend for the selected records, i.e., a value showing how the values increased or
    * decreased over time.
    */
-  public double getTrend(final String identifier, final long after, final int pointsToSmooth) {
+  public double getTrend(final String identifier, final long from, final int pointsToSmooth,
+      final long to) {
     final Statement startStatement = QueryBuilder.select().all().from(this.tableName) // NOPMD
         .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
-        .and(QueryBuilder.gt(TIMESTAMP_KEY, after)).limit(pointsToSmooth);
+        .and(QueryBuilder.gt(TIMESTAMP_KEY, from)).limit(pointsToSmooth);
+
+
     final List<T> first = this.get(startStatement);
-    final List<T> latest = this.getLatest(identifier, pointsToSmooth);
+    final List<T> latest = this.getLatestBeforeTo(identifier, pointsToSmooth, to);
 
     final OptionalDouble start = first.stream().mapToDouble(this.valueAccessor).average();
     final OptionalDouble end = latest.stream().mapToDouble(this.valueAccessor).average();
@@ -116,9 +142,9 @@ public class ActivePowerRepository<T> {
    * Get a frequency distribution of records. Records are grouped by their values and this methods
    * returns a list of {@link DistributionBucket}s.
    */
-  public List<DistributionBucket> getDistribution(final String identifier, final long after,
-      final int bucketsCount) {
-    final List<T> records = this.get(identifier, after);
+  public List<DistributionBucket> getDistribution(final String identifier, final long from,
+      final long to, final int bucketsCount) {
+    final List<T> records = this.getRange(identifier, from, to);
 
     if (records.isEmpty()) {
       return Collections.emptyList();
@@ -158,10 +184,10 @@ public class ActivePowerRepository<T> {
   /**
    * Get the number of records for the given sensor identifier and after a timestamp.
    */
-  public long getCount(final String identifier, final long after) {
+  public long getCount(final String identifier, final long from, final long to) {
     final Statement statement = QueryBuilder.select().countAll().from(this.tableName)
         .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
-        .and(QueryBuilder.gt(TIMESTAMP_KEY, after));
+        .and(QueryBuilder.gt(TIMESTAMP_KEY, from)).and(QueryBuilder.lt(TIMESTAMP_KEY, to));
     return this.cassandraSession.execute(statement).all().get(0).getLong(0);
   }
 
@@ -179,10 +205,8 @@ public class ActivePowerRepository<T> {
    */
   public static ActivePowerRepository<AggregatedActivePowerRecord> forAggregated(
       final Session cassandraSession) {
-    return new ActivePowerRepository<>(
-        cassandraSession,
-        AggregatedActivePowerRecord.class.getSimpleName(),
-        new AggregatedActivePowerRecordFactory(),
+    return new ActivePowerRepository<>(cassandraSession,
+        AggregatedActivePowerRecord.class.getSimpleName(), new AggregatedActivePowerRecordFactory(),
         record -> record.getSumInW());
   }
 
@@ -190,11 +214,9 @@ public class ActivePowerRepository<T> {
    * Create an {@link ActivePowerRepository} for {@link ActivePowerRecord}s.
    */
   public static ActivePowerRepository<ActivePowerRecord> forNormal(final Session cassandraSession) {
-    return new ActivePowerRepository<>(
-        cassandraSession,
-        ActivePowerRecord.class.getSimpleName(),
-        new ActivePowerRecordFactory(),
-        record -> record.getValueInW());
+    return new ActivePowerRepository<>(cassandraSession, ActivePowerRecord.class.getSimpleName(),
+        new ActivePowerRecordFactory(), record -> record.getValueInW());
   }
+
 
 }
