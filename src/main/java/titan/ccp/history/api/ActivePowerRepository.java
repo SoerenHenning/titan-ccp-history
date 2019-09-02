@@ -13,6 +13,8 @@ import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 import kieker.common.record.factory.IRecordFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import titan.ccp.common.kieker.cassandra.CassandraDeserializer;
 import titan.ccp.models.records.ActivePowerRecord;
 import titan.ccp.models.records.ActivePowerRecordFactory;
@@ -25,6 +27,8 @@ import titan.ccp.models.records.AggregatedActivePowerRecordFactory;
  * @param <T> type of records in this repository
  */
 public class ActivePowerRepository<T> {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(ActivePowerRepository.class);
 
   private static final String TIMESTAMP_KEY = "timestamp";
   private static final String IDENTIFIER_KEY = "identifier";
@@ -117,12 +121,12 @@ public class ActivePowerRepository<T> {
    * Compute a trend for the selected records, i.e., a value showing how the values increased or
    * decreased over time.
    */
+
   public double getTrend(final String identifier, final long from, final int pointsToSmooth,
       final long to) {
     final Statement startStatement = QueryBuilder.select().all().from(this.tableName) // NOPMD
         .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
         .and(QueryBuilder.gt(TIMESTAMP_KEY, from)).limit(pointsToSmooth);
-
 
     final List<T> first = this.get(startStatement);
     final List<T> latest = this.getLatestBeforeTo(identifier, pointsToSmooth, to);
@@ -133,6 +137,9 @@ public class ActivePowerRepository<T> {
     if (start.isPresent() && end.isPresent()) {
       return start.getAsDouble() > 0.0 ? end.getAsDouble() / start.getAsDouble() : 1;
     } else {
+      LOGGER.warn(
+          "Trend could not be computed for interval after={} and pointsToSmooth={}. Getting start={} and end={}.", // NOCS
+          from, pointsToSmooth, start, end);
       return -1;
     }
 

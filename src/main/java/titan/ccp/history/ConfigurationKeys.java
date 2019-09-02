@@ -11,11 +11,15 @@ public final class ConfigurationKeys {
 
   public static final String CASSANDRA_KEYSPACE = "cassandra.keyspace";
 
+  public static final String CASSANDRA_INIT_TIMEOUT_MS = "cassandra.init.timeout.ms";
+
   public static final String WEBSERVER_ENABLE = "webserver.enable";
 
   public static final String WEBSERVER_PORT = "webserver.port";
 
   public static final String WEBSERVER_CORS = "webserver.cors";
+
+  public static final String WEBSERVER_GZIP = "webserver.gzip";
 
   public static final String CONFIGURATION_HOST = "configuration.host";
 
