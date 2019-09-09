@@ -54,11 +54,11 @@ public class TopologyBuilder {
    * Create a new {@link TopologyBuilder} using the given topics.
    */
   public TopologyBuilder(final String inputTopic, final String outputTopic,
-      final String configurationTopic, final Session cassandraSession) {
+      final String configurationTopic) {
     this.inputTopic = inputTopic;
     this.outputTopic = outputTopic;
     this.configurationTopic = configurationTopic;
-    this.cassandraSession = cassandraSession;
+    this.cassandraSession = null;
   }
 
   /**

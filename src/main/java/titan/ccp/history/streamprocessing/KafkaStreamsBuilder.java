@@ -96,13 +96,12 @@ public class KafkaStreamsBuilder {
     Objects.requireNonNull(this.inputTopic, "Input topic has not been set.");
     Objects.requireNonNull(this.outputTopic, "Output topic has not been set.");
     Objects.requireNonNull(this.configurationTopic, "Configuration topic has not been set.");
-    Objects.requireNonNull(this.cassandraSession, "Cassandra session has not been set.");
+    // Objects.requireNonNull(this.cassandraSession, "Cassandra session has not been set.");
     // TODO log parameters
     final TopologyBuilder topologyBuilder = new TopologyBuilder(
         this.inputTopic,
         this.outputTopic,
-        this.configurationTopic,
-        this.cassandraSession);
+        this.configurationTopic);
 
     final Topology topology = topologyBuilder.build();
     System.out.println(topology.describe().toString());
