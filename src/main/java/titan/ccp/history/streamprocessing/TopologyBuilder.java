@@ -68,6 +68,9 @@ public class TopologyBuilder {
     // 1. Build Parent-Sensor Table
     final KTable<String, Set<String>> parentSensorTable = this.buildParentSensorTable();
 
+    // parentSensorTable.toStream().foreach((k, record) -> LOGGER.info("Parent-Sensor {}:{}", k,
+    // record));
+
     // 2. Build Input Table
     final KTable<String, ActivePowerRecord> inputTable = this.buildInputTable();
 
@@ -93,16 +96,30 @@ public class TopologyBuilder {
 
     // This is History, not Aggregation
     // Write records to Cassandra
-    this.buildCassandraWriters(inputTable);
+    // this.buildCassandraWriters(inputTable);
 
     return this.builder.build();
   }
 
   private KTable<String, ActivePowerRecord> buildInputTable() {
-    return this.builder
-        .table(this.inputTopic, Consumed.with(
+    final KStream<String, ActivePowerRecord> values = this.builder
+        .stream(this.inputTopic, Consumed.with(
             Serdes.String(),
             IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
+    final KStream<String, ActivePowerRecord> aggregationsInput = this.builder
+        .stream(this.outputTopic, Consumed.with(
+            Serdes.String(),
+            IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
+        .mapValues(r -> new ActivePowerRecord(r.getIdentifier(), r.getTimestamp(), r.getSumInW()));
+
+    final KTable<String, ActivePowerRecord> inputTable = values
+        .merge(aggregationsInput)
+        // .peek((k, record) -> LOGGER.info("Input {}", this.buildActivePowerRecordString(record)))
+        .groupByKey(Grouped.with(Serdes.String(),
+            IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())))
+        .reduce((aggr, value) -> value, Materialized.with(Serdes.String(),
+            IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
+    return inputTable;
   }
 
   private KTable<String, Set<String>> buildParentSensorTable() {
@@ -120,6 +137,7 @@ public class TopologyBuilder {
         .flatTransform(
             childParentsTransformerFactory.getTransformerSupplier(),
             childParentsTransformerFactory.getStoreName())
+        // .peek((k, record) -> LOGGER.info("Parent-Sensor {}:{}", k, record))
         .groupByKey(Grouped.with(Serdes.String(), OptionalParentsSerde.serde()))
         .aggregate(
             () -> Set.<String>of(),
@@ -171,9 +189,12 @@ public class TopologyBuilder {
   }
 
   private void exposeOutputStream(final KStream<String, AggregatedActivePowerRecord> aggregations) {
-    aggregations.to(this.outputTopic, Produced.with(
-        Serdes.String(),
-        IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())));
+    aggregations
+        // .peek((k, record) -> LOGGER.info("Expose {}",
+        // this.buildAggActivePowerRecordString(record)))
+        .to(this.outputTopic, Produced.with(
+            Serdes.String(),
+            IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())));
   }
 
   // TODO this part is going to be outsourced

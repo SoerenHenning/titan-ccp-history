@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.Properties;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
+import org.apache.kafka.streams.Topology;
 
 /**
  * Builder for the Kafka Streams configuration.
@@ -102,7 +103,10 @@ public class KafkaStreamsBuilder {
         this.outputTopic,
         this.configurationTopic,
         this.cassandraSession);
-    return new KafkaStreams(topologyBuilder.build(), this.buildProperties());
+
+    final Topology topology = topologyBuilder.build();
+    System.out.println(topology.describe().toString());
+    return new KafkaStreams(topology, this.buildProperties());
   }
 
   private Properties buildProperties() {
