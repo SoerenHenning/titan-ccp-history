@@ -134,7 +134,7 @@ public class TopologyBuilder {
     this.builder.addStateStore(childParentsTransformerFactory.getStoreBuilder());
 
     return configurationStream
-        .peek((k, v) -> LOGGER.info("Configuration input: {}:{}", k, v))
+        .peek((k, v) -> LOGGER.info("Configuration input: {}:string[size={}]", k, v.length()))
         .mapValues(data -> SensorRegistry.fromJson(data))
         .flatTransform(
             childParentsTransformerFactory.getTransformerSupplier(),
