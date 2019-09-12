@@ -114,7 +114,8 @@ public class TopologyBuilder {
 
     final KTable<String, ActivePowerRecord> inputTable = values
         .merge(aggregationsInput)
-        // .peek((k, record) -> LOGGER.info("Input {}", this.buildActivePowerRecordString(record)))
+        .peek((k, record) -> LOGGER.info("Received input {}",
+            this.buildActivePowerRecordString(record)))
         .groupByKey(Grouped.with(Serdes.String(),
             IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())))
         .reduce((aggr, value) -> value, Materialized.with(Serdes.String(),
@@ -174,7 +175,10 @@ public class TopologyBuilder {
       final KTable<SensorParentKey, ActivePowerRecord> lastValueTable) {
     return lastValueTable
         .groupBy(
-            (k, v) -> KeyValue.pair(k.getParent(), v),
+            (k, v) -> {
+              LOGGER.info("Group by: {}", v);
+              return KeyValue.pair(k.getParent(), v);
+            },
             Grouped.with(
                 Serdes.String(),
                 IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())))
@@ -190,7 +194,7 @@ public class TopologyBuilder {
 
   private void exposeOutputStream(final KStream<String, AggregatedActivePowerRecord> aggregations) {
     aggregations
-        // .peek((k, record) -> LOGGER.info("Expose {}",
+        .peek((k, record) -> LOGGER.info("Expose output: {}", record))
         // this.buildAggActivePowerRecordString(record)))
         .to(this.outputTopic, Produced.with(
             Serdes.String(),
