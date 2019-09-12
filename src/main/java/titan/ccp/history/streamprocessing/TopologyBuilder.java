@@ -114,8 +114,8 @@ public class TopologyBuilder {
 
     final KTable<String, ActivePowerRecord> inputTable = values
         .merge(aggregationsInput)
-        .peek((k, record) -> LOGGER.info("Received input {}",
-            this.buildActivePowerRecordString(record)))
+        // .peek((k, record) -> LOGGER.info("Received input {}",
+        // this.buildActivePowerRecordString(record)))
         .groupByKey(Grouped.with(Serdes.String(),
             IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())))
         .reduce((aggr, value) -> value, Materialized.with(Serdes.String(),
@@ -134,17 +134,17 @@ public class TopologyBuilder {
     this.builder.addStateStore(childParentsTransformerFactory.getStoreBuilder());
 
     return configurationStream
-        .peek((k, v) -> LOGGER.info("Configuration input: {}:string[size={}]", k, v.length()))
+        // .peek((k, v) -> LOGGER.info("Configuration input: {}:string[size={}]", k, v.length()))
         .mapValues(data -> SensorRegistry.fromJson(data))
         .flatTransform(
             childParentsTransformerFactory.getTransformerSupplier(),
             childParentsTransformerFactory.getStoreName())
-        .peek((k, record) -> LOGGER.info("Parent-Sensor {}:{}", k, record))
+        // .peek((k, record) -> LOGGER.info("Parent-Sensor {}:{}", k, record))
         .groupByKey(Grouped.with(Serdes.String(), OptionalParentsSerde.serde()))
         .aggregate(
             () -> Set.<String>of(),
             (key, newValue, oldValue) -> {
-              LOGGER.info("Aggregate: {}", newValue);
+              // LOGGER.info("Aggregate: {}", newValue);
               return newValue.orElse(null);
             },
             Materialized.with(Serdes.String(), ParentsSerde.serde()));
@@ -161,7 +161,7 @@ public class TopologyBuilder {
     return inputTable
         .join(parentSensorTable, (record, parents) -> new JointRecordParents(parents, record))
         .toStream()
-        .peek((k, v) -> LOGGER.info("Join Result {}:{}", k, v))
+        // .peek((k, v) -> LOGGER.info("Join Result {}:{}", k, v))
         .flatTransform(
             jointFlatMapTransformerFactory.getTransformerSupplier(),
             jointFlatMapTransformerFactory.getStoreName())
@@ -171,7 +171,7 @@ public class TopologyBuilder {
         .reduce(
             // TODO Also deduplicate here?
             (aggValue, newValue) -> {
-              LOGGER.info("To table reduce {}", newValue);
+              // LOGGER.info("To table reduce {}", newValue);
               return newValue;
             },
             Materialized.with(
@@ -184,7 +184,7 @@ public class TopologyBuilder {
     return lastValueTable
         .groupBy(
             (k, v) -> {
-              LOGGER.info("Group by: {}", v);
+              // LOGGER.info("Group by: {}", v);
               return KeyValue.pair(k.getParent(), v);
             },
             Grouped.with(
@@ -202,7 +202,7 @@ public class TopologyBuilder {
 
   private void exposeOutputStream(final KStream<String, AggregatedActivePowerRecord> aggregations) {
     aggregations
-        .peek((k, record) -> LOGGER.info("Expose output: {}", record))
+        // .peek((k, record) -> LOGGER.info("Expose output: {}", record))
         // this.buildAggActivePowerRecordString(record)))
         .to(this.outputTopic, Produced.with(
             Serdes.String(),

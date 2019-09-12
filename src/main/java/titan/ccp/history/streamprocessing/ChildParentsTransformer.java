@@ -52,9 +52,9 @@ public class ChildParentsTransformer implements
     // Values may later be null for deleting a sensor
     final Map<String, Set<String>> childParentsPairs = this.constructChildParentsPairs(registry);
 
-    LOGGER.info("Child Parent pairs: {}", childParentsPairs.size());
+    // LOGGER.info("Child Parent pairs: {}", childParentsPairs.size());
     this.updateChildParentsPairs(childParentsPairs);
-    LOGGER.info("Updated Child Parent pairs: {}", childParentsPairs.size());
+    // LOGGER.info("Updated Child Parent pairs: {}", childParentsPairs.size());
 
     this.updateState(childParentsPairs);
 
@@ -63,7 +63,7 @@ public class ChildParentsTransformer implements
         .stream()
         .map(e -> KeyValue.pair(e.getKey(), Optional.ofNullable(e.getValue())))
         .collect(Collectors.toList());
-    LOGGER.info("Return list: {}", list.size());
+    // LOGGER.info("Return list: {}", list.size());
     return list;
   }
 
