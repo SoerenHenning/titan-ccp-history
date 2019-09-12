@@ -1,5 +1,6 @@
 package titan.ccp.history.streamprocessing;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -10,6 +11,8 @@ import org.apache.kafka.streams.kstream.Transformer;
 import org.apache.kafka.streams.processor.ProcessorContext;
 import org.apache.kafka.streams.state.KeyValueIterator;
 import org.apache.kafka.streams.state.KeyValueStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import titan.ccp.configuration.events.Event;
 import titan.ccp.model.sensorregistry.AggregatedSensor;
 import titan.ccp.model.sensorregistry.Sensor;
@@ -23,6 +26,8 @@ import titan.ccp.model.sensorregistry.SensorRegistry;
  */
 public class ChildParentsTransformer implements
     Transformer<Event, SensorRegistry, Iterable<KeyValue<String, Optional<Set<String>>>>> {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(ChildParentsTransformer.class);
 
   private final String stateStoreName;
 
@@ -47,15 +52,19 @@ public class ChildParentsTransformer implements
     // Values may later be null for deleting a sensor
     final Map<String, Set<String>> childParentsPairs = this.constructChildParentsPairs(registry);
 
+    LOGGER.info("Child Parent pairs: {}", childParentsPairs);
     this.updateChildParentsPairs(childParentsPairs);
+    LOGGER.info("Updated Child Parent pairs: {}", childParentsPairs);
 
     this.updateState(childParentsPairs);
 
-    return childParentsPairs
+    final List<KeyValue<String, Optional<Set<String>>>> list = childParentsPairs
         .entrySet()
         .stream()
         .map(e -> KeyValue.pair(e.getKey(), Optional.ofNullable(e.getValue())))
         .collect(Collectors.toList());
+    LOGGER.info("Return list: {}", list);
+    return list;
   }
 
   @Override
