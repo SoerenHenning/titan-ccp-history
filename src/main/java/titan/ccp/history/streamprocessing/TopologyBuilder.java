@@ -138,11 +138,14 @@ public class TopologyBuilder {
         .flatTransform(
             childParentsTransformerFactory.getTransformerSupplier(),
             childParentsTransformerFactory.getStoreName())
-        // .peek((k, record) -> LOGGER.info("Parent-Sensor {}:{}", k, record))
+        .peek((k, record) -> LOGGER.info("Parent-Sensor {}:{}", k, record))
         .groupByKey(Grouped.with(Serdes.String(), OptionalParentsSerde.serde()))
         .aggregate(
             () -> Set.<String>of(),
-            (key, newValue, oldValue) -> newValue.orElse(null),
+            (key, newValue, oldValue) -> {
+              LOGGER.info("Aggregate: {}", newValue);
+              return newValue.orElse(null);
+            },
             Materialized.with(Serdes.String(), ParentsSerde.serde()));
   }
 
