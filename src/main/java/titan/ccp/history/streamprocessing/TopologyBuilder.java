@@ -157,6 +157,7 @@ public class TopologyBuilder {
     return inputTable
         .join(parentSensorTable, (record, parents) -> new JointRecordParents(parents, record))
         .toStream()
+        .peek((k, v) -> LOGGER.info("Join Result {}:{}", k, v))
         .flatTransform(
             jointFlatMapTransformerFactory.getTransformerSupplier(),
             jointFlatMapTransformerFactory.getStoreName())
@@ -165,7 +166,10 @@ public class TopologyBuilder {
             IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())))
         .reduce(
             // TODO Also deduplicate here?
-            (aggValue, newValue) -> newValue,
+            (aggValue, newValue) -> {
+              LOGGER.info("To table reduce {}", newValue);
+              return newValue;
+            },
             Materialized.with(
                 SensorParentKeySerde.serde(),
                 IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
