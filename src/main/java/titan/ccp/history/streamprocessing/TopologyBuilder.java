@@ -99,27 +99,31 @@ public class TopologyBuilder {
   }
 
   private KTable<String, ActivePowerRecord> buildInputTable() {
-    return this.builder.table(this.inputTopic, Consumed.with(Serdes.String(),
-        IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
+    return this.builder
+        .table(this.inputTopic, Consumed.with(
+            Serdes.String(),
+            IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
   }
 
   private KTable<String, Set<String>> buildParentSensorTable() {
     final KStream<Event, String> configurationStream = this.builder
         .stream(this.configurationTopic, Consumed.with(EventSerde.serde(), Serdes.String()))
         .filter((key, value) -> key == Event.SENSOR_REGISTRY_CHANGED
-            || key == Event.SENSOR_REGISTRY_STATUS)
-        .peek((k, v) -> System.out.println("!!!!!-----------!!!!!! " + k + v));
-
+            || key == Event.SENSOR_REGISTRY_STATUS);
 
     final ChildParentsTransformerFactory childParentsTransformerFactory =
         new ChildParentsTransformerFactory();
     this.builder.addStateStore(childParentsTransformerFactory.getStoreBuilder());
 
-    return configurationStream.mapValues(data -> SensorRegistry.fromJson(data))
-        .flatTransform(childParentsTransformerFactory.getTransformerSupplier(),
+    return configurationStream
+        .mapValues(data -> SensorRegistry.fromJson(data))
+        .flatTransform(
+            childParentsTransformerFactory.getTransformerSupplier(),
             childParentsTransformerFactory.getStoreName())
         .groupByKey(Grouped.with(Serdes.String(), OptionalParentsSerde.serde()))
-        .aggregate(() -> Set.<String>of(), (key, newValue, oldValue) -> newValue.orElse(null),
+        .aggregate(
+            () -> Set.<String>of(),
+            (key, newValue, oldValue) -> newValue.orElse(null),
             Materialized.with(Serdes.String(), ParentsSerde.serde()));
   }
 
@@ -134,24 +138,32 @@ public class TopologyBuilder {
     return inputTable
         .join(parentSensorTable, (record, parents) -> new JointRecordParents(parents, record))
         .toStream()
-        .flatTransform(jointFlatMapTransformerFactory.getTransformerSupplier(),
+        .flatTransform(
+            jointFlatMapTransformerFactory.getTransformerSupplier(),
             jointFlatMapTransformerFactory.getStoreName())
-        .groupByKey(Grouped.with(SensorParentKeySerde.serde(),
+        .groupByKey(Grouped.with(
+            SensorParentKeySerde.serde(),
             IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())))
         .reduce(
             // TODO Also deduplicate here?
-            (aggValue, newValue) -> newValue, Materialized.with(SensorParentKeySerde.serde(),
+            (aggValue, newValue) -> newValue,
+            Materialized.with(
+                SensorParentKeySerde.serde(),
                 IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
   }
 
   private KStream<String, AggregatedActivePowerRecord> buildAggregationStream(
       final KTable<SensorParentKey, ActivePowerRecord> lastValueTable) {
     return lastValueTable
-        .groupBy((k, v) -> KeyValue.pair(k.getParent(), v),
-            Grouped.with(Serdes.String(),
+        .groupBy(
+            (k, v) -> KeyValue.pair(k.getParent(), v),
+            Grouped.with(
+                Serdes.String(),
                 IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())))
-        .aggregate(() -> null, this.recordAggregator::add, this.recordAggregator::substract,
-            Materialized.with(Serdes.String(),
+        .aggregate(
+            () -> null, this.recordAggregator::add, this.recordAggregator::substract,
+            Materialized.with(
+                Serdes.String(),
                 IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
         .toStream()
         // TODO TODO timestamp -1 indicates that this record is emitted by an substract event
@@ -159,7 +171,8 @@ public class TopologyBuilder {
   }
 
   private void exposeOutputStream(final KStream<String, AggregatedActivePowerRecord> aggregations) {
-    aggregations.to(this.outputTopic, Produced.with(Serdes.String(),
+    aggregations.to(this.outputTopic, Produced.with(
+        Serdes.String(),
         IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())));
   }
 
@@ -169,7 +182,8 @@ public class TopologyBuilder {
     // Cassandra Writer for ActivePowerRecord
     final CassandraWriter<IMonitoringRecord> cassandraWriterForNormal =
         this.buildCassandraWriter(ActivePowerRecord.class);
-    inputTable.toStream()
+    inputTable
+        .toStream()
         // TODO Logging
         .peek((k, record) -> LOGGER.info("Write ActivePowerRecord to Cassandra {}", record))
         .foreach((key, record) -> cassandraWriterForNormal.write(record));
@@ -178,11 +192,11 @@ public class TopologyBuilder {
     final CassandraWriter<IMonitoringRecord> cassandraWriter =
         this.buildCassandraWriter(AggregatedActivePowerRecord.class);
     this.builder
-        .stream(this.outputTopic,
-            Consumed.with(Serdes.String(),
-                IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
-        .peek(
-            (k, record) -> LOGGER.info("Write AggregatedActivePowerRecord to Cassandra {}", record))
+        .stream(this.outputTopic, Consumed.with(
+            Serdes.String(),
+            IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
+        .peek((k, record) -> LOGGER.info("Write AggregatedActivePowerRecord to Cassandra {}",
+            record))
         .foreach((key, record) -> cassandraWriter.write(record));
   }
 
