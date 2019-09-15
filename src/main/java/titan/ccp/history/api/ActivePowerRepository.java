@@ -55,7 +55,8 @@ public class ActivePowerRepository<T> {
   public ActivePowerRepository(final Session cassandraSession, final String tableName,
       final IRecordFactory<T> recordFactory, final ToDoubleFunction<T> valueAccessor) {
     this(cassandraSession, tableName,
-        row -> recordFactory.create(new CassandraDeserializer(row, recordFactory.getValueNames())),
+        row -> recordFactory
+            .create(new CassandraDeserializer(row, recordFactory.getValueNames())),
         valueAccessor);
   }
 
@@ -81,7 +82,9 @@ public class ActivePowerRepository<T> {
     return this.get(statement);
   }
 
-
+  /**
+   * Get all selected records.
+   */
   private List<T> get(final Statement statement) {
     final ResultSet resultSet = this.cassandraSession.execute(statement); // NOPMD no close()
 
@@ -110,8 +113,9 @@ public class ActivePowerRepository<T> {
    */
   public List<T> getLatestBeforeTo(final String identifier, final int count, final long to) {
     final Statement statement = QueryBuilder.select().all().from(this.tableName)
-        .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier)).and(QueryBuilder.lt(TIMESTAMP_KEY, to))
-        .orderBy(QueryBuilder.desc(TIMESTAMP_KEY)).limit(count);
+        .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
+        .and(QueryBuilder.lt(TIMESTAMP_KEY, to)).orderBy(QueryBuilder.desc(TIMESTAMP_KEY))
+        .limit(count);
 
     return this.get(statement);
   }
@@ -203,7 +207,8 @@ public class ActivePowerRepository<T> {
    * Get all available sensor identifiers.
    */
   public List<String> getIdentifiers() {
-    final Statement statement = QueryBuilder.select(IDENTIFIER_KEY).distinct().from(this.tableName);
+    final Statement statement =
+        QueryBuilder.select(IDENTIFIER_KEY).distinct().from(this.tableName);
     return this.cassandraSession.execute(statement).all().stream().map(row -> row.getString(0))
         .collect(Collectors.toList());
   }
@@ -214,16 +219,18 @@ public class ActivePowerRepository<T> {
   public static ActivePowerRepository<AggregatedActivePowerRecord> forAggregated(
       final Session cassandraSession) {
     return new ActivePowerRepository<>(cassandraSession,
-        AggregatedActivePowerRecord.class.getSimpleName(), new AggregatedActivePowerRecordFactory(),
-        record -> record.getSumInW());
+        AggregatedActivePowerRecord.class.getSimpleName(),
+        new AggregatedActivePowerRecordFactory(), record -> record.getSumInW());
   }
 
   /**
    * Create an {@link ActivePowerRepository} for {@link ActivePowerRecord}s.
    */
-  public static ActivePowerRepository<ActivePowerRecord> forNormal(final Session cassandraSession) {
-    return new ActivePowerRepository<>(cassandraSession, ActivePowerRecord.class.getSimpleName(),
-        new ActivePowerRecordFactory(), record -> record.getValueInW());
+  public static ActivePowerRepository<ActivePowerRecord> forNormal(
+      final Session cassandraSession) {
+    return new ActivePowerRepository<>(cassandraSession,
+        ActivePowerRecord.class.getSimpleName(), new ActivePowerRecordFactory(),
+        record -> record.getValueInW());
   }
 
 

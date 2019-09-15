@@ -81,8 +81,9 @@ public class RestApiServer {
       final String identifier = request.params("identifier"); // NOCS NOPMD
       final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
       long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
-      final long to = NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS
       from = from > 0 ? from : after;
+      final long to =
+          NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS
       return this.normalRepository.getRange(identifier, from, to);
     }, this.gson::toJson);
 
@@ -96,9 +97,10 @@ public class RestApiServer {
       final String identifier = request.params("identifier");
       final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
       long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
-      final long to = NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS NOPMD
-      final int buckets = NumberUtils.toInt(request.queryParams("buckets"), 4); // NOCS
       from = from > 0 ? from : after;
+      final long to =
+          NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS NOPMD
+      final int buckets = NumberUtils.toInt(request.queryParams("buckets"), 4); // NOCS
       return this.normalRepository.getDistribution(identifier, from, to, buckets);
     }, this.gson::toJson);
 
@@ -106,9 +108,12 @@ public class RestApiServer {
       final String identifier = request.params("identifier");
       final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
       long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
-      final int pointsToSmooth = NumberUtils.toInt(request.queryParams("pointsToSmooth"), 10); // NOCS NOPMD
-      final long to = NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS NOPMD
       from = from > 0 ? from : after;
+      final int pointsToSmooth =
+          NumberUtils.toInt(request.queryParams("pointsToSmooth"), 10); // NOCS NOPMD
+
+      final long to =
+          NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS NOPMD
       return this.normalRepository.getTrend(identifier, from, pointsToSmooth, to);
     }, this.gson::toJson);
 
@@ -117,8 +122,9 @@ public class RestApiServer {
       final String identifier = request.params("identifier");
       final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
       long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
-      final long to = NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS
-      from = from > 0 ? from : after; // NOPMD
+      from = from > 0 ? from : after;
+      final long to =
+          NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS  NOPMD
       return this.normalRepository.getCount(identifier, from, to);
     }, this.gson::toJson);
 
@@ -135,9 +141,9 @@ public class RestApiServer {
       final String identifier = request.params("identifier");
       final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
       long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
-      final long to = NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS
       from = from > 0 ? from : after;
-      // NOPMD
+      final long to =
+          NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS NOPMD
       return this.aggregatedRepository.getRange(identifier, from, to);
     }, this.gson::toJson);
 
@@ -153,9 +159,9 @@ public class RestApiServer {
           final String identifier = request.params("identifier");
           final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
           long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
+          from = from > 0 ? from : after;
           final long to =
-              NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS
-          from = from > 0 ? from : after;// NOPMD
+              NumberUtils.toLong(request.queryParams("to"),System.currentTimeMillis());//NOCS NOPMD
           final int buckets = NumberUtils.toInt(request.queryParams("buckets"), 4); // NOCS NOPMD
           return this.aggregatedRepository.getDistribution(identifier, from, to, buckets);
         }, this.gson::toJson);
@@ -165,11 +171,11 @@ public class RestApiServer {
           final String identifier = request.params("identifier");
           final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
           long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
+          from = from > 0 ? from : after;
           final int pointsToSmooth =
-              NumberUtils.toInt(request.queryParams("pointsToSmooth"), 10); // NOCS
+              NumberUtils.toInt(request.queryParams("pointsToSmooth"), 10); // NOCS NOPMD
           final long to =
-              NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS
-          from = from > 0 ? from : after; // NOPMD
+              NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis());//NOCS NOPMD
           return this.aggregatedRepository.getTrend(identifier, from, pointsToSmooth, to);
         }, this.gson::toJson);
 
@@ -180,7 +186,8 @@ public class RestApiServer {
           long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
           from = from > 0 ? from : after;
           final long to =
-              NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS NOPMD
+              NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS
+          // NOPMD
           return this.aggregatedRepository.getCount(identifier, from, to);
         }, this.gson::toJson);
 
