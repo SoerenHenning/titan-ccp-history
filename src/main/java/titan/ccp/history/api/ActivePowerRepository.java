@@ -62,6 +62,17 @@ public class ActivePowerRepository<T> {
   /**
    * Get all selected records.
    */
+  public List<T> getRange(final String identifier, final long from, final long to) {
+    final Statement statement = QueryBuilder.select().all().from(this.tableName)
+        .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
+        .and(QueryBuilder.gt(TIMESTAMP_KEY, from)).and(QueryBuilder.lt(TIMESTAMP_KEY, to));
+
+    return this.get(statement);
+  }
+
+  /**
+   * Get all selected records.
+   */
   public List<T> get(final String identifier, final long from) {
     final Statement statement = QueryBuilder.select().all().from(this.tableName)
         .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
@@ -70,16 +81,6 @@ public class ActivePowerRepository<T> {
     return this.get(statement);
   }
 
-  /**
-   * Get all selected records.
-   */
-  public List<T> getRange(final String identifier, final long from, final long to) {
-    final Statement statement = QueryBuilder.select().all().from(this.tableName)
-        .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
-        .and(QueryBuilder.gt(TIMESTAMP_KEY, from)).and(QueryBuilder.lt(TIMESTAMP_KEY, to));
-
-    return this.get(statement);
-  }
 
   private List<T> get(final Statement statement) {
     final ResultSet resultSet = this.cassandraSession.execute(statement); // NOPMD no close()
@@ -137,8 +138,8 @@ public class ActivePowerRepository<T> {
     if (start.isPresent() && end.isPresent()) {
       return start.getAsDouble() > 0.0 ? end.getAsDouble() / start.getAsDouble() : 1;
     } else {
-      LOGGER.warn(
-          "Trend could not be computed for interval after={} and pointsToSmooth={}. Getting start={} and end={}.", // NOCS
+      LOGGER.warn("Trend could not be computed for interval after={} and pointsToSmooth={}."// NOCS
+          + " Getting start={} and end={}.", // NOCS
           from, pointsToSmooth, start, end);
       return -1;
     }

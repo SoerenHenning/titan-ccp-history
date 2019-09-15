@@ -57,7 +57,8 @@ public class RestApiServer {
           response.header("Access-Control-Allow-Headers", accessControlRequestHeaders);
         }
 
-        final String accessControlRequestMethod = request.headers("Access-Control-Request-Method");
+        final String accessControlRequestMethod =
+            request.headers("Access-Control-Request-Method");
         if (accessControlRequestMethod != null) {
           response.header("Access-Control-Allow-Methods", accessControlRequestMethod);
         }
@@ -81,7 +82,9 @@ public class RestApiServer {
       final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
       long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
       from = from > 0 ? from : after;
-      final long to = NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS
+
+      final long to = NumberUtils.toLong(request.queryParams("to"),
+          System.currentTimeMillis()); // NOCS NOPMD
       return this.normalRepository.getRange(identifier, from, to);
     }, this.gson::toJson);
 
@@ -96,9 +99,12 @@ public class RestApiServer {
       final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
       long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
       from = from > 0 ? from : after;
-      final long to = NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS
-                                                                                                 // NOPMD
-      final int buckets = NumberUtils.toInt(request.queryParams("buckets"), 4); // NOCS
+
+      final long to = NumberUtils.toLong(request.queryParams("to"),
+          System.currentTimeMillis()); // NOCS  NOPMD
+
+
+      final int buckets = NumberUtils.toInt(request.queryParams("buckets"), 4); // NOCS NOPMD
       return this.normalRepository.getDistribution(identifier, from, to, buckets);
     }, this.gson::toJson);
 
@@ -107,11 +113,10 @@ public class RestApiServer {
       final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
       long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
       from = from > 0 ? from : after;
-      final int pointsToSmooth = NumberUtils.toInt(request.queryParams("pointsToSmooth"), 10); // NOCS
-                                                                                               // NOPMD
+      final int pointsToSmooth = NumberUtils.toInt(request.queryParams("pointsToSmooth"), 10);
 
-      final long to = NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS
-                                                                                                 // NOPMD
+      final long to = NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis());
+      // NOPMD
       return this.normalRepository.getTrend(identifier, from, pointsToSmooth, to);
     }, this.gson::toJson);
 
@@ -121,8 +126,8 @@ public class RestApiServer {
       final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
       long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
       from = from > 0 ? from : after;
-      final long to = NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS
-                                                                                                 // NOPMD
+      final long to = NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis());
+
       return this.normalRepository.getCount(identifier, from, to);
     }, this.gson::toJson);
 
@@ -140,16 +145,17 @@ public class RestApiServer {
       final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
       long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
       from = from > 0 ? from : after;
-      final long to = NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS
-                                                                                                 // NOPMD
+      final long to = NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis());
+
       return this.aggregatedRepository.getRange(identifier, from, to);
     }, this.gson::toJson);
 
-    this.webService.get("/aggregated-power-consumption/:identifier/latest", (request, response) -> {
-      final String identifier = request.params("identifier");
-      final int count = NumberUtils.toInt(request.queryParams("count"), 1); // NOCS NOPMD
-      return this.aggregatedRepository.getLatest(identifier, count);
-    }, this.gson::toJson);
+    this.webService.get("/aggregated-power-consumption/:identifier/latest",
+        (request, response) -> {
+          final String identifier = request.params("identifier");
+          final int count = NumberUtils.toInt(request.queryParams("count"), 1); // NOCS NOPMD
+          return this.aggregatedRepository.getLatest(identifier, count);
+        }, this.gson::toJson);
 
     this.webService.get("/aggregated-power-consumption/:identifier/distribution",
         (request, response) -> {
@@ -157,33 +163,39 @@ public class RestApiServer {
           final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
           long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
           from = from > 0 ? from : after;
-          final long to = NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS
-                                                                                                     // NOPMD
+          final long to =
+              NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS
+          // NOPMD
           final int buckets = NumberUtils.toInt(request.queryParams("buckets"), 4); // NOCS NOPMD
           return this.aggregatedRepository.getDistribution(identifier, from, to, buckets);
         }, this.gson::toJson);
 
-    this.webService.get("/aggregated-power-consumption/:identifier/trend", (request, response) -> {
-      final String identifier = request.params("identifier");
-      final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
-      long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
-      from = from > 0 ? from : after;
-      final int pointsToSmooth = NumberUtils.toInt(request.queryParams("pointsToSmooth"), 10); // NOCS
-                                                                                               // NOPMD
-      final long to = NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS
-                                                                                                 // NOPMD
-      return this.aggregatedRepository.getTrend(identifier, from, pointsToSmooth, to);
-    }, this.gson::toJson);
+    this.webService.get("/aggregated-power-consumption/:identifier/trend",
+        (request, response) -> {
+          final String identifier = request.params("identifier");
+          final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
+          long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
+          from = from > 0 ? from : after;
+          final int pointsToSmooth =
+              NumberUtils.toInt(request.queryParams("pointsToSmooth"), 10); // NOCS
+          // NOPMD
+          final long to =
+              NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS
+          // NOPMD
+          return this.aggregatedRepository.getTrend(identifier, from, pointsToSmooth, to);
+        }, this.gson::toJson);
 
-    this.webService.get("/aggregated-power-consumption/:identifier/count", (request, response) -> {
-      final String identifier = request.params("identifier");
-      final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
-      long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
-      from = from > 0 ? from : after;
-      final long to = NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS
-                                                                                                 // NOPMD
-      return this.aggregatedRepository.getCount(identifier, from, to);
-    }, this.gson::toJson);
+    this.webService.get("/aggregated-power-consumption/:identifier/count",
+        (request, response) -> {
+          final String identifier = request.params("identifier");
+          final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
+          long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
+          from = from > 0 ? from : after;
+          final long to =
+              NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS
+          // NOPMD
+          return this.aggregatedRepository.getCount(identifier, from, to);
+        }, this.gson::toJson);
 
     this.webService.after((request, response) -> {
       response.type("application/json");
