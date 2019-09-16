@@ -56,7 +56,7 @@ public class ActivePowerRepository<T> {
       final IRecordFactory<T> recordFactory, final ToDoubleFunction<T> valueAccessor) {
     this(cassandraSession, tableName,
         row -> recordFactory
-            .create(new CassandraDeserializer(row, recordFactory.getValueNames())),
+        .create(new CassandraDeserializer(row, recordFactory.getValueNames())),
         valueAccessor);
   }
 
@@ -141,9 +141,9 @@ public class ActivePowerRepository<T> {
 
     if (start.isPresent() && end.isPresent()) {
       return start.getAsDouble() > 0.0 ? end.getAsDouble() / start.getAsDouble() : 1;
-    } else {
-      LOGGER.warn("Trend could not be computed for interval after={} and pointsToSmooth={}."// NOCS
-          + " Getting start={} and end={}.", // NOCS
+    } else { // NOPMD
+      LOGGER.warn("Trend could not be computed for interval after={} and pointsToSmooth={}."// NOCS NOPMD
+          + " Getting start={} and end={}.", // NOCS NOPMD
           from, pointsToSmooth, start, end);
       return -1;
     }
