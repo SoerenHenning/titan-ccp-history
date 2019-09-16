@@ -45,7 +45,7 @@ public class RestApiServer {
   /**
    * Start the web server by setting up the API routes.
    */
-  public void start() { // NOPMD declaration of routes
+  public void start() { // NOPMD NOCS declaration of routes
     LOGGER.info("Instantiate API routes.");
 
     if (this.enableCors) {
@@ -81,7 +81,7 @@ public class RestApiServer {
       final String identifier = request.params("identifier"); // NOCS NOPMD
       final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
       long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
-      from = from > 0 ? from : after; // NOCS
+      from = from > 0 ? from : after;
       final long to =
           NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS
       return this.normalRepository.getRange(identifier, from, to);
@@ -97,7 +97,7 @@ public class RestApiServer {
       final String identifier = request.params("identifier");
       final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
       long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
-      from = from > 0 ? from : after; // NOCS
+      from = from > 0 ? from : after;
       final long to =
           NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS NOPMD
       final int buckets = NumberUtils.toInt(request.queryParams("buckets"), 4); // NOCS
@@ -108,7 +108,7 @@ public class RestApiServer {
       final String identifier = request.params("identifier");
       final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
       long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
-      from = from > 0 ? from : after; //NOCS
+      from = from > 0 ? from : after;
       final int pointsToSmooth =
           NumberUtils.toInt(request.queryParams("pointsToSmooth"), 10); // NOCS NOPMD
 
@@ -122,7 +122,7 @@ public class RestApiServer {
       final String identifier = request.params("identifier");
       final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
       long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
-      from = from > 0 ? from : after; //NOCS
+      from = from > 0 ? from : after;
       final long to =
           NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS  NOPMD
       return this.normalRepository.getCount(identifier, from, to);
@@ -141,7 +141,7 @@ public class RestApiServer {
       final String identifier = request.params("identifier");
       final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
       long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
-      from = from > 0 ? from : after; //NOCS
+      from = from > 0 ? from : after;
       final long to =
           NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS NOPMD
       return this.aggregatedRepository.getRange(identifier, from, to);
@@ -159,7 +159,7 @@ public class RestApiServer {
           final String identifier = request.params("identifier");
           final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
           long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
-          from = from > 0 ? from : after; // NOCS
+          from = from > 0 ? from : after;
           final long to =
               NumberUtils.toLong(request.queryParams("to"),System.currentTimeMillis());//NOCS NOPMD
           final int buckets = NumberUtils.toInt(request.queryParams("buckets"), 4); // NOCS NOPMD
@@ -171,7 +171,7 @@ public class RestApiServer {
           final String identifier = request.params("identifier");
           final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
           long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
-          from = from > 0 ? from : after; // NOCS
+          from = from > 0 ? from : after;
           final int pointsToSmooth =
               NumberUtils.toInt(request.queryParams("pointsToSmooth"), 10); // NOCS NOPMD
           final long to =
@@ -184,7 +184,7 @@ public class RestApiServer {
           final String identifier = request.params("identifier");
           final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
           long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
-          from = from > 0 ? from : after; //NOCS
+          from = from > 0 ? from : after;
           final long to =
               NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS
           // NOPMD
