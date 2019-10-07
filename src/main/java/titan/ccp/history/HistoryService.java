@@ -25,9 +25,9 @@ public class HistoryService {
    * Start the service.
    */
   public void run() {
-
     final CompletableFuture<ClusterSession> clusterSessionFuture =
-        CompletableFuture.supplyAsync(this::startCassandraSession);
+        new CompletableFuture<>();
+    clusterSessionFuture.complete(this.startCassandraSession());
     clusterSessionFuture.thenAcceptAsync(this::createKafkaStreamsApplication);
     clusterSessionFuture.thenAcceptAsync(this::startWebserver);
   }
@@ -42,6 +42,7 @@ public class HistoryService {
    * @return the {@link ClusterSession} for the cassandra cluster.
    */
   private ClusterSession startCassandraSession() {
+    System.out.println("start");
     // Cassandra connect
     final ClusterSession clusterSession = new SessionBuilder()
         .contactPoint(this.config.getString(ConfigurationKeys.CASSANDRA_HOST))
@@ -49,6 +50,7 @@ public class HistoryService {
         .keyspace(this.config.getString(ConfigurationKeys.CASSANDRA_KEYSPACE))
         .timeoutInMillis(this.config.getInt(ConfigurationKeys.CASSANDRA_INIT_TIMEOUT_MS))
         .build();
+    System.out.println("built");
     this.stopEvent.thenRun(clusterSession.getSession()::close);
     return clusterSession;
   }
@@ -64,7 +66,6 @@ public class HistoryService {
         .bootstrapServers(this.config.getString(ConfigurationKeys.KAFKA_BOOTSTRAP_SERVERS))
         .inputTopic(this.config.getString(ConfigurationKeys.KAFKA_INPUT_TOPIC))
         .outputTopic(this.config.getString(ConfigurationKeys.KAFKA_OUTPUT_TOPIC))
-        .configurationTopic(this.config.getString(ConfigurationKeys.CONFIGURATION_KAFKA_TOPIC))
         .numThreads(this.config.getInt(ConfigurationKeys.NUM_THREADS))
         .commitIntervalMs(this.config.getInt(ConfigurationKeys.COMMIT_INTERVAL_MS))
         .cacheMaxBytesBuffering(this.config.getInt(ConfigurationKeys.CACHE_MAX_BYTES_BUFFERING))
