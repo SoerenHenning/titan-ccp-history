@@ -16,7 +16,7 @@ import titan.ccp.history.streamprocessing.KafkaStreamsBuilder;
  */
 public class HistoryService {
 
-  private final Configuration config = Configurations.create();
+  private volatile Configuration config = Configurations.create();
 
   private final CompletableFuture<Void> stopEvent = new CompletableFuture<>();
 
@@ -27,7 +27,7 @@ public class HistoryService {
   public void run() {
 
     final CompletableFuture<ClusterSession> clusterSessionFuture =
-        CompletableFuture.supplyAsync(this::startCassandraSession);
+        CompletableFuture.completedFuture(this.startCassandraSession());
     clusterSessionFuture.thenAcceptAsync(this::createKafkaStreamsApplication);
     clusterSessionFuture.thenAcceptAsync(this::startWebserver);
   }
