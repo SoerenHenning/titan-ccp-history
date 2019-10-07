@@ -16,7 +16,7 @@ import titan.ccp.history.streamprocessing.KafkaStreamsBuilder;
  */
 public class HistoryService {
 
-  private volatile Configuration config = Configurations.create();
+  private final Configuration config = Configurations.create();
 
   private final CompletableFuture<Void> stopEvent = new CompletableFuture<>();
 
@@ -27,7 +27,7 @@ public class HistoryService {
   public void run() {
 
     final CompletableFuture<ClusterSession> clusterSessionFuture =
-        CompletableFuture.completedFuture(this.startCassandraSession());
+        CompletableFuture.supplyAsync(this::startCassandraSession);
     clusterSessionFuture.thenAcceptAsync(this::createKafkaStreamsApplication);
     clusterSessionFuture.thenAcceptAsync(this::startWebserver);
   }
@@ -44,11 +44,12 @@ public class HistoryService {
   private ClusterSession startCassandraSession() {
     // Cassandra connect
     final ClusterSession clusterSession = new SessionBuilder()
-        .contactPoint(this.config.getString(ConfigurationKeys.CASSANDRA_HOST))
-        .port(this.config.getInt(ConfigurationKeys.CASSANDRA_PORT))
-        .keyspace(this.config.getString(ConfigurationKeys.CASSANDRA_KEYSPACE))
-        .timeoutInMillis(this.config.getInt(ConfigurationKeys.CASSANDRA_INIT_TIMEOUT_MS))
+        // .contactPoint(this.config.getString(ConfigurationKeys.CASSANDRA_HOST))
+        // .port(this.config.getInt(ConfigurationKeys.CASSANDRA_PORT))
+        // .keyspace(this.config.getString(ConfigurationKeys.CASSANDRA_KEYSPACE))
+        // .timeoutInMillis(this.config.getInt(ConfigurationKeys.CASSANDRA_INIT_TIMEOUT_MS))
         .build();
+    System.out.println("s");
     this.stopEvent.thenRun(clusterSession.getSession()::close);
     return clusterSession;
   }
