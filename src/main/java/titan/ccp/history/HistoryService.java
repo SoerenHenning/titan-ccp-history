@@ -20,20 +20,19 @@ public class HistoryService {
 
   private final CompletableFuture<Void> stopEvent = new CompletableFuture<>();
 
-
   /**
    * Start the service.
+   *
+   * @return {@link CompletableFuture} which is completed when the service is successfully started.
    */
-  public void run() {
-
-    final CompletableFuture<ClusterSession> clusterSessionFuture =
+  public CompletableFuture<Void> run() {
+    final CompletableFuture<ClusterSession> clusterSessionStarter =
         CompletableFuture.supplyAsync(this::startCassandraSession);
-    clusterSessionFuture.thenAcceptAsync(this::createKafkaStreamsApplication);
-    clusterSessionFuture.thenAcceptAsync(this::startWebserver);
-  }
-
-  public static void main(final String[] args) {
-    new HistoryService().run();
+    final CompletableFuture<Void> streamsStarter =
+        clusterSessionStarter.thenAcceptAsync(this::createKafkaStreamsApplication);
+    final CompletableFuture<Void> webserverStarter =
+        clusterSessionStarter.thenAcceptAsync(this::startWebserver);
+    return CompletableFuture.allOf(streamsStarter, webserverStarter);
   }
 
   /**
@@ -96,6 +95,10 @@ public class HistoryService {
    */
   public void stop() {
     this.stopEvent.complete(null);
+  }
+
+  public static void main(final String[] args) {
+    new HistoryService().run().join();
   }
 
 }
