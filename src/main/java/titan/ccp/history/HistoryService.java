@@ -43,10 +43,10 @@ public class HistoryService {
   private ClusterSession startCassandraSession() {
     // Cassandra connect
     final ClusterSession clusterSession = new SessionBuilder()
-        // .contactPoint(this.config.getString(ConfigurationKeys.CASSANDRA_HOST))
-        // .port(this.config.getInt(ConfigurationKeys.CASSANDRA_PORT))
-        // .keyspace(this.config.getString(ConfigurationKeys.CASSANDRA_KEYSPACE))
-        // .timeoutInMillis(this.config.getInt(ConfigurationKeys.CASSANDRA_INIT_TIMEOUT_MS))
+        .contactPoint(this.config.getString(ConfigurationKeys.CASSANDRA_HOST))
+        .port(this.config.getInt(ConfigurationKeys.CASSANDRA_PORT))
+        .keyspace(this.config.getString(ConfigurationKeys.CASSANDRA_KEYSPACE))
+        .timeoutInMillis(this.config.getInt(ConfigurationKeys.CASSANDRA_INIT_TIMEOUT_MS))        
         .build();
     this.stopEvent.thenRun(clusterSession.getSession()::close);
     return clusterSession;
