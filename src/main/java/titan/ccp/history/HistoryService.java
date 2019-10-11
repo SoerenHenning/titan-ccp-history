@@ -48,7 +48,6 @@ public class HistoryService {
         // .keyspace(this.config.getString(ConfigurationKeys.CASSANDRA_KEYSPACE))
         // .timeoutInMillis(this.config.getInt(ConfigurationKeys.CASSANDRA_INIT_TIMEOUT_MS))
         .build();
-    System.out.println("s");
     this.stopEvent.thenRun(clusterSession.getSession()::close);
     return clusterSession;
   }
