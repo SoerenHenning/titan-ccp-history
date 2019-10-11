@@ -53,7 +53,7 @@ public class HistoryService {
   }
 
   /**
-   * Build and start the underlying Kafka Streams Application of the service.
+   * Build and start the underlying Kafka Streams application of the service.
    *
    * @param clusterSession the database session which the application should use.
    */
