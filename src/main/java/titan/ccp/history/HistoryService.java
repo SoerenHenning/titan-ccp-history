@@ -20,20 +20,19 @@ public class HistoryService {
 
   private final CompletableFuture<Void> stopEvent = new CompletableFuture<>();
 
-
   /**
    * Start the service.
+   *
+   * @return {@link CompletableFuture} which is completed when the service is successfully started.
    */
-  public void run() {
-    final CompletableFuture<ClusterSession> clusterSessionFuture =
-        new CompletableFuture<>();
-    clusterSessionFuture.complete(this.startCassandraSession());
-    clusterSessionFuture.thenAcceptAsync(this::createKafkaStreamsApplication);
-    clusterSessionFuture.thenAcceptAsync(this::startWebserver);
-  }
-
-  public static void main(final String[] args) {
-    new HistoryService().run();
+  public CompletableFuture<Void> run() {
+    final CompletableFuture<ClusterSession> clusterSessionStarter =
+        CompletableFuture.supplyAsync(this::startCassandraSession);
+    final CompletableFuture<Void> streamsStarter =
+        clusterSessionStarter.thenAcceptAsync(this::createKafkaStreamsApplication);
+    final CompletableFuture<Void> webserverStarter =
+        clusterSessionStarter.thenAcceptAsync(this::startWebserver);
+    return CompletableFuture.allOf(streamsStarter, webserverStarter);
   }
 
   /**
@@ -42,7 +41,6 @@ public class HistoryService {
    * @return the {@link ClusterSession} for the cassandra cluster.
    */
   private ClusterSession startCassandraSession() {
-    System.out.println("start");
     // Cassandra connect
     final ClusterSession clusterSession = new SessionBuilder()
         .contactPoint(this.config.getString(ConfigurationKeys.CASSANDRA_HOST))
@@ -50,13 +48,12 @@ public class HistoryService {
         .keyspace(this.config.getString(ConfigurationKeys.CASSANDRA_KEYSPACE))
         .timeoutInMillis(this.config.getInt(ConfigurationKeys.CASSANDRA_INIT_TIMEOUT_MS))
         .build();
-    System.out.println("built");
     this.stopEvent.thenRun(clusterSession.getSession()::close);
     return clusterSession;
   }
 
   /**
-   * Build and start the underlying Kafka Streams Application of the service.
+   * Build and start the underlying Kafka Streams application of the service.
    *
    * @param clusterSession the database session which the application should use.
    */
@@ -96,6 +93,10 @@ public class HistoryService {
    */
   public void stop() {
     this.stopEvent.complete(null);
+  }
+
+  public static void main(final String[] args) {
+    new HistoryService().run().join();
   }
 
 }
