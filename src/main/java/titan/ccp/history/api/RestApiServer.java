@@ -156,7 +156,13 @@ public class RestApiServer {
         response.header("Content-Encoding", "gzip");
       }
     });
+  }
 
+  /**
+   * Stop the webserver.
+   */
+  public void stop() {
+    this.webService.stop();
   }
 
 }
