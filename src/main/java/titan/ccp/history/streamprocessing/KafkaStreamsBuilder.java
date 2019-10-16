@@ -20,7 +20,6 @@ public class KafkaStreamsBuilder {
   private String bootstrapServers; // NOPMD
   private String inputTopic; // NOPMD
   private String outputTopic; // NOPMD
-  private String configurationTopic; // NOPMD
   private int numThreads = -1; // NOPMD
   private int commitIntervalMs = -1; // NOPMD
   private int cacheMaxBytesBuffering = -1; // NOPMD
@@ -37,11 +36,6 @@ public class KafkaStreamsBuilder {
 
   public KafkaStreamsBuilder outputTopic(final String outputTopic) {
     this.outputTopic = outputTopic;
-    return this;
-  }
-
-  public KafkaStreamsBuilder configurationTopic(final String configurationTopic) {
-    this.configurationTopic = configurationTopic;
     return this;
   }
 
@@ -94,13 +88,11 @@ public class KafkaStreamsBuilder {
   public KafkaStreams build() {
     Objects.requireNonNull(this.inputTopic, "Input topic has not been set.");
     Objects.requireNonNull(this.outputTopic, "Output topic has not been set.");
-    Objects.requireNonNull(this.configurationTopic, "Configuration topic has not been set.");
     Objects.requireNonNull(this.cassandraSession, "Cassandra session has not been set.");
     // TODO log parameters
     final TopologyBuilder topologyBuilder = new TopologyBuilder(
         this.inputTopic,
         this.outputTopic,
-        this.configurationTopic,
         this.cassandraSession);
     return new KafkaStreams(topologyBuilder.build(), this.buildProperties());
   }
