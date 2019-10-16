@@ -20,12 +20,6 @@ import titan.ccp.models.records.AggregatedActivePowerRecordFactory;
 
 /**
  * Builds Kafka Stream Topology for the History microservice.
- *
- * <p>
- * The History microservice is going to be divided into a History and an Aggregation component
- * (later microservice). After the restructuring, this class constructs the topology for the
- * Aggregation whereas the Cassandra storing parts are going to be moved to a dedicated builder.
- * </p>
  */
 public class TopologyBuilder {
 
@@ -33,10 +27,9 @@ public class TopologyBuilder {
 
   private final String inputTopic;
   private final String outputTopic;
-  private final Session cassandraSession; // TODO Remove History parts
+  private final Session cassandraSession;
 
   private final StreamsBuilder builder = new StreamsBuilder();
-
 
   /**
    * Create a new {@link TopologyBuilder} using the given topics.
@@ -52,20 +45,14 @@ public class TopologyBuilder {
    * Build the {@link Topology} for the History microservice.
    */
   public Topology build() {
-    this.buildCassandraWriters();
-
-    return this.builder.build();
-  }
-
-  private void buildCassandraWriters() {
 
     // Cassandra Writer for ActivePowerRecord
     final CassandraWriter<IMonitoringRecord> cassandraWriterForNormal =
         this.buildCassandraWriter(ActivePowerRecord.class);
     this.builder
-        .stream(this.inputTopic,
-            Consumed.with(Serdes.String(),
-                IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())))
+        .stream(this.inputTopic, Consumed.with(
+            Serdes.String(),
+            IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())))
         // TODO Logging
         .peek((k, record) -> LOGGER.info("Write ActivePowerRecord to Cassandra {}",
             this.buildActivePowerRecordString(record)))
@@ -78,9 +65,12 @@ public class TopologyBuilder {
         .stream(this.outputTopic, Consumed.with(
             Serdes.String(),
             IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
+        // TODO Logging
         .peek((k, record) -> LOGGER.info("Write AggregatedActivePowerRecord to Cassandra {}",
             this.buildAggActivePowerRecordString(record)))
         .foreach((key, record) -> cassandraWriter.write(record));
+
+    return this.builder.build();
   }
 
   private CassandraWriter<IMonitoringRecord> buildCassandraWriter(
