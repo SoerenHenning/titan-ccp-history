@@ -1,7 +1,6 @@
 package titan.ccp.history.streamprocessing;
 
 import com.datastax.driver.core.Session;
-import java.time.temporal.ChronoField;
 import kieker.common.record.IMonitoringRecord;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.Topology;
@@ -119,10 +118,10 @@ public class TopologyBuilder {
         .stream(this.outputTopic + "-avro",
             Consumed.with(this.serdes.string(), this.serdes.aggregatedActivePowerRecordValues()))
         .mapValues((final titan.ccp.model.records.AggregatedActivePowerRecord aaprAvro) -> {
-          final AggregatedActivePowerRecord aaprKieker = new AggregatedActivePowerRecord(
-              aaprAvro.getIdentifier(), aaprAvro.getTimestamp().get(ChronoField.MILLI_OF_SECOND),
-              aaprAvro.getMinInW(), aaprAvro.getMaxInW(), aaprAvro.getCount(), aaprAvro.getSumInW(),
-              aaprAvro.getAverageInW());
+          final AggregatedActivePowerRecord aaprKieker =
+              new AggregatedActivePowerRecord(aaprAvro.getIdentifier(), aaprAvro.getTimestamp(),
+                  aaprAvro.getMinInW(), aaprAvro.getMaxInW(), aaprAvro.getCount(),
+                  aaprAvro.getSumInW(), aaprAvro.getAverageInW());
           return aaprKieker;
         });
   }
