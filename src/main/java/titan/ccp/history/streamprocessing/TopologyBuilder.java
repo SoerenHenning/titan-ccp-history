@@ -2,7 +2,6 @@ package titan.ccp.history.streamprocessing;
 
 import com.datastax.driver.core.Session;
 import kieker.common.record.IMonitoringRecord;
-import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.Consumed;
@@ -25,17 +24,20 @@ public class TopologyBuilder {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TopologyBuilder.class);
 
+  private final Serdes serdes;
   private final String inputTopic;
   private final String outputTopic;
   private final Session cassandraSession;
 
   private final StreamsBuilder builder = new StreamsBuilder();
 
+
   /**
    * Create a new {@link TopologyBuilder} using the given topics.
    */
-  public TopologyBuilder(final String inputTopic, final String outputTopic,
+  public TopologyBuilder(final Serdes serdes, final String inputTopic, final String outputTopic,
       final Session cassandraSession) {
+    this.serdes = serdes;
     this.inputTopic = inputTopic;
     this.outputTopic = outputTopic;
     this.cassandraSession = cassandraSession;
@@ -50,9 +52,9 @@ public class TopologyBuilder {
     final CassandraWriter<IMonitoringRecord> cassandraWriterForNormal =
         this.buildCassandraWriter(ActivePowerRecord.class);
     this.builder
-        .stream(this.inputTopic, Consumed.with(
-            Serdes.String(),
-            IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())))
+        .stream(this.inputTopic,
+            Consumed.with(this.serdes.string(),
+                IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())))
         // TODO Logging
         .peek((k, record) -> LOGGER.info("Write ActivePowerRecord to Cassandra {}",
             this.buildActivePowerRecordString(record)))
@@ -62,9 +64,9 @@ public class TopologyBuilder {
     final CassandraWriter<IMonitoringRecord> cassandraWriter =
         this.buildCassandraWriter(AggregatedActivePowerRecord.class);
     this.builder
-        .stream(this.outputTopic, Consumed.with(
-            Serdes.String(),
-            IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
+        .stream(this.outputTopic,
+            Consumed.with(this.serdes.string(),
+                IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())))
         // TODO Logging
         .peek((k, record) -> LOGGER.info("Write AggregatedActivePowerRecord to Cassandra {}",
             this.buildAggActivePowerRecordString(record)))
