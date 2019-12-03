@@ -44,6 +44,10 @@ final class Serdes {
     return this.avroSerdeFactory.forValues();
   }
 
+  public Serde<titan.ccp.model.records.AggregatedActivePowerRecord> aggregatedActivePowerRecordValues() {
+    return this.avroSerdeFactory.forValues();
+  }
+
   public Serde<Stats> stats() {
     return GenericSerde.from(Stats::toByteArray, Stats::fromByteArray);
   }
