@@ -16,7 +16,6 @@ import titan.ccp.common.kieker.kafka.IMonitoringRecordSerde;
 import titan.ccp.models.records.ActivePowerRecord;
 import titan.ccp.models.records.ActivePowerRecordFactory;
 import titan.ccp.models.records.AggregatedActivePowerRecord;
-import titan.ccp.models.records.AggregatedActivePowerRecordFactory;
 
 /**
  * Builds Kafka Stream Topology for the History microservice.
@@ -67,13 +66,8 @@ public class TopologyBuilder {
     // 5. Build Output Stream
     final KStream<String, AggregatedActivePowerRecord> outputStream = this.buildOutputStream();
 
-    // 5.5 Build Avro Output Stream
-    final KStream<String, AggregatedActivePowerRecord> avroOutputStream =
-        this.buildAvroOutputStream();
-
     // 6. Write the AggregatedActivePowerRecords from Input Stream to Cassandra
     this.writeAggregatedActivePowerRecordsToCassandra(cassandraWriter, outputStream);
-    // this.writeAggregatedActivePowerRecordsToCassandra(cassandraWriter, avroOutputStream);
 
     return this.builder.build();
   }
@@ -109,20 +103,15 @@ public class TopologyBuilder {
   }
 
   private KStream<String, AggregatedActivePowerRecord> buildOutputStream() {
-    return this.builder.stream(this.outputTopic, Consumed.with(this.serdes.string(),
-        IMonitoringRecordSerde.serde(new AggregatedActivePowerRecordFactory())));
-  }
-
-  private KStream<String, AggregatedActivePowerRecord> buildAvroOutputStream() {
     return this.builder
-        .stream(this.outputTopic + "-avro",
+        .stream(this.outputTopic,
             Consumed.with(this.serdes.string(), this.serdes.aggregatedActivePowerRecordValues()))
-        .mapValues((final titan.ccp.model.records.AggregatedActivePowerRecord aaprAvro) -> {
-          final AggregatedActivePowerRecord aaprKieker =
-              new AggregatedActivePowerRecord(aaprAvro.getIdentifier(), aaprAvro.getTimestamp(),
-                  aaprAvro.getMinInW(), aaprAvro.getMaxInW(), aaprAvro.getCount(),
-                  aaprAvro.getSumInW(), aaprAvro.getAverageInW());
-          return aaprKieker;
+        .mapValues((final titan.ccp.model.records.AggregatedActivePowerRecord aggrAvro) -> {
+          final AggregatedActivePowerRecord aggrKieker =
+              new AggregatedActivePowerRecord(aggrAvro.getIdentifier(), aggrAvro.getTimestamp(),
+                  aggrAvro.getMinInW(), aggrAvro.getMaxInW(), aggrAvro.getCount(),
+                  aggrAvro.getSumInW(), aggrAvro.getAverageInW());
+          return aggrKieker;
         });
   }
 
