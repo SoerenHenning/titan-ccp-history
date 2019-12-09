@@ -3,7 +3,7 @@ package titan.ccp.history.streamprocessing;
 import com.google.common.math.Stats;
 import org.apache.kafka.common.serialization.Serde;
 import titan.ccp.common.avro.SchemaRegistryAvroSerdeFactory;
-import titan.ccp.common.kafka.simpleserdes.GenericSerde;
+import titan.ccp.common.kafka.GenericSerde;
 import titan.ccp.common.kieker.kafka.IMonitoringRecordSerde;
 import titan.ccp.model.records.WindowedActivePowerRecord;
 import titan.ccp.models.records.ActivePowerRecord;
