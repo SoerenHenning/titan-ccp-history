@@ -12,9 +12,7 @@ import titan.ccp.common.cassandra.CassandraWriter;
 import titan.ccp.common.cassandra.ExplicitPrimaryKeySelectionStrategy;
 import titan.ccp.common.cassandra.PredefinedTableNameMappers;
 import titan.ccp.common.kieker.cassandra.KiekerDataAdapter;
-import titan.ccp.common.kieker.kafka.IMonitoringRecordSerde;
 import titan.ccp.models.records.ActivePowerRecord;
-import titan.ccp.models.records.ActivePowerRecordFactory;
 import titan.ccp.models.records.AggregatedActivePowerRecord;
 
 /**
@@ -88,8 +86,13 @@ public class TopologyBuilder {
   }
 
   private KStream<String, ActivePowerRecord> buildInputStream() {
-    return this.builder.stream(this.inputTopic, Consumed.with(this.serdes.string(),
-        IMonitoringRecordSerde.serde(new ActivePowerRecordFactory())));
+    return this.builder
+        .stream(this.inputTopic,
+            Consumed.with(this.serdes.string(), this.serdes.activePowerRecordValues()))
+        .mapValues(apAvro -> {
+          return new ActivePowerRecord(apAvro.getIdentifier(), apAvro.getTimestamp(),
+              apAvro.getValueInW());
+        });
   }
 
   private void writeActivePowerRecordsToCassandra(
