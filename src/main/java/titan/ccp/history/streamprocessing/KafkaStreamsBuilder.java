@@ -97,9 +97,13 @@ public class KafkaStreamsBuilder {
     Objects.requireNonNull(this.outputTopic, "Output topic has not been set.");
     Objects.requireNonNull(this.cassandraSession, "Cassandra session has not been set.");
     // TODO log parameters
-    final TopologyBuilder topologyBuilder = new TopologyBuilder(new Serdes(this.schemaRegistryUrl),
-        this.inputTopic, this.outputTopic, this.cassandraSession);
-    final Properties properties = PropertiesBuilder.bootstrapServers(this.bootstrapServers)
+    final TopologyBuilder topologyBuilder = new TopologyBuilder(
+        new Serdes(this.schemaRegistryUrl),
+        this.inputTopic,
+        this.outputTopic,
+        this.cassandraSession);
+    final Properties properties = PropertiesBuilder
+        .bootstrapServers(this.bootstrapServers)
         .applicationId(APPLICATION_NAME + '-' + APPLICATION_VERSION) // TODO as parameter
         .set(StreamsConfig.NUM_STREAM_THREADS_CONFIG, this.numThreads, p -> p > 0)
         .set(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, this.commitIntervalMs, p -> p >= 0)

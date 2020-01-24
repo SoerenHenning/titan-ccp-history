@@ -58,7 +58,8 @@ public class HistoryService {
    */
   private void createKafkaStreamsApplication(final ClusterSession clusterSession) {
     final KafkaStreams kafkaStreams =
-        new KafkaStreamsBuilder().cassandraSession(clusterSession.getSession())
+        new KafkaStreamsBuilder()
+            .cassandraSession(clusterSession.getSession())
             .bootstrapServers(this.config.getString(ConfigurationKeys.KAFKA_BOOTSTRAP_SERVERS))
             .inputTopic(this.config.getString(ConfigurationKeys.KAFKA_INPUT_TOPIC))
             .outputTopic(this.config.getString(ConfigurationKeys.KAFKA_OUTPUT_TOPIC))
@@ -78,7 +79,8 @@ public class HistoryService {
    */
   private void startWebserver(final ClusterSession clusterSession) {
     if (this.config.getBoolean(ConfigurationKeys.WEBSERVER_ENABLE)) {
-      final RestApiServer restApiServer = new RestApiServer(clusterSession.getSession(),
+      final RestApiServer restApiServer = new RestApiServer(
+          clusterSession.getSession(),
           this.config.getInt(ConfigurationKeys.WEBSERVER_PORT),
           this.config.getBoolean(ConfigurationKeys.WEBSERVER_CORS),
           this.config.getBoolean(ConfigurationKeys.WEBSERVER_GZIP));

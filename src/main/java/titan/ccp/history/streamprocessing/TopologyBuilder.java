@@ -77,20 +77,23 @@ public class TopologyBuilder {
     primaryKeySelectionStrategy.registerPartitionKeys(recordClass.getSimpleName(), "identifier");
     primaryKeySelectionStrategy.registerClusteringColumns(recordClass.getSimpleName(), "timestamp");
 
-    final CassandraWriter<IMonitoringRecord> cassandraWriter =
-        CassandraWriter.builder(this.cassandraSession, new KiekerDataAdapter())
-            .tableNameMapper(PredefinedTableNameMappers.SIMPLE_CLASS_NAME)
-            .primaryKeySelectionStrategy(primaryKeySelectionStrategy).build();
+    final CassandraWriter<IMonitoringRecord> cassandraWriter = CassandraWriter
+        .builder(this.cassandraSession, new KiekerDataAdapter())
+        .tableNameMapper(PredefinedTableNameMappers.SIMPLE_CLASS_NAME)
+        .primaryKeySelectionStrategy(primaryKeySelectionStrategy).build();
 
     return cassandraWriter;
   }
 
   private KStream<String, ActivePowerRecord> buildInputStream() {
     return this.builder
-        .stream(this.inputTopic,
+        .stream(
+            this.inputTopic,
             Consumed.with(this.serdes.string(), this.serdes.activePowerRecordValues()))
         .mapValues(apAvro -> {
-          return new ActivePowerRecord(apAvro.getIdentifier(), apAvro.getTimestamp(),
+          return new ActivePowerRecord(
+              apAvro.getIdentifier(),
+              apAvro.getTimestamp(),
               apAvro.getValueInW());
         });
   }
@@ -111,9 +114,14 @@ public class TopologyBuilder {
             Consumed.with(this.serdes.string(), this.serdes.aggregatedActivePowerRecordValues()))
         .mapValues((final titan.ccp.model.records.AggregatedActivePowerRecord aggrAvro) -> {
           final AggregatedActivePowerRecord aggrKieker =
-              new AggregatedActivePowerRecord(aggrAvro.getIdentifier(), aggrAvro.getTimestamp(),
-                  aggrAvro.getMinInW(), aggrAvro.getMaxInW(), aggrAvro.getCount(),
-                  aggrAvro.getSumInW(), aggrAvro.getAverageInW());
+              new AggregatedActivePowerRecord(
+                  aggrAvro.getIdentifier(),
+                  aggrAvro.getTimestamp(),
+                  aggrAvro.getMinInW(),
+                  aggrAvro.getMaxInW(),
+                  aggrAvro.getCount(),
+                  aggrAvro.getSumInW(),
+                  aggrAvro.getAverageInW());
           return aggrKieker;
         });
   }

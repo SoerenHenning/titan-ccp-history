@@ -13,12 +13,7 @@ import titan.ccp.models.records.ActivePowerRecordFactory;
 final class Serdes {
 
   private final SchemaRegistryAvroSerdeFactory avroSerdeFactory;
-  // private final SensorRegistry sensorRegistry;
 
-  // public Serdes(final String schemaRegistryUrl, final SensorRegistry sensorRegistry) {
-  // this.avroSerdeFactory = new SchemaRegistryAvroSerdeFactory(schemaRegistryUrl);
-  // this.sensorRegistry = sensorRegistry;
-  // }
   public Serdes(final String schemaRegistryUrl) {
     this.avroSerdeFactory = new SchemaRegistryAvroSerdeFactory(schemaRegistryUrl);
   }
@@ -50,10 +45,5 @@ final class Serdes {
   public Serde<Stats> stats() {
     return GenericSerde.from(Stats::toByteArray, Stats::fromByteArray);
   }
-
-  // public Serde<AggregationHistory> aggregationHistory() {
-  // return AggregationHistorySerde.serde(this.sensorRegistry);
-  // }
-
 
 }
