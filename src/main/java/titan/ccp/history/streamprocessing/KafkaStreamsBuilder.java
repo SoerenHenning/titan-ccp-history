@@ -13,7 +13,7 @@ import titan.ccp.common.kafka.streams.PropertiesBuilder;
 public class KafkaStreamsBuilder {
 
   private static final String APPLICATION_NAME = "titan-ccp-history";
-  private static final String APPLICATION_VERSION = "0.0.1";
+  private static final String APPLICATION_VERSION = "0.0.2";
 
   // private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStreamsBuilder.class);
 
