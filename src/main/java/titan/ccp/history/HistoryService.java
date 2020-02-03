@@ -46,8 +46,7 @@ public class HistoryService {
         .contactPoint(this.config.getString(ConfigurationKeys.CASSANDRA_HOST))
         .port(this.config.getInt(ConfigurationKeys.CASSANDRA_PORT))
         .keyspace(this.config.getString(ConfigurationKeys.CASSANDRA_KEYSPACE))
-        .timeoutInMillis(this.config.getInt(ConfigurationKeys.CASSANDRA_INIT_TIMEOUT_MS))
-        .build();
+        .timeoutInMillis(this.config.getInt(ConfigurationKeys.CASSANDRA_INIT_TIMEOUT_MS)).build();
     this.stopEvent.thenRun(clusterSession.getSession()::close);
     return clusterSession;
   }
@@ -58,15 +57,17 @@ public class HistoryService {
    * @param clusterSession the database session which the application should use.
    */
   private void createKafkaStreamsApplication(final ClusterSession clusterSession) {
-    final KafkaStreams kafkaStreams = new KafkaStreamsBuilder()
-        .cassandraSession(clusterSession.getSession())
-        .bootstrapServers(this.config.getString(ConfigurationKeys.KAFKA_BOOTSTRAP_SERVERS))
-        .inputTopic(this.config.getString(ConfigurationKeys.KAFKA_INPUT_TOPIC))
-        .outputTopic(this.config.getString(ConfigurationKeys.KAFKA_OUTPUT_TOPIC))
-        .numThreads(this.config.getInt(ConfigurationKeys.NUM_THREADS))
-        .commitIntervalMs(this.config.getInt(ConfigurationKeys.COMMIT_INTERVAL_MS))
-        .cacheMaxBytesBuffering(this.config.getInt(ConfigurationKeys.CACHE_MAX_BYTES_BUFFERING))
-        .build();
+    final KafkaStreams kafkaStreams =
+        new KafkaStreamsBuilder()
+            .cassandraSession(clusterSession.getSession())
+            .bootstrapServers(this.config.getString(ConfigurationKeys.KAFKA_BOOTSTRAP_SERVERS))
+            .inputTopic(this.config.getString(ConfigurationKeys.KAFKA_INPUT_TOPIC))
+            .outputTopic(this.config.getString(ConfigurationKeys.KAFKA_OUTPUT_TOPIC))
+            .schemaRegistry(this.config.getString(ConfigurationKeys.SCHEMA_REGISTRY_URL))
+            .numThreads(this.config.getInt(ConfigurationKeys.NUM_THREADS))
+            .commitIntervalMs(this.config.getInt(ConfigurationKeys.COMMIT_INTERVAL_MS))
+            .cacheMaxBytesBuffering(this.config.getInt(ConfigurationKeys.CACHE_MAX_BYTES_BUFFERING))
+            .build();
     this.stopEvent.thenRun(kafkaStreams::close);
     kafkaStreams.start();
   }

@@ -13,7 +13,7 @@ import titan.ccp.common.kafka.streams.PropertiesBuilder;
 public class KafkaStreamsBuilder {
 
   private static final String APPLICATION_NAME = "titan-ccp-history";
-  private static final String APPLICATION_VERSION = "0.0.1";
+  private static final String APPLICATION_VERSION = "0.0.2";
 
   // private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStreamsBuilder.class);
 
@@ -21,6 +21,7 @@ public class KafkaStreamsBuilder {
   private String bootstrapServers; // NOPMD
   private String inputTopic; // NOPMD
   private String outputTopic; // NOPMD
+  private String schemaRegistryUrl; // NOPMD
   private int numThreads = -1; // NOPMD
   private int commitIntervalMs = -1; // NOPMD
   private int cacheMaxBytesBuff = -1; // NOPMD
@@ -37,6 +38,11 @@ public class KafkaStreamsBuilder {
 
   public KafkaStreamsBuilder outputTopic(final String outputTopic) {
     this.outputTopic = outputTopic;
+    return this;
+  }
+
+  public KafkaStreamsBuilder schemaRegistry(final String url) {
+    this.schemaRegistryUrl = url;
     return this;
   }
 
@@ -92,6 +98,7 @@ public class KafkaStreamsBuilder {
     Objects.requireNonNull(this.cassandraSession, "Cassandra session has not been set.");
     // TODO log parameters
     final TopologyBuilder topologyBuilder = new TopologyBuilder(
+        new Serdes(this.schemaRegistryUrl),
         this.inputTopic,
         this.outputTopic,
         this.cassandraSession);
