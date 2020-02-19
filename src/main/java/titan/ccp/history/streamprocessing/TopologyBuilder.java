@@ -117,8 +117,8 @@ public class TopologyBuilder {
               new AggregatedActivePowerRecord(
                   aggrAvro.getIdentifier(),
                   aggrAvro.getTimestamp(),
-                  aggrAvro.getMinInW(),
-                  aggrAvro.getMaxInW(),
+                  0.0,
+                  0.0,
                   aggrAvro.getCount(),
                   aggrAvro.getSumInW(),
                   aggrAvro.getAverageInW());
