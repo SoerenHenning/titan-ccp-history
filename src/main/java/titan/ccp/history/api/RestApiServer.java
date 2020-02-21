@@ -124,7 +124,7 @@ public class RestApiServer {
       long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
       from = from > 0 ? from : after;
       final long to =
-          NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS  NOPMD
+          NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS NOPMD
       return this.normalRepository.getCount(identifier, from, to);
     }, this.gson::toJson);
 
@@ -161,7 +161,8 @@ public class RestApiServer {
           long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
           from = from > 0 ? from : after;
           final long to =
-              NumberUtils.toLong(request.queryParams("to"),System.currentTimeMillis());//NOCS NOPMD
+              NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis());// NOCS
+                                                                                        // NOPMD
           final int buckets = NumberUtils.toInt(request.queryParams("buckets"), 4); // NOCS NOPMD
           return this.aggregatedRepository.getDistribution(identifier, from, to, buckets);
         }, this.gson::toJson);
@@ -175,7 +176,8 @@ public class RestApiServer {
           final int pointsToSmooth =
               NumberUtils.toInt(request.queryParams("pointsToSmooth"), 10); // NOCS NOPMD
           final long to =
-              NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis());//NOCS NOPMD
+              NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis());// NOCS
+                                                                                        // NOPMD
           return this.aggregatedRepository.getTrend(identifier, from, pointsToSmooth, to);
         }, this.gson::toJson);
 
@@ -197,5 +199,13 @@ public class RestApiServer {
         response.header("Content-Encoding", "gzip");
       }
     });
+
+  }
+
+  /**
+   * Stop the webserver.
+   */
+  public void stop() {
+    this.webService.stop();
   }
 }

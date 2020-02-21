@@ -21,12 +21,6 @@ public final class ConfigurationKeys {
 
   public static final String WEBSERVER_GZIP = "webserver.gzip";
 
-  public static final String CONFIGURATION_HOST = "configuration.host";
-
-  public static final String CONFIGURATION_PORT = "configuration.port";
-
-  public static final String CONFIGURATION_KAFKA_TOPIC = "configuration.kafka.topic";
-
   public static final String KAFKA_BOOTSTRAP_SERVERS = "kafka.bootstrap.servers";
 
   public static final String KAFKA_OUTPUT_TOPIC = "kafka.output.topic";
@@ -38,6 +32,8 @@ public final class ConfigurationKeys {
   public static final String COMMIT_INTERVAL_MS = "commit.interval.ms";
 
   public static final String CACHE_MAX_BYTES_BUFFERING = "cache.max.bytes.buffering";
+
+  public static final String SCHEMA_REGISTRY_URL = "schema.registry.url";
 
   private ConfigurationKeys() {}
 

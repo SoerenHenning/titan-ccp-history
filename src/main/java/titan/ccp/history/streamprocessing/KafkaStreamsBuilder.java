@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.Properties;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
+import titan.ccp.common.kafka.streams.PropertiesBuilder;
 
 /**
  * Builder for the Kafka Streams configuration.
@@ -12,7 +13,7 @@ import org.apache.kafka.streams.StreamsConfig;
 public class KafkaStreamsBuilder {
 
   private static final String APPLICATION_NAME = "titan-ccp-history";
-  private static final String APPLICATION_VERSION = "0.0.1";
+  private static final String APPLICATION_VERSION = "0.0.2";
 
   // private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStreamsBuilder.class);
 
@@ -20,10 +21,10 @@ public class KafkaStreamsBuilder {
   private String bootstrapServers; // NOPMD
   private String inputTopic; // NOPMD
   private String outputTopic; // NOPMD
-  private String configurationTopic; // NOPMD
+  private String schemaRegistryUrl; // NOPMD
   private int numThreads = -1; // NOPMD
   private int commitIntervalMs = -1; // NOPMD
-  private int cacheMaxBytesBuffering = -1; // NOPMD
+  private int cacheMaxBytesBuff = -1; // NOPMD
 
   public KafkaStreamsBuilder cassandraSession(final Session cassandraSession) {
     this.cassandraSession = cassandraSession;
@@ -40,8 +41,8 @@ public class KafkaStreamsBuilder {
     return this;
   }
 
-  public KafkaStreamsBuilder configurationTopic(final String configurationTopic) {
-    this.configurationTopic = configurationTopic;
+  public KafkaStreamsBuilder schemaRegistry(final String url) {
+    this.schemaRegistryUrl = url;
     return this;
   }
 
@@ -84,7 +85,7 @@ public class KafkaStreamsBuilder {
     if (cacheMaxBytesBuffering < -1) {
       throw new IllegalArgumentException("Cache max bytes buffering must be greater or equal -1.");
     }
-    this.cacheMaxBytesBuffering = cacheMaxBytesBuffering;
+    this.cacheMaxBytesBuff = cacheMaxBytesBuffering;
     return this;
   }
 
@@ -94,32 +95,21 @@ public class KafkaStreamsBuilder {
   public KafkaStreams build() {
     Objects.requireNonNull(this.inputTopic, "Input topic has not been set.");
     Objects.requireNonNull(this.outputTopic, "Output topic has not been set.");
-    Objects.requireNonNull(this.configurationTopic, "Configuration topic has not been set.");
     Objects.requireNonNull(this.cassandraSession, "Cassandra session has not been set.");
     // TODO log parameters
     final TopologyBuilder topologyBuilder = new TopologyBuilder(
+        new Serdes(this.schemaRegistryUrl),
         this.inputTopic,
         this.outputTopic,
-        this.configurationTopic,
         this.cassandraSession);
-    return new KafkaStreams(topologyBuilder.build(), this.buildProperties());
-  }
-
-  private Properties buildProperties() {
-    final Properties properties = new Properties();
-    properties.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, this.bootstrapServers);
-    properties.put(StreamsConfig.APPLICATION_ID_CONFIG,
-        APPLICATION_NAME + '-' + APPLICATION_VERSION); // TODO as parameter
-    if (this.numThreads > 0) {
-      properties.put(StreamsConfig.NUM_STREAM_THREADS_CONFIG, this.numThreads);
-    }
-    if (this.commitIntervalMs >= 0) {
-      properties.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, this.commitIntervalMs);
-    }
-    if (this.cacheMaxBytesBuffering >= 0) {
-      properties.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, this.cacheMaxBytesBuffering);
-    }
-    return properties;
+    final Properties properties = PropertiesBuilder
+        .bootstrapServers(this.bootstrapServers)
+        .applicationId(APPLICATION_NAME + '-' + APPLICATION_VERSION) // TODO as parameter
+        .set(StreamsConfig.NUM_STREAM_THREADS_CONFIG, this.numThreads, p -> p > 0)
+        .set(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, this.commitIntervalMs, p -> p >= 0)
+        .set(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, this.cacheMaxBytesBuff, p -> p >= 0)
+        .build();
+    return new KafkaStreams(topologyBuilder.build(), properties);
   }
 
 }
