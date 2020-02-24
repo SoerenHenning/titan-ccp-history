@@ -215,8 +215,7 @@ public class ActivePowerRepository<T> {
    * Get all available sensor identifiers.
    */
   public List<String> getIdentifiers() {
-    final Statement statement =
-        QueryBuilder.select(IDENTIFIER_KEY).distinct().from(this.tableName);
+    final Statement statement = QueryBuilder.select(IDENTIFIER_KEY).distinct().from(this.tableName);
     return this.cassandraSession.execute(statement).all().stream().map(row -> row.getString(0))
         .collect(Collectors.toList());
   }
@@ -229,7 +228,8 @@ public class ActivePowerRepository<T> {
     return new ActivePowerRepository<>(
         cassandraSession,
         AggregatedActivePowerRecord.class.getSimpleName(),
-        new AggregatedActivePowerRecordFactory(), record -> record.getSumInW());
+        new AggregatedActivePowerRecordFactory(),
+        record -> record.getSumInW());
   }
 
   /**
