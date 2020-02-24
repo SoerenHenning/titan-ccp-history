@@ -54,9 +54,9 @@ public class ActivePowerRepository<T> {
    */
   public ActivePowerRepository(final Session cassandraSession, final String tableName,
       final IRecordFactory<T> recordFactory, final ToDoubleFunction<T> valueAccessor) {
-    this(cassandraSession, tableName,
-        row -> recordFactory
-        .create(new CassandraDeserializer(row, recordFactory.getValueNames())),
+    this(cassandraSession,
+        tableName,
+        row -> recordFactory.create(new CassandraDeserializer(row, recordFactory.getValueNames())),
         valueAccessor);
   }
 
@@ -101,7 +101,8 @@ public class ActivePowerRepository<T> {
    * Get the latests records.
    */
   public List<T> getLatest(final String identifier, final int count) {
-    final Statement statement = QueryBuilder.select().all().from(this.tableName)
+    final Statement statement = QueryBuilder.select().all()
+        .from(this.tableName)
         .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
         .orderBy(QueryBuilder.desc(TIMESTAMP_KEY)).limit(count);
 
@@ -112,9 +113,11 @@ public class ActivePowerRepository<T> {
    * Get the latests records.
    */
   public List<T> getLatestBeforeTo(final String identifier, final int count, final long to) {
-    final Statement statement = QueryBuilder.select().all().from(this.tableName)
+    final Statement statement = QueryBuilder.select().all()
+        .from(this.tableName)
         .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
-        .and(QueryBuilder.lt(TIMESTAMP_KEY, to)).orderBy(QueryBuilder.desc(TIMESTAMP_KEY))
+        .and(QueryBuilder.lt(TIMESTAMP_KEY, to))
+        .orderBy(QueryBuilder.desc(TIMESTAMP_KEY))
         .limit(count);
 
     return this.get(statement);
@@ -129,9 +132,11 @@ public class ActivePowerRepository<T> {
 
   public double getTrend(final String identifier, final long from, final int pointsToSmooth,
       final long to) {
-    final Statement startStatement = QueryBuilder.select().all().from(this.tableName) // NOPMD
+    final Statement startStatement = QueryBuilder.select().all() // NOPMD
+        .from(this.tableName)
         .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
-        .and(QueryBuilder.gt(TIMESTAMP_KEY, from)).limit(pointsToSmooth);
+        .and(QueryBuilder.gt(TIMESTAMP_KEY, from))
+        .limit(pointsToSmooth);
 
     final List<T> first = this.get(startStatement);
     final List<T> latest = this.getLatestBeforeTo(identifier, pointsToSmooth, to);
@@ -142,8 +147,8 @@ public class ActivePowerRepository<T> {
     if (start.isPresent() && end.isPresent()) {
       return start.getAsDouble() > 0.0 ? end.getAsDouble() / start.getAsDouble() : 1;
     } else { // NOPMD
-      LOGGER.warn("Trend could not be computed for interval after={} and pointsToSmooth={}."// NOCS NOPMD
-          + " Getting start={} and end={}.", // NOCS NOPMD
+      LOGGER.warn(
+          "Trend could not be computed for interval after={} and pointsToSmooth={}. Getting start={} and end={}.", // NOCS_NOPMD
           from, pointsToSmooth, start, end);
       return -1;
     }
@@ -197,9 +202,12 @@ public class ActivePowerRepository<T> {
    * Get the number of records for the given sensor identifier and after a timestamp.
    */
   public long getCount(final String identifier, final long from, final long to) {
-    final Statement statement = QueryBuilder.select().countAll().from(this.tableName)
+    final Statement statement = QueryBuilder.select()
+        .countAll()
+        .from(this.tableName)
         .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
-        .and(QueryBuilder.gt(TIMESTAMP_KEY, from)).and(QueryBuilder.lt(TIMESTAMP_KEY, to));
+        .and(QueryBuilder.gt(TIMESTAMP_KEY, from))
+        .and(QueryBuilder.lt(TIMESTAMP_KEY, to));
     return this.cassandraSession.execute(statement).all().get(0).getLong(0);
   }
 
@@ -218,7 +226,8 @@ public class ActivePowerRepository<T> {
    */
   public static ActivePowerRepository<AggregatedActivePowerRecord> forAggregated(
       final Session cassandraSession) {
-    return new ActivePowerRepository<>(cassandraSession,
+    return new ActivePowerRepository<>(
+        cassandraSession,
         AggregatedActivePowerRecord.class.getSimpleName(),
         new AggregatedActivePowerRecordFactory(), record -> record.getSumInW());
   }
@@ -226,9 +235,9 @@ public class ActivePowerRepository<T> {
   /**
    * Create an {@link ActivePowerRepository} for {@link ActivePowerRecord}s.
    */
-  public static ActivePowerRepository<ActivePowerRecord> forNormal(
-      final Session cassandraSession) {
-    return new ActivePowerRepository<>(cassandraSession,
+  public static ActivePowerRepository<ActivePowerRecord> forNormal(final Session cassandraSession) {
+    return new ActivePowerRepository<>(
+        cassandraSession,
         ActivePowerRecord.class.getSimpleName(), new ActivePowerRecordFactory(),
         record -> record.getValueInW());
   }

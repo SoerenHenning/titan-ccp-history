@@ -57,8 +57,7 @@ public class RestApiServer {
           response.header("Access-Control-Allow-Headers", accessControlRequestHeaders);
         }
 
-        final String accessControlRequestMethod =
-            request.headers("Access-Control-Request-Method");
+        final String accessControlRequestMethod = request.headers("Access-Control-Request-Method");
         if (accessControlRequestMethod != null) {
           response.header("Access-Control-Allow-Methods", accessControlRequestMethod);
         }
@@ -199,7 +198,6 @@ public class RestApiServer {
         response.header("Content-Encoding", "gzip");
       }
     });
-
   }
 
   /**
@@ -208,4 +206,5 @@ public class RestApiServer {
   public void stop() {
     this.webService.stop();
   }
+
 }
