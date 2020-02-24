@@ -34,8 +34,8 @@ public class RestApiServer {
    */
   public RestApiServer(final Session cassandraSession, final int port, final boolean enableCors,
       final boolean enableGzip) {
-    this.aggregatedRepository = ActivePowerRepository.forAggregated(cassandraSession);
-    this.normalRepository = ActivePowerRepository.forNormal(cassandraSession);
+    this.aggregatedRepository = CassandraRepository.forAggregated(cassandraSession);
+    this.normalRepository = CassandraRepository.forNormal(cassandraSession);
     LOGGER.info("Instantiate API server.");
     this.webService = Service.ignite().port(port);
     this.enableCors = enableCors;
