@@ -77,7 +77,8 @@ public class ActivePowerRepository<T> {
    * Get all selected records.
    */
   public List<T> get(final String identifier, final long from) {
-    final Statement statement = QueryBuilder.select().all().from(this.tableName)
+    final Statement statement = QueryBuilder.select().all()
+        .from(this.tableName)
         .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
         .and(QueryBuilder.gt(TIMESTAMP_KEY, from));
 
@@ -218,7 +219,11 @@ public class ActivePowerRepository<T> {
    */
   public List<String> getIdentifiers() {
     final Statement statement = QueryBuilder.select(IDENTIFIER_KEY).distinct().from(this.tableName);
-    return this.cassandraSession.execute(statement).all().stream().map(row -> row.getString(0))
+    return this.cassandraSession
+        .execute(statement)
+        .all()
+        .stream()
+        .map(row -> row.getString(0))
         .collect(Collectors.toList());
   }
 
