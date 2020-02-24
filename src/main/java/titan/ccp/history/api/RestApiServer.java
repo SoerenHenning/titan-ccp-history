@@ -186,9 +186,8 @@ public class RestApiServer {
           final long after = NumberUtils.toLong(request.queryParams("after"), 0); // NOCS NOPMD
           long from = NumberUtils.toLong(request.queryParams("from"), 0); // NOCS NOPMD
           from = from > 0 ? from : after;
-          final long to =
-              NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS
-          // NOPMD
+          final long to = NumberUtils.toLong(request.queryParams("to"), System.currentTimeMillis()); // NOCS
+                                                                                                     // NOPMD
           return this.aggregatedRepository.getCount(identifier, from, to);
         }, this.gson::toJson);
 

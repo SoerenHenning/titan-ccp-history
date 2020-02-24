@@ -64,9 +64,11 @@ public class ActivePowerRepository<T> {
    * Get all selected records.
    */
   public List<T> getRange(final String identifier, final long from, final long to) {
-    final Statement statement = QueryBuilder.select().all().from(this.tableName)
+    final Statement statement = QueryBuilder.select().all()
+        .from(this.tableName)
         .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
-        .and(QueryBuilder.gt(TIMESTAMP_KEY, from)).and(QueryBuilder.lt(TIMESTAMP_KEY, to));
+        .and(QueryBuilder.gt(TIMESTAMP_KEY, from))
+        .and(QueryBuilder.lt(TIMESTAMP_KEY, to));
 
     return this.get(statement);
   }
@@ -238,9 +240,9 @@ public class ActivePowerRepository<T> {
   public static ActivePowerRepository<ActivePowerRecord> forNormal(final Session cassandraSession) {
     return new ActivePowerRepository<>(
         cassandraSession,
-        ActivePowerRecord.class.getSimpleName(), new ActivePowerRecordFactory(),
+        ActivePowerRecord.class.getSimpleName(),
+        new ActivePowerRecordFactory(),
         record -> record.getValueInW());
   }
-
 
 }
