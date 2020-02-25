@@ -10,39 +10,32 @@ import java.util.List;
 public interface ActivePowerRepository<T> {
 
   /**
-   * Get all selected records.
+   * Get all records for the provided identifier in the provided time interval.
    */
-  List<T> getRange(String identifier, long from, long to);
-
-  /**
-   * Get all selected records.
-   */
-  List<T> get(String identifier, long from);
+  List<T> get(String identifier, TimeRestriction timeRestriction);
 
   /**
    * Get the latests records.
    */
-  List<T> getLatest(String identifier, int count);
+  List<T> getLatest(String identifier, TimeRestriction timeRestriction, int count);
 
   /**
-   * Get the latests records.
+   * Get the earliest records.
    */
-  List<T> getLatestBeforeTo(String identifier, int count, long to);
+  List<T> getEarliest(String identifier, TimeRestriction timeRestriction, int count);
 
   /**
    * Compute a trend for the selected records, i.e., a value showing how the values increased or
    * decreased over time.
    */
-
-  double getTrend(String identifier, long from, int pointsToSmooth,
-      long to);
+  double getTrend(String identifier, final TimeRestriction timeRestriction, int pointsToSmooth);
 
   /**
    * Get a frequency distribution of records. Records are grouped by their values and this methods
    * returns a list of {@link DistributionBucket}s.
    */
-  List<DistributionBucket> getDistribution(String identifier, long from,
-      long to, int bucketsCount);
+  List<DistributionBucket> getDistribution(String identifier, TimeRestriction timeRestriction,
+      int bucketsCount);
 
   /**
    * Get the total amount of all records.
@@ -52,7 +45,7 @@ public interface ActivePowerRepository<T> {
   /**
    * Get the number of records for the given sensor identifier and after a timestamp.
    */
-  long getCount(String identifier, long from, long to);
+  long getCount(String identifier, TimeRestriction timeRestriction);
 
   /**
    * Get all available sensor identifiers.

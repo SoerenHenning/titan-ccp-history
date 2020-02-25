@@ -5,6 +5,7 @@ import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
+import com.datastax.driver.core.querybuilder.Select.Where;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -50,7 +51,7 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
   }
 
   /**
-   * Create a new {@link CassandraRepository}.
+   * Create a new {@link CassandraRepository} for Kieker records.
    */
   public CassandraRepository(final Session cassandraSession, final String tableName,
       final IRecordFactory<T> recordFactory, final ToDoubleFunction<T> valueAccessor) {
@@ -61,93 +62,62 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
   }
 
   @Override
-  public List<T> getRange(final String identifier, final long from, final long to) {
-    final Statement statement = QueryBuilder.select().all()
-        .from(this.tableName)
-        .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
-        .and(QueryBuilder.gt(TIMESTAMP_KEY, from))
-        .and(QueryBuilder.lt(TIMESTAMP_KEY, to));
-
-    return this.get(statement);
+  public List<T> get(final String identifier, final TimeRestriction timeRestriction) {
+    final Statement statement =
+        this.buildRestrictedSelectAllBaseStatement(identifier, timeRestriction);
+    return this.executeStatement(statement);
   }
 
   @Override
-  public List<T> get(final String identifier, final long from) {
-    final Statement statement = QueryBuilder.select().all()
-        .from(this.tableName)
-        .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
-        .and(QueryBuilder.gt(TIMESTAMP_KEY, from));
+  public List<T> getLatest(final String identifier, final TimeRestriction timeRestriction,
+      final int count) {
+    final Statement statement =
+        this.buildRestrictedSelectAllBaseStatement(identifier, timeRestriction)
+            .orderBy(QueryBuilder.desc(TIMESTAMP_KEY))
+            .limit(count);
 
-    return this.get(statement);
-  }
-
-  /**
-   * Get all selected records.
-   */
-  private List<T> get(final Statement statement) {
-    final ResultSet resultSet = this.cassandraSession.execute(statement); // NOPMD no close()
-
-    final List<T> records = new ArrayList<>();
-    for (final Row row : resultSet) {
-      final T record = this.recordFactory.apply(row);
-      records.add(record);
-    }
-
-    return records;
+    return this.executeStatement(statement);
   }
 
   @Override
-  public List<T> getLatest(final String identifier, final int count) {
-    final Statement statement = QueryBuilder.select().all()
-        .from(this.tableName)
-        .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
-        .orderBy(QueryBuilder.desc(TIMESTAMP_KEY)).limit(count);
+  public List<T> getEarliest(final String identifier, final TimeRestriction timeRestriction,
+      final int count) {
+    final Statement statement =
+        this.buildRestrictedSelectAllBaseStatement(identifier, timeRestriction)
+            .orderBy(QueryBuilder.asc(TIMESTAMP_KEY))
+            .limit(count);
 
-    return this.get(statement);
+    return this.executeStatement(statement);
   }
 
   @Override
-  public List<T> getLatestBeforeTo(final String identifier, final int count, final long to) {
-    final Statement statement = QueryBuilder.select().all()
-        .from(this.tableName)
-        .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
-        .and(QueryBuilder.lt(TIMESTAMP_KEY, to))
-        .orderBy(QueryBuilder.desc(TIMESTAMP_KEY))
-        .limit(count);
+  public double getTrend(final String identifier, final TimeRestriction timeRestriction,
+      final int pointsToSmooth) {
+    // TODO Could be a default implementation of the interface
+    final List<T> earliest =
+        this.getEarliest(identifier, timeRestriction, pointsToSmooth);
+    final List<T> latest =
+        this.getLatest(identifier, timeRestriction, pointsToSmooth);
 
-    return this.get(statement);
-  }
-
-  @Override
-  public double getTrend(final String identifier, final long from, final int pointsToSmooth,
-      final long to) {
-    final Statement startStatement = QueryBuilder.select().all() // NOPMD
-        .from(this.tableName)
-        .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
-        .and(QueryBuilder.gt(TIMESTAMP_KEY, from))
-        .limit(pointsToSmooth);
-
-    final List<T> first = this.get(startStatement);
-    final List<T> latest = this.getLatestBeforeTo(identifier, pointsToSmooth, to);
-
-    final OptionalDouble start = first.stream().mapToDouble(this.valueAccessor).average();
+    final OptionalDouble start = earliest.stream().mapToDouble(this.valueAccessor).average();
     final OptionalDouble end = latest.stream().mapToDouble(this.valueAccessor).average();
 
     if (start.isPresent() && end.isPresent()) {
       return start.getAsDouble() > 0.0 ? end.getAsDouble() / start.getAsDouble() : 1;
     } else { // NOPMD
       LOGGER.warn(
-          "Trend could not be computed for interval after={} and pointsToSmooth={}. Getting start={} and end={}.", // NOCS_NOPMD
-          from, pointsToSmooth, start, end);
+          "Trend could not be computed for interval={} and pointsToSmooth={}. Getting start={} and end={}.", // NOCS_NOPMD
+          timeRestriction, pointsToSmooth, start, end);
       return -1;
     }
 
   }
 
   @Override
-  public List<DistributionBucket> getDistribution(final String identifier, final long from,
-      final long to, final int bucketsCount) {
-    final List<T> records = this.getRange(identifier, from, to);
+  public List<DistributionBucket> getDistribution(final String identifier,
+      final TimeRestriction timeRestriction, final int bucketsCount) {
+    // TODO Could be a default implementation of the interface
+    final List<T> records = this.get(identifier, timeRestriction);
 
     if (records.isEmpty()) {
       return Collections.emptyList();
@@ -183,13 +153,14 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
   }
 
   @Override
-  public long getCount(final String identifier, final long from, final long to) {
+  public long getCount(final String identifier, final TimeRestriction timeRestriction) {
     final Statement statement = QueryBuilder.select()
         .countAll()
         .from(this.tableName)
         .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
-        .and(QueryBuilder.gt(TIMESTAMP_KEY, from))
-        .and(QueryBuilder.lt(TIMESTAMP_KEY, to));
+        .and(QueryBuilder.gte(TIMESTAMP_KEY, timeRestriction.getFromOrDefault(Long.MIN_VALUE)))
+        .and(QueryBuilder.lte(TIMESTAMP_KEY, timeRestriction.getToOrDefault(Long.MAX_VALUE)))
+        .and(QueryBuilder.gt(TIMESTAMP_KEY, timeRestriction.getAfterOrDefault(Long.MIN_VALUE)));
     return this.cassandraSession.execute(statement).all().get(0).getLong(0);
   }
 
@@ -202,6 +173,32 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
         .stream()
         .map(row -> row.getString(0))
         .collect(Collectors.toList());
+  }
+
+  private Where buildRestrictedSelectAllBaseStatement(
+      final String identifier,
+      final TimeRestriction timeRestriction) {
+    return QueryBuilder.select().all()
+        .from(this.tableName)
+        .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
+        .and(QueryBuilder.gte(TIMESTAMP_KEY, timeRestriction.getFromOrDefault(Long.MIN_VALUE)))
+        .and(QueryBuilder.lte(TIMESTAMP_KEY, timeRestriction.getToOrDefault(Long.MAX_VALUE)))
+        .and(QueryBuilder.gt(TIMESTAMP_KEY, timeRestriction.getAfterOrDefault(Long.MIN_VALUE)));
+  }
+
+  /**
+   * Execute the provided Cassandra {@link Statement} and reconstruct records of type T.
+   */
+  private List<T> executeStatement(final Statement statement) {
+    final ResultSet resultSet = this.cassandraSession.execute(statement); // NOPMD no close()
+
+    final List<T> records = new ArrayList<>();
+    for (final Row row : resultSet) {
+      final T record = this.recordFactory.apply(row);
+      records.add(record);
+    }
+
+    return records;
   }
 
   /**
