@@ -1,19 +1,19 @@
 package titan.ccp.history.streamprocessing;
 
 import com.datastax.driver.core.Session;
-import kieker.common.record.IMonitoringRecord;
+import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.KStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import titan.ccp.common.avro.cassandra.AvroDataAdapter;
 import titan.ccp.common.cassandra.CassandraWriter;
 import titan.ccp.common.cassandra.ExplicitPrimaryKeySelectionStrategy;
 import titan.ccp.common.cassandra.PredefinedTableNameMappers;
-import titan.ccp.common.kieker.cassandra.KiekerDataAdapter;
-import titan.ccp.models.records.ActivePowerRecord;
-import titan.ccp.models.records.AggregatedActivePowerRecord;
+import titan.ccp.model.records.ActivePowerRecord;
+import titan.ccp.model.records.AggregatedActivePowerRecord;
 
 /**
  * Builds Kafka Stream Topology for the History microservice.
@@ -47,7 +47,7 @@ public class TopologyBuilder {
   public Topology build() {
 
     // 1. Cassandra Writer for ActivePowerRecord
-    final CassandraWriter<IMonitoringRecord> cassandraWriterForNormal =
+    final CassandraWriter<SpecificRecord> cassandraWriterForNormal =
         this.buildCassandraWriter(ActivePowerRecord.class);
 
     // 2. Build Input Stream
@@ -58,7 +58,7 @@ public class TopologyBuilder {
 
 
     // 4. Cassandra Writer for AggregatedActivePowerRecord
-    final CassandraWriter<IMonitoringRecord> cassandraWriter =
+    final CassandraWriter<SpecificRecord> cassandraWriter =
         this.buildCassandraWriter(AggregatedActivePowerRecord.class);
 
     // 5. Build Output Stream
@@ -70,15 +70,15 @@ public class TopologyBuilder {
     return this.builder.build();
   }
 
-  private CassandraWriter<IMonitoringRecord> buildCassandraWriter(
-      final Class<? extends IMonitoringRecord> recordClass) {
+  private <T extends SpecificRecord> CassandraWriter<SpecificRecord> buildCassandraWriter(
+      final Class<T> recordClass) {
     final ExplicitPrimaryKeySelectionStrategy primaryKeySelectionStrategy =
         new ExplicitPrimaryKeySelectionStrategy();
     primaryKeySelectionStrategy.registerPartitionKeys(recordClass.getSimpleName(), "identifier");
     primaryKeySelectionStrategy.registerClusteringColumns(recordClass.getSimpleName(), "timestamp");
 
-    final CassandraWriter<IMonitoringRecord> cassandraWriter = CassandraWriter
-        .builder(this.cassandraSession, new KiekerDataAdapter())
+    final CassandraWriter<SpecificRecord> cassandraWriter = CassandraWriter
+        .builder(this.cassandraSession, new AvroDataAdapter())
         .tableNameMapper(PredefinedTableNameMappers.SIMPLE_CLASS_NAME)
         .primaryKeySelectionStrategy(primaryKeySelectionStrategy).build();
 
@@ -89,17 +89,13 @@ public class TopologyBuilder {
     return this.builder
         .stream(
             this.inputTopic,
-            Consumed.with(this.serdes.string(), this.serdes.activePowerRecordValues()))
-        .mapValues(apAvro -> {
-          return new ActivePowerRecord(
-              apAvro.getIdentifier(),
-              apAvro.getTimestamp(),
-              apAvro.getValueInW());
-        });
+            Consumed.with(
+                this.serdes.string(),
+                this.serdes.activePowerRecordValues()));
   }
 
   private void writeActivePowerRecordsToCassandra(
-      final CassandraWriter<IMonitoringRecord> cassandraWriterForNormal,
+      final CassandraWriter<SpecificRecord> cassandraWriterForNormal,
       final KStream<String, ActivePowerRecord> inputStream) {
     inputStream
         // TODO Logging
@@ -110,24 +106,15 @@ public class TopologyBuilder {
 
   private KStream<String, AggregatedActivePowerRecord> buildOutputStream() {
     return this.builder
-        .stream(this.outputTopic,
-            Consumed.with(this.serdes.string(), this.serdes.aggregatedActivePowerRecordValues()))
-        .mapValues((final titan.ccp.model.records.AggregatedActivePowerRecord aggrAvro) -> {
-          final AggregatedActivePowerRecord aggrKieker =
-              new AggregatedActivePowerRecord(
-                  aggrAvro.getIdentifier(),
-                  aggrAvro.getTimestamp(),
-                  0.0,
-                  0.0,
-                  aggrAvro.getCount(),
-                  aggrAvro.getSumInW(),
-                  aggrAvro.getAverageInW());
-          return aggrKieker;
-        });
+        .stream(
+            this.outputTopic,
+            Consumed.with(
+                this.serdes.string(),
+                this.serdes.aggregatedActivePowerRecordValues()));
   }
 
   private void writeAggregatedActivePowerRecordsToCassandra(
-      final CassandraWriter<IMonitoringRecord> cassandraWriter,
+      final CassandraWriter<SpecificRecord> cassandraWriter,
       final KStream<String, AggregatedActivePowerRecord> outputStream) {
     outputStream
         // TODO Logging
