@@ -8,7 +8,7 @@ import redis.clients.jedis.Jedis;
 import titan.ccp.common.cassandra.SessionBuilder;
 import titan.ccp.common.cassandra.SessionBuilder.ClusterSession;
 import titan.ccp.history.api.ActivePowerRepository;
-import titan.ccp.models.records.ActivePowerRecord;
+import titan.ccp.model.records.ActivePowerRecord;
 
 /**
  * Prints the total amount of input measurements along with the total amount of stored measurements

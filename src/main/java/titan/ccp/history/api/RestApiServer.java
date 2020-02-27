@@ -7,8 +7,8 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spark.Service;
-import titan.ccp.models.records.ActivePowerRecord;
-import titan.ccp.models.records.AggregatedActivePowerRecord;
+import titan.ccp.model.records.ActivePowerRecord;
+import titan.ccp.model.records.AggregatedActivePowerRecord;
 
 
 /**

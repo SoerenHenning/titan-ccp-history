@@ -12,14 +12,12 @@ import java.util.OptionalDouble;
 import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
-import kieker.common.record.factory.IRecordFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import titan.ccp.common.kieker.cassandra.CassandraDeserializer;
-import titan.ccp.models.records.ActivePowerRecord;
-import titan.ccp.models.records.ActivePowerRecordFactory;
-import titan.ccp.models.records.AggregatedActivePowerRecord;
-import titan.ccp.models.records.AggregatedActivePowerRecordFactory;
+import titan.ccp.model.records.ActivePowerRecord;
+import titan.ccp.model.records.AggregatedActivePowerRecord;
+
+
 
 /**
  * A proxy class to encapsulate the database and queries to it.
@@ -47,17 +45,6 @@ public class ActivePowerRepository<T> {
     this.tableName = tableName;
     this.recordFactory = recordFactory;
     this.valueAccessor = valueAccessor;
-  }
-
-  /**
-   * Create a new {@link ActivePowerRepository}.
-   */
-  public ActivePowerRepository(final Session cassandraSession, final String tableName,
-      final IRecordFactory<T> recordFactory, final ToDoubleFunction<T> valueAccessor) {
-    this(cassandraSession,
-        tableName,
-        row -> recordFactory.create(new CassandraDeserializer(row, recordFactory.getValueNames())),
-        valueAccessor);
   }
 
   /**
@@ -193,7 +180,13 @@ public class ActivePowerRepository<T> {
     return new ActivePowerRepository<>(
         cassandraSession,
         AggregatedActivePowerRecord.class.getSimpleName(),
-        new AggregatedActivePowerRecordFactory(),
+        row -> AggregatedActivePowerRecord.newBuilder()
+            .setIdentifier(row.getString(IDENTIFIER_KEY))
+            .setTimestamp(row.getLong(TIMESTAMP_KEY))
+            .setCount(row.getLong("count"))
+            .setSumInW(row.getDouble("sumInW"))
+            .setAverageInW(row.getDouble("averageInW"))
+            .build(),
         record -> record.getSumInW());
   }
 
@@ -204,7 +197,11 @@ public class ActivePowerRepository<T> {
     return new ActivePowerRepository<>(
         cassandraSession,
         ActivePowerRecord.class.getSimpleName(),
-        new ActivePowerRecordFactory(),
+        row -> ActivePowerRecord.newBuilder()
+            .setIdentifier(row.getString(IDENTIFIER_KEY))
+            .setTimestamp(row.getLong(TIMESTAMP_KEY))
+            .setValueInW(row.getDouble("valueInW"))
+            .build(),
         record -> record.getValueInW());
   }
 
