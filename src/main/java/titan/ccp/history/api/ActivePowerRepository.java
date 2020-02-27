@@ -180,18 +180,13 @@ public class ActivePowerRepository<T> {
     return new ActivePowerRepository<>(
         cassandraSession,
         AggregatedActivePowerRecord.class.getSimpleName(),
-        // TODO: replace with a more elegant way
-        row -> {
-          final titan.ccp.model.records.AggregatedActivePowerRecord.Builder builder =
-              AggregatedActivePowerRecord.newBuilder();
-          builder
-              .setIdentifier(row.getString("identifier"))
-              .setTimestamp(row.getLong("timestamp"))
-              .setCount(row.getLong("count"))
-              .setSumInW(row.getDouble("sumInW"))
-              .setAverageInW(row.getDouble("averageInW"));
-          return builder.build();
-        },
+        row -> AggregatedActivePowerRecord.newBuilder()
+            .setIdentifier(row.getString(IDENTIFIER_KEY))
+            .setTimestamp(row.getLong(TIMESTAMP_KEY))
+            .setCount(row.getLong("count"))
+            .setSumInW(row.getDouble("sumInW"))
+            .setAverageInW(row.getDouble("averageInW"))
+            .build(),
         record -> record.getSumInW());
   }
 
@@ -202,16 +197,11 @@ public class ActivePowerRepository<T> {
     return new ActivePowerRepository<>(
         cassandraSession,
         ActivePowerRecord.class.getSimpleName(),
-        // TODO: replace with a more elegant way
-        row -> {
-          final titan.ccp.model.records.ActivePowerRecord.Builder builder =
-              ActivePowerRecord.newBuilder();
-          builder
-              .setIdentifier(row.getString("identifier"))
-              .setTimestamp(row.getLong("timestamp"))
-              .setValueInW(row.getDouble("valueInW"));
-          return builder.build();
-        },
+        row -> ActivePowerRecord.newBuilder()
+            .setIdentifier(row.getString(IDENTIFIER_KEY))
+            .setTimestamp(row.getLong(TIMESTAMP_KEY))
+            .setValueInW(row.getDouble("valueInW"))
+            .build(),
         record -> record.getValueInW());
   }
 
