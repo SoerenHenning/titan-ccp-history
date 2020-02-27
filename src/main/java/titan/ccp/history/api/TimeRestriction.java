@@ -1,6 +1,8 @@
 package titan.ccp.history.api;
 
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Representing a time restriction for a query to the data store. The following restrictions exist
@@ -17,13 +19,13 @@ public final class TimeRestriction {
 
   private long from = ABSENT_VALUE;
   private long to = ABSENT_VALUE;
-  private final long after = ABSENT_VALUE;
+  private long after = ABSENT_VALUE;
 
   /**
    * Returns <code>true</code> if a 'from' restriction exists.
    */
   public boolean hasFrom() {
-    return this.from == ABSENT_VALUE;
+    return this.from != ABSENT_VALUE;
   }
 
   /**
@@ -65,7 +67,7 @@ public final class TimeRestriction {
    * Returns <code>true</code> if a 'to' restriction exists.
    */
   public boolean hasTo() {
-    return this.to == ABSENT_VALUE;
+    return this.to != ABSENT_VALUE;
   }
 
   /**
@@ -107,7 +109,7 @@ public final class TimeRestriction {
    * Returns <code>true</code> if an 'after' restriction exists.
    */
   public boolean hasAfter() {
-    return this.after == ABSENT_VALUE;
+    return this.after != ABSENT_VALUE;
   }
 
   /**
@@ -142,17 +144,19 @@ public final class TimeRestriction {
       throw new IllegalArgumentException(
           "The 'after' restriction is not allowed to be " + ABSENT_VALUE + ".");
     }
-    this.from = afterInEpochMillis;
+    this.after = afterInEpochMillis;
   }
 
   @Override
   public String toString() {
     return "{"
-        + (this.hasFrom() ? "from: " + this.getFrom() + ", " : "")
-        + (this.hasTo() ? "to: " + this.getTo() + ", " : "")
-        + (this.hasAfter() ? "After: " + this.getAfter() + ", " : "")
+        + Stream.of(
+            this.hasFrom() ? "from: " + this.getFrom() : "",
+            this.hasTo() ? "to: " + this.getTo() : "",
+            this.hasAfter() ? "after: " + this.getAfter() : "")
+            .filter(s -> !s.isEmpty())
+            .collect(Collectors.joining(", "))
         + "}";
-
   }
 
 }
