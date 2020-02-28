@@ -23,7 +23,7 @@ configurations.all {
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 }
 
-allprojects { 
+allprojects {
 	repositories {
 	    jcenter()
 	    maven {
@@ -38,7 +38,6 @@ allprojects {
 dependencies {
     compile('org.industrial-devops:titan-ccp-common:0.0.3-SNAPSHOT') { changing = true }
     compile('org.industrial-devops:titan-ccp-common-kafka:0.0.3-SNAPSHOT') { changing = true }
-    compile 'net.kieker-monitoring:kieker:1.14-SNAPSHOT'
     compile 'org.apache.kafka:kafka-streams:2.3.0'
     compile 'com.sparkjava:spark-core:2.7.2'
 	compile 'com.google.code.gson:gson:2.8.2'
@@ -92,7 +91,7 @@ tasks.withType(com.github.spotbugs.SpotBugsTask) {
 task checkstyle {
   group 'Quality Assurance'
   description 'Run Checkstyle'
-  
+
   dependsOn 'checkstyleMain'
   dependsOn 'checkstyleTest'
 }
@@ -108,7 +107,7 @@ task pmd {
 task spotbugs {
   group 'Quality Assurance'
   description 'Run SpotBugs'
-  
+
   dependsOn 'spotbugsMain'
   dependsOn 'spotbugsTest'
 }
