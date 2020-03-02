@@ -10,8 +10,7 @@ import java.util.stream.Stream;
  * timestamp greater or equal the 'from' timestamp. 2. 'to' restricts the query to only return
  * records with timestamp less or equal the provided 'to' timestamp. 3. 'after' restricts the query
  * to only return records with timestamp greater (not equal) the 'after' timestamp. Thus, in cases
- * where both the 'from' and the 'after' restriction are provided, only the 'after' restriction has
- * an effect.
+ * where both the 'from' and the 'after' restriction are provided, only bigger value has an effect.
  */
 public final class TimeRestriction {
 

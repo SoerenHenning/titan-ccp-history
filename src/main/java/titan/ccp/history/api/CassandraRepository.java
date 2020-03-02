@@ -166,12 +166,27 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
   private Where buildRestrictedSelectAllBaseStatement(
       final String identifier,
       final TimeRestriction timeRestriction) {
-    return QueryBuilder.select().all()
+    final Where where = QueryBuilder.select().all()
         .from(this.tableName)
         .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
-        .and(QueryBuilder.gte(TIMESTAMP_KEY, timeRestriction.getFromOrDefault(Long.MIN_VALUE)))
-        .and(QueryBuilder.lte(TIMESTAMP_KEY, timeRestriction.getToOrDefault(Long.MAX_VALUE)))
-        .and(QueryBuilder.gt(TIMESTAMP_KEY, timeRestriction.getAfterOrDefault(Long.MIN_VALUE)));
+        .and(QueryBuilder.lte(TIMESTAMP_KEY, timeRestriction.getToOrDefault(Long.MAX_VALUE)));
+
+    // choose only the bigger value of after and from
+    if (timeRestriction.hasAfter() && timeRestriction.hasFrom()) {
+      final long after = timeRestriction.getAfter();
+      final long from = timeRestriction.getFrom();
+      if (after >= from) {
+        where.and(QueryBuilder.gt(TIMESTAMP_KEY, after));
+      } else {
+        where.and(QueryBuilder.gte(TIMESTAMP_KEY, from));
+      }
+    } else if (timeRestriction.hasFrom()) {
+      where.and(QueryBuilder.gte(TIMESTAMP_KEY, timeRestriction.getAfterOrDefault(Long.MIN_VALUE)));
+    } else {
+      where.and(QueryBuilder.gt(TIMESTAMP_KEY, timeRestriction.getAfterOrDefault(Long.MIN_VALUE)));
+    }
+
+    return where;
   }
 
   /**
