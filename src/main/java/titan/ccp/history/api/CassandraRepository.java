@@ -4,6 +4,7 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
+import com.datastax.driver.core.querybuilder.Clause;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.querybuilder.Select.Where;
 import java.util.ArrayList;
@@ -166,27 +167,29 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
   private Where buildRestrictedSelectAllBaseStatement(
       final String identifier,
       final TimeRestriction timeRestriction) {
-    final Where where = QueryBuilder.select().all()
+    return QueryBuilder.select().all()
         .from(this.tableName)
         .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
-        .and(QueryBuilder.lte(TIMESTAMP_KEY, timeRestriction.getToOrDefault(Long.MAX_VALUE)));
+        .and(this.buildLowerTimeRestrictionClause(timeRestriction))
+        .and(this.buildUpperTimeRestrictionClause(timeRestriction));
+  }
 
-    // choose only the bigger value of after and from
-    if (timeRestriction.hasAfter() && timeRestriction.hasFrom()) {
-      final long after = timeRestriction.getAfter();
-      final long from = timeRestriction.getFrom();
-      if (after >= from) {
-        where.and(QueryBuilder.gt(TIMESTAMP_KEY, after));
+  private Clause buildLowerTimeRestrictionClause(final TimeRestriction timeRestriction) {
+    if (timeRestriction.hasFrom()) {
+      // If two lower restrictions do exists, find the "superior" one.
+      if (timeRestriction.hasAfter() && timeRestriction.getAfter() >= timeRestriction.getFrom()) {
+        QueryBuilder.gt(TIMESTAMP_KEY, timeRestriction.getAfter());
       } else {
-        where.and(QueryBuilder.gte(TIMESTAMP_KEY, from));
+        QueryBuilder.gte(TIMESTAMP_KEY, timeRestriction.getFrom());
       }
-    } else if (timeRestriction.hasFrom()) {
-      where.and(QueryBuilder.gte(TIMESTAMP_KEY, timeRestriction.getFromOrDefault(Long.MIN_VALUE)));
-    } else {
-      where.and(QueryBuilder.gt(TIMESTAMP_KEY, timeRestriction.getAfterOrDefault(Long.MIN_VALUE)));
+    } else if (timeRestriction.hasAfter()) {
+      QueryBuilder.gt(TIMESTAMP_KEY, timeRestriction.getAfter());
     }
+    return QueryBuilder.gte(TIMESTAMP_KEY, Long.MIN_VALUE);
+  }
 
-    return where;
+  private Clause buildUpperTimeRestrictionClause(final TimeRestriction timeRestriction) {
+    return QueryBuilder.lte(TIMESTAMP_KEY, timeRestriction.getToOrDefault(Long.MAX_VALUE));
   }
 
   /**
