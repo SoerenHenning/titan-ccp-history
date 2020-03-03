@@ -8,6 +8,7 @@ import redis.clients.jedis.Jedis;
 import titan.ccp.common.cassandra.SessionBuilder;
 import titan.ccp.common.cassandra.SessionBuilder.ClusterSession;
 import titan.ccp.history.api.ActivePowerRepository;
+import titan.ccp.history.api.CassandraRepository;
 import titan.ccp.model.records.ActivePowerRecord;
 
 /**
@@ -32,7 +33,7 @@ public final class RecordCounter {
     final ClusterSession clusterSession = new SessionBuilder().contactPoint(cassandraHost)
         .port(cassandraPort).keyspace(cassandraKeyspace).build();
     final ActivePowerRepository<ActivePowerRecord> normalRepository =
-        ActivePowerRepository.forNormal(clusterSession.getSession());
+        CassandraRepository.forNormal(clusterSession.getSession());
     final String redisHost = Objects.requireNonNullElse(System.getenv("REDIS_HOST"), "localhost");
     final int redisPort =
         Integer.parseInt(Objects.requireNonNullElse(System.getenv("REDIS_PORT"), "6379"));
