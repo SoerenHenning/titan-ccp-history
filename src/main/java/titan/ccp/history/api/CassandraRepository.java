@@ -181,7 +181,7 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
         where.and(QueryBuilder.gte(TIMESTAMP_KEY, from));
       }
     } else if (timeRestriction.hasFrom()) {
-      where.and(QueryBuilder.gte(TIMESTAMP_KEY, timeRestriction.getAfterOrDefault(Long.MIN_VALUE)));
+      where.and(QueryBuilder.gte(TIMESTAMP_KEY, timeRestriction.getFromOrDefault(Long.MIN_VALUE)));
     } else {
       where.and(QueryBuilder.gt(TIMESTAMP_KEY, timeRestriction.getAfterOrDefault(Long.MIN_VALUE)));
     }
