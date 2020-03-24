@@ -16,6 +16,7 @@ import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import titan.ccp.common.cassandra.CassandraReader;
 import titan.ccp.model.records.ActivePowerRecord;
 import titan.ccp.model.records.AggregatedActivePowerRecord;
 
@@ -212,18 +213,14 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
    */
   public static ActivePowerRepository<AggregatedActivePowerRecord> forAggregated(
       final Session cassandraSession) {
+
     return new CassandraRepository<>(
         cassandraSession,
         AggregatedActivePowerRecord.class.getSimpleName(),
-        row -> AggregatedActivePowerRecord.newBuilder()
-            .setIdentifier(row.getString(IDENTIFIER_KEY))
-            .setTimestamp(row.getLong(TIMESTAMP_KEY))
-            .setCount(row.getLong("count"))
-            .setSumInW(row.getDouble("sumInW"))
-            .setAverageInW(row.getDouble("averageInW"))
-            .build(),
+        CassandraReader.recordFactory(AggregatedActivePowerRecord::new),
         record -> record.getSumInW());
   }
+
 
   /**
    * Create an {@link ActivePowerRepository} for {@link ActivePowerRecord}s.
@@ -232,11 +229,7 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
     return new CassandraRepository<>(
         cassandraSession,
         ActivePowerRecord.class.getSimpleName(),
-        row -> ActivePowerRecord.newBuilder()
-            .setIdentifier(row.getString(IDENTIFIER_KEY))
-            .setTimestamp(row.getLong(TIMESTAMP_KEY))
-            .setValueInW(row.getDouble("valueInW"))
-            .build(),
+        CassandraReader.recordFactory(ActivePowerRecord::new),
         record -> record.getValueInW());
   }
 
