@@ -1,11 +1,17 @@
 package titan.ccp.history.streamprocessing;
 
 import com.datastax.driver.core.Session;
+import java.time.Duration;
 import org.apache.avro.specific.SpecificRecord;
+import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.Consumed;
+import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.Materialized;
+import org.apache.kafka.streams.kstream.Produced;
+import org.apache.kafka.streams.kstream.TimeWindows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import titan.ccp.common.avro.cassandra.AvroDataAdapter;
@@ -14,6 +20,7 @@ import titan.ccp.common.cassandra.ExplicitPrimaryKeySelectionStrategy;
 import titan.ccp.common.cassandra.PredefinedTableNameMappers;
 import titan.ccp.model.records.ActivePowerRecord;
 import titan.ccp.model.records.AggregatedActivePowerRecord;
+import titan.ccp.model.records.WindowedActivePowerRecord;
 
 /**
  * Builds Kafka Stream Topology for the History microservice.
@@ -28,6 +35,7 @@ public class TopologyBuilder {
   private final Session cassandraSession;
 
   private final StreamsBuilder builder = new StreamsBuilder();
+  private final RecordAggregator recordAggregator = new RecordAggregator();
 
 
   /**
@@ -56,7 +64,6 @@ public class TopologyBuilder {
     // 3. Write the ActivePowerRecords from Input Stream to Cassandra
     this.writeActivePowerRecordsToCassandra(cassandraWriterForNormal, inputStream);
 
-
     // 4. Cassandra Writer for AggregatedActivePowerRecord
     final CassandraWriter<SpecificRecord> cassandraWriter =
         this.buildCassandraWriter(AggregatedActivePowerRecord.class);
@@ -66,6 +73,28 @@ public class TopologyBuilder {
 
     // 6. Write the AggregatedActivePowerRecords from Input Stream to Cassandra
     this.writeAggregatedActivePowerRecordsToCassandra(cassandraWriter, outputStream);
+
+
+    // NOTE temporary for 10 sec aggregations
+    final TimeWindows timeWindows = TimeWindows.of(Duration.ofSeconds(10));
+
+    final KStream<String, WindowedActivePowerRecord> windowedStream = inputStream
+        .groupByKey(Grouped.with(this.serdes.string(), this.serdes.activePowerRecordValues()))
+        .windowedBy(timeWindows)
+        .aggregate(
+            () -> null,
+            this.recordAggregator::add,
+            Materialized.with(this.serdes.string(), this.serdes.windowedActivePowerValues()))
+        .toStream()
+        .map((key, value) -> KeyValue.pair(
+            key.key(),
+            value));
+
+    windowedStream.to(
+        "ten-sec-aggregation",
+        Produced.with(
+            this.serdes.string(),
+            this.serdes.windowedActivePowerValues()));
 
     return this.builder.build();
   }
