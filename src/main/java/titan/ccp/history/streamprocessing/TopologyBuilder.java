@@ -68,33 +68,23 @@ public class TopologyBuilder {
     final CassandraWriter<SpecificRecord> cassandraWriter =
         this.buildCassandraWriter(AggregatedActivePowerRecord.class);
 
-    // 5. Build Output Stream
-    final KStream<String, AggregatedActivePowerRecord> outputStream = this.buildOutputStream();
+    // 5. Build Aggregation Stream
+    final KStream<String, AggregatedActivePowerRecord> aggregationStream =
+        this.buildAggregationStream();
 
     // 6. Write the AggregatedActivePowerRecords from Input Stream to Cassandra
-    this.writeAggregatedActivePowerRecordsToCassandra(cassandraWriter, outputStream);
+    this.writeAggregatedActivePowerRecordsToCassandra(cassandraWriter, aggregationStream);
 
+    // 7. Build combined power stream
+    final KStream<String, ActivePowerRecord> combinedActivePowerStream =
+        this.buildRecordStream(inputStream, aggregationStream);
 
-    // NOTE temporary for 10 sec aggregations
-    final TimeWindows timeWindows = TimeWindows.of(Duration.ofSeconds(10));
+    // 8. Create tumbling window stream
+    final KStream<String, WindowedActivePowerRecord> windowedStream =
+        this.buildWindowedStream(combinedActivePowerStream);
 
-    final KStream<String, WindowedActivePowerRecord> windowedStream = inputStream
-        .groupByKey(Grouped.with(this.serdes.string(), this.serdes.activePowerRecordValues()))
-        .windowedBy(timeWindows)
-        .aggregate(
-            () -> null,
-            this.recordAggregator::add,
-            Materialized.with(this.serdes.string(), this.serdes.windowedActivePowerValues()))
-        .toStream()
-        .map((key, value) -> KeyValue.pair(
-            key.key(),
-            value));
-
-    windowedStream.to(
-        "ten-sec-aggregation",
-        Produced.with(
-            this.serdes.string(),
-            this.serdes.windowedActivePowerValues()));
+    // 9. Write tumbling window to kafka and kassandra
+    this.exposeTumblingWindow(windowedStream);
 
     return this.builder.build();
   }
@@ -133,7 +123,7 @@ public class TopologyBuilder {
         .foreach((key, record) -> cassandraWriterForNormal.write(record));
   }
 
-  private KStream<String, AggregatedActivePowerRecord> buildOutputStream() {
+  private KStream<String, AggregatedActivePowerRecord> buildAggregationStream() {
     return this.builder
         .stream(
             this.outputTopic,
@@ -144,8 +134,8 @@ public class TopologyBuilder {
 
   private void writeAggregatedActivePowerRecordsToCassandra(
       final CassandraWriter<SpecificRecord> cassandraWriter,
-      final KStream<String, AggregatedActivePowerRecord> outputStream) {
-    outputStream
+      final KStream<String, AggregatedActivePowerRecord> aggregationStream) {
+    aggregationStream
         // TODO Logging
         .peek((k, record) -> LOGGER.info("Write AggregatedActivePowerRecord to Cassandra {}",
             this.buildAggActivePowerRecordString(record)))
@@ -164,4 +154,43 @@ public class TopologyBuilder {
         + '}';
   }
 
+  private KStream<String, ActivePowerRecord> buildRecordStream(
+      final KStream<String, ActivePowerRecord> activePowerStream,
+      final KStream<String, AggregatedActivePowerRecord> aggrActivePowerStream) {
+    final KStream<String, ActivePowerRecord> activePowerStreamAggr = aggrActivePowerStream
+        .mapValues(
+            aggrAvro -> new ActivePowerRecord(
+                aggrAvro.getIdentifier(),
+                aggrAvro.getTimestamp(),
+                aggrAvro.getSumInW()));
+
+    return activePowerStream.merge(activePowerStreamAggr);
+  }
+
+
+  private KStream<String, WindowedActivePowerRecord> buildWindowedStream(
+      final KStream<String, ActivePowerRecord> combinedActivePowerStream) {
+    final TimeWindows timeWindows = TimeWindows.of(Duration.ofSeconds(10));
+
+    return combinedActivePowerStream
+        .groupByKey(Grouped.with(this.serdes.string(), this.serdes.activePowerRecordValues()))
+        .windowedBy(timeWindows)
+        .aggregate(
+            () -> null,
+            this.recordAggregator::add,
+            Materialized.with(this.serdes.string(), this.serdes.windowedActivePowerValues()))
+        .toStream()
+        .map((key, value) -> KeyValue.pair(
+            key.key(),
+            value));
+  }
+
+  private void exposeTumblingWindow(
+      final KStream<String, WindowedActivePowerRecord> windowedStream) {
+    windowedStream.to(
+        "ten-sec-aggregation",
+        Produced.with(
+            this.serdes.string(),
+            this.serdes.windowedActivePowerValues()));
+  }
 }
