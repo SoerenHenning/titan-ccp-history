@@ -1,6 +1,7 @@
 package titan.ccp.history.streamprocessing;
 
 import com.datastax.driver.core.Session;
+import com.google.common.math.Stats;
 import java.time.Duration;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.streams.KeyValue;
@@ -18,6 +19,7 @@ import titan.ccp.common.avro.cassandra.AvroDataAdapter;
 import titan.ccp.common.cassandra.CassandraWriter;
 import titan.ccp.common.cassandra.ExplicitPrimaryKeySelectionStrategy;
 import titan.ccp.common.cassandra.PredefinedTableNameMappers;
+import titan.ccp.history.streamprocessing.util.StatsFactory;
 import titan.ccp.model.records.ActivePowerRecord;
 import titan.ccp.model.records.AggregatedActivePowerRecord;
 import titan.ccp.model.records.WindowedActivePowerRecord;
@@ -35,7 +37,6 @@ public class TopologyBuilder {
   private final Session cassandraSession;
 
   private final StreamsBuilder builder = new StreamsBuilder();
-  private final RecordAggregator recordAggregator = new RecordAggregator();
 
 
   /**
@@ -176,13 +177,13 @@ public class TopologyBuilder {
         .groupByKey(Grouped.with(this.serdes.string(), this.serdes.activePowerRecordValues()))
         .windowedBy(timeWindows)
         .aggregate(
-            () -> null,
-            this.recordAggregator::add,
-            Materialized.with(this.serdes.string(), this.serdes.windowedActivePowerValues()))
+            () -> Stats.of(),
+            (k, record, stats) -> StatsFactory.accumulate(stats, record.getValueInW()),
+            Materialized.with(this.serdes.string(), this.serdes.stats()))
         .toStream()
-        .map((key, value) -> KeyValue.pair(
-            key.key(),
-            value));
+        .map((windowedKey, stats) -> KeyValue.pair(
+            windowedKey.key(),
+            WindowedActivePowerRecordFactory.create(windowedKey, stats)));
   }
 
   private void exposeTumblingWindow(
