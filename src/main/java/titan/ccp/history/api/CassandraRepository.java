@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import titan.ccp.common.cassandra.AvroMapper;
+import titan.ccp.common.cassandra.DecodeException;
 import titan.ccp.model.records.ActivePowerRecord;
 import titan.ccp.model.records.AggregatedActivePowerRecord;
 
@@ -204,7 +205,7 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
       try {
         final T record = this.recordFactory.apply(row);
         records.add(record);
-      } catch (final IllegalStateException e) {
+      } catch (final DecodeException e) {
         LOGGER.error("Cannot create object from cassandra row.", e);
       }
 
