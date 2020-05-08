@@ -5,7 +5,7 @@ import org.apache.commons.configuration2.Configuration;
 import org.apache.kafka.streams.KafkaStreams;
 import titan.ccp.common.cassandra.SessionBuilder;
 import titan.ccp.common.cassandra.SessionBuilder.ClusterSession;
-import titan.ccp.common.configuration.Configurations;
+import titan.ccp.common.configuration.ServiceConfigurations;
 import titan.ccp.history.api.RestApiServer;
 import titan.ccp.history.streamprocessing.KafkaStreamsBuilder;
 
@@ -16,7 +16,7 @@ import titan.ccp.history.streamprocessing.KafkaStreamsBuilder;
  */
 public class HistoryService {
 
-  private final Configuration config = Configurations.create();
+  private final Configuration config = ServiceConfigurations.createWithDefaults();
 
   private final CompletableFuture<Void> stopEvent = new CompletableFuture<>();
 
