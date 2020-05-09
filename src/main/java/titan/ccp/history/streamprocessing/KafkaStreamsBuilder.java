@@ -21,6 +21,7 @@ public class KafkaStreamsBuilder {
   private String bootstrapServers; // NOPMD
   private String inputTopic; // NOPMD
   private String outputTopic; // NOPMD
+  private TimeWindowsConfiguration timeWindowsConfiguration; // NOPMD
   private String schemaRegistryUrl; // NOPMD
   private int numThreads = -1; // NOPMD
   private int commitIntervalMs = -1; // NOPMD
@@ -38,6 +39,12 @@ public class KafkaStreamsBuilder {
 
   public KafkaStreamsBuilder outputTopic(final String outputTopic) {
     this.outputTopic = outputTopic;
+    return this;
+  }
+
+  public KafkaStreamsBuilder timeWindowsConfiguration(
+      final TimeWindowsConfiguration timeWindowsConfiguration) {
+    this.timeWindowsConfiguration = timeWindowsConfiguration;
     return this;
   }
 
@@ -101,6 +108,7 @@ public class KafkaStreamsBuilder {
         new Serdes(this.schemaRegistryUrl),
         this.inputTopic,
         this.outputTopic,
+        this.timeWindowsConfiguration,
         this.cassandraSession);
     final Properties properties = PropertiesBuilder
         .bootstrapServers(this.bootstrapServers)

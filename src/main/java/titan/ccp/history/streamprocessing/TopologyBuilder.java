@@ -2,7 +2,6 @@ package titan.ccp.history.streamprocessing;
 
 import com.datastax.driver.core.Session;
 import com.google.common.math.Stats;
-import java.time.Duration;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
@@ -36,6 +35,7 @@ public class TopologyBuilder {
   private final Serdes serdes;
   private final String inputTopic;
   private final String outputTopic;
+  private final TimeWindowsConfiguration timeWindowsConfiguration;
   private final Session cassandraSession;
 
   private final StreamsBuilder builder = new StreamsBuilder();
@@ -45,10 +45,11 @@ public class TopologyBuilder {
    * Create a new {@link TopologyBuilder} using the given topics.
    */
   public TopologyBuilder(final Serdes serdes, final String inputTopic, final String outputTopic,
-      final Session cassandraSession) {
+      final TimeWindowsConfiguration timeWindowsConfiguration, final Session cassandraSession) {
     this.serdes = serdes;
     this.inputTopic = inputTopic;
     this.outputTopic = outputTopic;
+    this.timeWindowsConfiguration = timeWindowsConfiguration;
     this.cassandraSession = cassandraSession;
   }
 
@@ -82,16 +83,8 @@ public class TopologyBuilder {
     final KStream<String, ActivePowerRecord> combinedActivePowerStream =
         this.buildRecordStream(inputStream, aggregationStream);
 
-    // 8. Cassandra Writer for WindowedActivePowerRecord
-    final CassandraWriter<SpecificRecord> windowedCassandraWriter =
-        this.buildWindowedCassandraWriter("tenSecAggregation");
-
-    // 9. Create tumbling window stream
-    final KStream<String, WindowedActivePowerRecord> windowedStream =
-        this.buildWindowedStream(combinedActivePowerStream);
-
-    // 10. Write tumbling window to kafka and kassandra
-    this.exposeTumblingWindow(windowedStream, windowedCassandraWriter);
+    // 8. Add WindowedActivePowerRecord with time windows configuration
+    this.addTumblingWindow(combinedActivePowerStream);
 
     return this.builder.build();
   }
@@ -194,11 +187,26 @@ public class TopologyBuilder {
     return activePowerStream.merge(activePowerStreamAggr);
   }
 
+  private void addTumblingWindow(
+      final KStream<String, ActivePowerRecord> combinedActivePowerStream) {
+
+    // Create a cassandra writer for this tumbling Window
+    final CassandraWriter<SpecificRecord> windowedCassandraWriter =
+        this.buildWindowedCassandraWriter(this.timeWindowsConfiguration.getCassandraTableName());
+
+    // Create tumbling window stream with the aggregations
+    final KStream<String, WindowedActivePowerRecord> windowedStream =
+        this.buildWindowedStream(combinedActivePowerStream,
+            this.timeWindowsConfiguration.getTimeWindows());
+
+    // Write tumbling window to kafka and Cassandra
+    this.exposeTumblingWindow(this.timeWindowsConfiguration.getKafkaTopic(), windowedStream,
+        windowedCassandraWriter);
+  }
 
   private KStream<String, WindowedActivePowerRecord> buildWindowedStream(
-      final KStream<String, ActivePowerRecord> combinedActivePowerStream) {
-    final TimeWindows timeWindows = TimeWindows.of(Duration.ofSeconds(10));
-
+      final KStream<String, ActivePowerRecord> combinedActivePowerStream,
+      final TimeWindows timeWindows) {
     return combinedActivePowerStream
         .groupByKey(Grouped.with(this.serdes.string(), this.serdes.activePowerRecordValues()))
         .windowedBy(timeWindows)
@@ -212,11 +220,11 @@ public class TopologyBuilder {
             WindowedActivePowerRecordFactory.create(windowedKey, stats)));
   }
 
-  private void exposeTumblingWindow(
+  private void exposeTumblingWindow(final String topic,
       final KStream<String, WindowedActivePowerRecord> windowedStream,
       final CassandraWriter<SpecificRecord> cassandraWriter) {
     windowedStream.to(
-        "ten-sec-aggregation",
+        topic,
         Produced.with(
             this.serdes.string(),
             this.serdes.windowedActivePowerValues()));
