@@ -2,8 +2,6 @@ package titan.ccp.history.streamprocessing.util;
 
 import com.google.common.collect.Streams;
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -39,8 +37,7 @@ public final class TimeWindowsConfigurationsFactory {
 
     // Iterate over prefixes to create a TimeWindowsConfiguration
     for (final String timeWindowPrefix : timeWindowPrefixes) {
-      final TemporalUnit unit = getTemporalUnit(config.getString(timeWindowPrefix + "unit"));
-      final Duration duration = Duration.of(config.getLong(timeWindowPrefix + "time"), unit);
+      final Duration duration = Duration.parse(config.getString(timeWindowPrefix + "duration"));
 
       final TimeWindowsConfiguration timeWindowsConfiguration = new TimeWindowsConfiguration(
           config.getString(timeWindowPrefix + "kafka"),
@@ -79,39 +76,5 @@ public final class TimeWindowsConfigurationsFactory {
         .filter(Objects::nonNull) // filter out non null objects
         .distinct() // only want to get resulting keys once
         .collect(Collectors.toList()); // transform to a list
-  }
-
-  /**
-   * Transforms a given String to a {@code TemporalUnit} object.
-   *
-   * @param unitString The unit string.
-   * @return The given temporal unit.
-   */
-  private static TemporalUnit getTemporalUnit(final String unitString) {
-    TemporalUnit unit = null;
-    switch (unitString) {
-      case "s":
-        unit = ChronoUnit.SECONDS;
-        break;
-      case "min":
-        unit = ChronoUnit.MINUTES;
-        break;
-      case "h":
-        unit = ChronoUnit.HOURS;
-        break;
-      case "d":
-        unit = ChronoUnit.DAYS;
-        break;
-      case "mon":
-        unit = ChronoUnit.MONTHS;
-        break;
-      case "y":
-        unit = ChronoUnit.YEARS;
-        break;
-      default:
-        // TODO: How to handle this case!? Exception or default unit
-        break;
-    }
-    return unit;
   }
 }
