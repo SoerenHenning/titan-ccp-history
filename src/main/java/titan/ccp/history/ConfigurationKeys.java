@@ -27,6 +27,8 @@ public final class ConfigurationKeys {
 
   public static final String KAFKA_INPUT_TOPIC = "kafka.input.topic";
 
+  public static final String TIME_WINDOWS_KEY_PREFIX = "timeWindows";
+
   public static final String NUM_THREADS = "num.threads";
 
   public static final String COMMIT_INTERVAL_MS = "commit.interval.ms";

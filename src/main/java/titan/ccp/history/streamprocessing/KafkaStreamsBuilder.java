@@ -1,6 +1,7 @@
 package titan.ccp.history.streamprocessing;
 
 import com.datastax.driver.core.Session;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 import org.apache.kafka.streams.KafkaStreams;
@@ -21,6 +22,7 @@ public class KafkaStreamsBuilder {
   private String bootstrapServers; // NOPMD
   private String inputTopic; // NOPMD
   private String outputTopic; // NOPMD
+  private List<TimeWindowsConfiguration> timeWindowsConfigurations; // NOPMD
   private String schemaRegistryUrl; // NOPMD
   private int numThreads = -1; // NOPMD
   private int commitIntervalMs = -1; // NOPMD
@@ -38,6 +40,12 @@ public class KafkaStreamsBuilder {
 
   public KafkaStreamsBuilder outputTopic(final String outputTopic) {
     this.outputTopic = outputTopic;
+    return this;
+  }
+
+  public KafkaStreamsBuilder timeWindowsConfigurations(
+      final List<TimeWindowsConfiguration> timeWindowsConfigurations) {
+    this.timeWindowsConfigurations = timeWindowsConfigurations;
     return this;
   }
 
@@ -101,6 +109,7 @@ public class KafkaStreamsBuilder {
         new Serdes(this.schemaRegistryUrl),
         this.inputTopic,
         this.outputTopic,
+        this.timeWindowsConfigurations,
         this.cassandraSession);
     final Properties properties = PropertiesBuilder
         .bootstrapServers(this.bootstrapServers)
