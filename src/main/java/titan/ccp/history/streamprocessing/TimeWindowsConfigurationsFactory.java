@@ -1,4 +1,4 @@
-package titan.ccp.history.streamprocessing.util;
+package titan.ccp.history.streamprocessing;
 
 import com.google.common.collect.Streams;
 import java.time.Duration;
@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.kafka.streams.kstream.TimeWindows;
 import titan.ccp.history.ConfigurationKeys;
-import titan.ccp.history.streamprocessing.TimeWindowsConfiguration;
 
 /**
  * Utility class to create {@code TimeWindowConfiguration}s.

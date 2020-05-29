@@ -8,7 +8,7 @@ import titan.ccp.common.cassandra.SessionBuilder.ClusterSession;
 import titan.ccp.common.configuration.ServiceConfigurations;
 import titan.ccp.history.api.RestApiServer;
 import titan.ccp.history.streamprocessing.KafkaStreamsBuilder;
-import titan.ccp.history.streamprocessing.util.TimeWindowsConfigurationsFactory;
+import titan.ccp.history.streamprocessing.TimeWindowsConfigurationsFactory;
 
 /**
  * A microservice that manages the history and, therefore, stores and aggregates incoming

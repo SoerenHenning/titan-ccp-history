@@ -35,7 +35,6 @@ public class TopologyBuilder {
 
   private final StreamsBuilder builder = new StreamsBuilder();
 
-
   /**
    * Create a new {@link TopologyBuilder} using the given topics.
    */
@@ -125,10 +124,10 @@ public class TopologyBuilder {
       final KStream<String, AggregatedActivePowerRecord> aggrActivePowerStream) {
     final KStream<String, ActivePowerRecord> activePowerStreamAggr = aggrActivePowerStream
         .mapValues(
-            aggrAvro -> new ActivePowerRecord(
-                aggrAvro.getIdentifier(),
-                aggrAvro.getTimestamp(),
-                aggrAvro.getSumInW()));
+            aggr -> new ActivePowerRecord(
+                aggr.getIdentifier(),
+                aggr.getTimestamp(),
+                aggr.getSumInW()));
 
     return activePowerStream.merge(activePowerStreamAggr);
   }
