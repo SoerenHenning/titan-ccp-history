@@ -15,10 +15,7 @@ import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.kstream.TimeWindows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import titan.ccp.common.avro.cassandra.AvroDataAdapter;
 import titan.ccp.common.cassandra.CassandraWriter;
-import titan.ccp.common.cassandra.ExplicitPrimaryKeySelectionStrategy;
-import titan.ccp.common.cassandra.PredefinedTableNameMappers;
 import titan.ccp.history.streamprocessing.util.StatsFactory;
 import titan.ccp.model.records.ActivePowerRecord;
 import titan.ccp.model.records.AggregatedActivePowerRecord;
@@ -30,14 +27,11 @@ import titan.ccp.model.records.WindowedActivePowerRecord;
 public class TopologyBuilder {
   private static final Logger LOGGER = LoggerFactory.getLogger(TopologyBuilder.class);
 
-  // For the Cassandra writers
-  private static final String IDENTIFIER_PARTITION_KEY = "identifier";
-
   private final Serdes serdes;
   private final String inputTopic;
   private final String outputTopic;
   private final List<TimeWindowsConfiguration> timeWindowsConfigurations;
-  private final Session cassandraSession;
+  private final CassandraWriterFactory writerFactory;
 
   private final StreamsBuilder builder = new StreamsBuilder();
 
@@ -52,62 +46,36 @@ public class TopologyBuilder {
     this.inputTopic = inputTopic;
     this.outputTopic = outputTopic;
     this.timeWindowsConfigurations = timeWindowsConfigurations;
-    this.cassandraSession = cassandraSession;
+    this.writerFactory = new CassandraWriterFactory(cassandraSession);
   }
 
   /**
    * Build the {@link Topology} for the History microservice.
    */
   public Topology build() {
-
-    // 1. Cassandra Writer for ActivePowerRecord
-    final CassandraWriter<SpecificRecord> cassandraWriterForNormal =
-        this.buildCassandraWriter(ActivePowerRecord.class);
-
-    // 2. Build Input Stream
+    // 1. Build Input Stream
     final KStream<String, ActivePowerRecord> inputStream = this.buildInputStream();
 
-    // 3. Write the ActivePowerRecords from Input Stream to Cassandra
-    this.writeActivePowerRecordsToCassandra(cassandraWriterForNormal, inputStream);
+    // 2. Write the ActivePowerRecords from Input Stream to Cassandra
+    this.writeActivePowerRecordsToCassandra(inputStream);
 
-    // 4. Cassandra Writer for AggregatedActivePowerRecord
-    final CassandraWriter<SpecificRecord> cassandraWriter =
-        this.buildCassandraWriter(AggregatedActivePowerRecord.class);
-
-    // 5. Build Aggregation Stream
+    // 3. Build Aggregation Stream
     final KStream<String, AggregatedActivePowerRecord> aggregationStream =
         this.buildAggregationStream();
 
-    // 6. Write the AggregatedActivePowerRecords from Input Stream to Cassandra
-    this.writeAggregatedActivePowerRecordsToCassandra(cassandraWriter, aggregationStream);
+    // 4. Write the AggregatedActivePowerRecords from Input Stream to Cassandra
+    this.writeAggregatedActivePowerRecordsToCassandra(aggregationStream);
 
-    // 7. Build combined power stream
+    // 5. Build combined power stream
     final KStream<String, ActivePowerRecord> combinedActivePowerStream =
         this.buildRecordStream(inputStream, aggregationStream);
 
-    // 8. Add the tumbling windows
+    // 6. Add the tumbling windows
     for (final TimeWindowsConfiguration twc : this.timeWindowsConfigurations) {
       this.addTumblingWindow(twc, combinedActivePowerStream);
     }
 
     return this.builder.build();
-  }
-
-  private <T extends SpecificRecord> CassandraWriter<SpecificRecord> buildCassandraWriter(
-      final Class<T> recordClass) {
-    final ExplicitPrimaryKeySelectionStrategy primaryKeySelectionStrategy =
-        new ExplicitPrimaryKeySelectionStrategy();
-    primaryKeySelectionStrategy.registerPartitionKeys(
-        recordClass.getSimpleName(),
-        IDENTIFIER_PARTITION_KEY);
-    primaryKeySelectionStrategy.registerClusteringColumns(recordClass.getSimpleName(), "timestamp");
-
-    final CassandraWriter<SpecificRecord> cassandraWriter = CassandraWriter
-        .builder(this.cassandraSession, new AvroDataAdapter())
-        .tableNameMapper(PredefinedTableNameMappers.SIMPLE_CLASS_NAME)
-        .primaryKeySelectionStrategy(primaryKeySelectionStrategy).build();
-
-    return cassandraWriter;
   }
 
   private KStream<String, ActivePowerRecord> buildInputStream() {
@@ -120,13 +88,16 @@ public class TopologyBuilder {
   }
 
   private void writeActivePowerRecordsToCassandra(
-      final CassandraWriter<SpecificRecord> cassandraWriterForNormal,
       final KStream<String, ActivePowerRecord> inputStream) {
+    // Cassandra Writer for ActivePowerRecord
+    final CassandraWriter<SpecificRecord> cassandraWriter =
+        this.writerFactory.buildUnwindowed(ActivePowerRecord.class);
+
     inputStream
         // TODO Logging
         .peek((k, record) -> LOGGER.info("Write ActivePowerRecord to Cassandra {}",
             this.buildActivePowerRecordString(record)))
-        .foreach((key, record) -> cassandraWriterForNormal.write(record));
+        .foreach((key, record) -> cassandraWriter.write(record));
   }
 
   private KStream<String, AggregatedActivePowerRecord> buildAggregationStream() {
@@ -139,8 +110,11 @@ public class TopologyBuilder {
   }
 
   private void writeAggregatedActivePowerRecordsToCassandra(
-      final CassandraWriter<SpecificRecord> cassandraWriter,
       final KStream<String, AggregatedActivePowerRecord> aggregationStream) {
+    // Cassandra Writer for AggregatedActivePowerRecord
+    final CassandraWriter<SpecificRecord> cassandraWriter =
+        this.writerFactory.buildUnwindowed(AggregatedActivePowerRecord.class);
+
     aggregationStream
         // TODO Logging
         .peek((k, record) -> LOGGER.info("Write AggregatedActivePowerRecord to Cassandra {}",
@@ -185,7 +159,8 @@ public class TopologyBuilder {
 
     // Create a cassandra writer for this tumbling Window
     final CassandraWriter<SpecificRecord> windowedCassandraWriter =
-        this.buildWindowedCassandraWriter(timeWindowsConfiguration.getCassandraTableName());
+        this.writerFactory
+            .buildWindowed(timeWindowsConfiguration.getCassandraTableName());
 
     // Create tumbling window stream with the aggregations
     final KStream<String, WindowedActivePowerRecord> windowedStream =
@@ -195,24 +170,6 @@ public class TopologyBuilder {
     // Write tumbling window to kafka and Cassandra
     this.exposeTumblingWindow(timeWindowsConfiguration.getKafkaTopic(), windowedStream,
         windowedCassandraWriter);
-  }
-
-  private <T extends SpecificRecord> CassandraWriter<SpecificRecord> buildWindowedCassandraWriter(
-      final String tableName) {
-    final ExplicitPrimaryKeySelectionStrategy primaryKeySelectionStrategy =
-        new ExplicitPrimaryKeySelectionStrategy();
-
-    primaryKeySelectionStrategy
-        .registerPartitionKeys(tableName, IDENTIFIER_PARTITION_KEY);
-    primaryKeySelectionStrategy.registerClusteringColumns(tableName,
-        "startTimestamp");
-
-    final CassandraWriter<SpecificRecord> cassandraWriter = CassandraWriter
-        .builder(this.cassandraSession, new AvroDataAdapter())
-        .tableNameMapper(c -> tableName)
-        .primaryKeySelectionStrategy(primaryKeySelectionStrategy).build();
-
-    return cassandraWriter;
   }
 
   private KStream<String, WindowedActivePowerRecord> buildWindowedStream(
@@ -242,4 +199,6 @@ public class TopologyBuilder {
 
     windowedStream.foreach((k, record) -> cassandraWriter.write(record));
   }
+
+
 }

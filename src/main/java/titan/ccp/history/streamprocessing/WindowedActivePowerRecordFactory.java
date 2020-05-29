@@ -10,9 +10,7 @@ import titan.ccp.model.records.WindowedActivePowerRecord;
  */
 public final class WindowedActivePowerRecordFactory {
 
-  private WindowedActivePowerRecordFactory() {
-
-  }
+  private WindowedActivePowerRecordFactory() {}
 
   /**
    * Method to create a {@link WindowedActivePowerRecord}.
