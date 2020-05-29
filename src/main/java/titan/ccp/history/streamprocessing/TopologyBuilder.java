@@ -95,8 +95,7 @@ public class TopologyBuilder {
 
     inputStream
         // TODO Logging
-        .peek((k, record) -> LOGGER.info("Write ActivePowerRecord to Cassandra {}",
-            this.buildActivePowerRecordString(record)))
+        .peek((k, rec) -> LOGGER.info("Write ActivePowerRecord to Cassandra {}", rec))
         .foreach((key, record) -> cassandraWriter.write(record));
   }
 
@@ -117,21 +116,8 @@ public class TopologyBuilder {
 
     aggregationStream
         // TODO Logging
-        .peek((k, record) -> LOGGER.info("Write AggregatedActivePowerRecord to Cassandra {}",
-            this.buildAggActivePowerRecordString(record)))
+        .peek((k, rec) -> LOGGER.info("Write AggregatedActivePowerRecord to Cassandra {}", rec))
         .foreach((key, record) -> cassandraWriter.write(record));
-  }
-
-  // TODO Temp
-  private String buildActivePowerRecordString(final ActivePowerRecord record) {
-    return "{" + record.getIdentifier() + ';' + record.getTimestamp() + ';' + record.getValueInW()
-        + '}';
-  }
-
-  // TODO Temp
-  private String buildAggActivePowerRecordString(final AggregatedActivePowerRecord record) {
-    return "{" + record.getIdentifier() + ';' + record.getTimestamp() + ';' + record.getSumInW()
-        + '}';
   }
 
   private KStream<String, ActivePowerRecord> buildRecordStream(
