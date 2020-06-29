@@ -16,7 +16,7 @@ buildscript {
 }
 
 sourceCompatibility = "1.11"
-targetCompatibility = "1.11"
+targetCompatibility = "1.8"
 
 configurations.all {
     // Check for updates every build
