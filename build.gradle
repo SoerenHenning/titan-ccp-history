@@ -16,7 +16,7 @@ buildscript {
 }
 
 sourceCompatibility = "1.11"
-targetCompatibility = "1.8"
+targetCompatibility = "1.11"
 
 configurations.all {
     // Check for updates every build
@@ -55,6 +55,10 @@ dependencies {
 }
 
 mainClassName = "titan.ccp.history.HistoryService"
+
+compileTestJava {
+    sourceCompatibility = 1.8
+}
 
 pmd {
   ruleSets = [] // Gradle requires to clean the rule sets first
