@@ -9,4 +9,5 @@
   <suppress checks="." files="[\\/]bin[\\/]" />
   <suppress checks="." files="[\\/]target[\\/]" />
   <suppress checks="." files="[\\/]src/test/java[\\/]" />
+  <suppress checks="." files="[\\/]src/intTest/java[\\/]" />
 </suppressions>

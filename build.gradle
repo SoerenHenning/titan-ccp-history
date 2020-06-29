@@ -35,6 +35,18 @@ allprojects {
 	}
 }
 
+sourceSets {
+    intTest {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+configurations {
+    intTestImplementation.extendsFrom implementation
+    intTestRuntimeOnly.extendsFrom runtimeOnly
+}
+
 dependencies {
     compile('org.industrial-devops:titan-ccp-common:0.1.0-SNAPSHOT') { changing = true }
     compile('org.industrial-devops:titan-ccp-common-kafka:0.1.0-SNAPSHOT') { changing = true }
@@ -49,12 +61,24 @@ dependencies {
     compile 'org.apache.commons:commons-lang3:3.7'
     compile 'org.slf4j:slf4j-simple:1.7.25'
 
-    // Use JUnit test framework
-    testCompile 'junit:junit:4.12'
-    testCompile 'com.github.stefanbirkner:system-rules:1.17.0'
+    testCompile 'junit:junit:4.13'
+    
+    intTestCompile 'junit:junit:4.13'
+    intTestCompile 'org.testcontainers:cassandra:1.14.3'
 }
 
 mainClassName = "titan.ccp.history.HistoryService"
+
+task integrationTest(type: Test) {
+    description = 'Runs integration tests.'
+    group = 'verification'
+
+    testClassesDirs = sourceSets.intTest.output.classesDirs
+    classpath = sourceSets.intTest.runtimeClasspath
+    shouldRunAfter test
+}
+
+check.dependsOn integrationTest
 
 pmd {
   ruleSets = [] // Gradle requires to clean the rule sets first
@@ -114,8 +138,11 @@ task spotbugs {
 }
 
 eclipse {
-    classpath {
-       downloadSources=true
-       downloadJavadoc=true
-    }
+  classpath {
+    downloadSources=true
+    downloadJavadoc=true
+       
+    plusConfigurations.add configurations.intTestCompile
+    plusConfigurations.add configurations.intTestRuntime
+  }
 }
