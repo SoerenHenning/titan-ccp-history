@@ -57,7 +57,8 @@ dependencies {
 mainClassName = "titan.ccp.history.HistoryService"
 
 compileTestJava {
-    sourceCompatibility = 1.8
+    sourceCompatibility = "1.8"
+	targetCompatibility = "1.8"
 }
 
 pmd {
