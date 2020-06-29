@@ -60,6 +60,10 @@ compileTestJava {
     sourceCompatibility = "1.8"
 	targetCompatibility = "1.8"
 }
+tasks.withType(Test) {
+  sourceCompatibility = "1.8"
+  targetCompatibility = "1.8"
+}
 
 pmd {
   ruleSets = [] // Gradle requires to clean the rule sets first
