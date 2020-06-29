@@ -210,7 +210,7 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
   /**
    * Create an {@link ActivePowerRepository} for {@link AggregatedActivePowerRecord}s.
    */
-  public static ActivePowerRepository<AggregatedActivePowerRecord> forAggregated(
+  public static CassandraRepository<AggregatedActivePowerRecord> forAggregated(
       final Session cassandraSession) {
     return new CassandraRepository<>(
         cassandraSession,
@@ -228,7 +228,7 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
   /**
    * Create an {@link ActivePowerRepository} for {@link ActivePowerRecord}s.
    */
-  public static ActivePowerRepository<ActivePowerRecord> forNormal(final Session cassandraSession) {
+  public static CassandraRepository<ActivePowerRecord> forNormal(final Session cassandraSession) {
     return new CassandraRepository<>(
         cassandraSession,
         ActivePowerRecord.class.getSimpleName(),

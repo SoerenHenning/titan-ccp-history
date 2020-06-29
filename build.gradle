@@ -50,7 +50,7 @@ dependencies {
 
     // Use JUnit test framework
     testCompile 'junit:junit:4.12'
-    testCompile 'com.github.stefanbirkner:system-rules:1.17.0'
+    testCompile 'org.cassandraunit:cassandra-unit-shaded:3.3.0.2'
 }
 
 mainClassName = "titan.ccp.history.HistoryService"
