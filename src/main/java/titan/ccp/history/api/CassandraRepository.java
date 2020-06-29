@@ -180,14 +180,15 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
     if (timeRestriction.hasFrom()) {
       // If two lower restrictions do exists, find the "superior" one.
       if (timeRestriction.hasAfter() && timeRestriction.getAfter() >= timeRestriction.getFrom()) {
-        QueryBuilder.gt(TIMESTAMP_KEY, timeRestriction.getAfter());
+        return QueryBuilder.gt(TIMESTAMP_KEY, timeRestriction.getAfter());
       } else {
-        QueryBuilder.gte(TIMESTAMP_KEY, timeRestriction.getFrom());
+        return QueryBuilder.gte(TIMESTAMP_KEY, timeRestriction.getFrom());
       }
     } else if (timeRestriction.hasAfter()) {
-      QueryBuilder.gt(TIMESTAMP_KEY, timeRestriction.getAfter());
+      return QueryBuilder.gt(TIMESTAMP_KEY, timeRestriction.getAfter());
+    } else {
+      return QueryBuilder.gte(TIMESTAMP_KEY, Long.MIN_VALUE);
     }
-    return QueryBuilder.gte(TIMESTAMP_KEY, Long.MIN_VALUE);
   }
 
   private Clause buildUpperTimeRestrictionClause(final TimeRestriction timeRestriction) {
@@ -206,7 +207,7 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
         final T record = this.recordFactory.apply(row);
         records.add(record);
       } catch (final DecodeException e) {
-        LOGGER.error("Cannot create object from cassandra row.", e);
+        LOGGER.error("Cannot create object from Cassandra row.", e);
       }
 
     }
