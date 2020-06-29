@@ -17,7 +17,7 @@ public class CassandraRepositoryTest extends AbstractCassandraTest {
   @Test
   @Ignore // Throwing exception atm as table not exists
   public void testGetOnEmptyRepository() {
-    final ActivePowerRepository<ActivePowerRecord> repository =
+    final CassandraRepository<ActivePowerRecord> repository =
         CassandraRepository.forNormal(this.session);
 
     final List<ActivePowerRecord> records = repository.get("machine", new TimeRestriction());
@@ -26,7 +26,7 @@ public class CassandraRepositoryTest extends AbstractCassandraTest {
 
   @Test
   public void testGetWithoutRestriction() {
-    final ActivePowerRepository<ActivePowerRecord> repository =
+    final CassandraRepository<ActivePowerRecord> repository =
         CassandraRepository.forNormal(this.session);
     final CassandraWriter<SpecificRecord> writer =
         this.buildCassandraWriter(ActivePowerRecord.class);
@@ -44,7 +44,7 @@ public class CassandraRepositoryTest extends AbstractCassandraTest {
 
   @Test
   public void testGetWithFromRestriction() {
-    final ActivePowerRepository<ActivePowerRecord> repository =
+    final CassandraRepository<ActivePowerRecord> repository =
         CassandraRepository.forNormal(this.session);
     final CassandraWriter<SpecificRecord> writer =
         this.buildCassandraWriter(ActivePowerRecord.class);
@@ -84,7 +84,7 @@ public class CassandraRepositoryTest extends AbstractCassandraTest {
 
   @Test
   public void testGetWithToRestriction() {
-    final ActivePowerRepository<ActivePowerRecord> repository =
+    final CassandraRepository<ActivePowerRecord> repository =
         CassandraRepository.forNormal(this.session);
     final CassandraWriter<SpecificRecord> writer =
         this.buildCassandraWriter(ActivePowerRecord.class);
@@ -104,7 +104,7 @@ public class CassandraRepositoryTest extends AbstractCassandraTest {
 
   @Test
   public void testGetWithFromRestrictionOnExact() {
-    final ActivePowerRepository<ActivePowerRecord> repository =
+    final CassandraRepository<ActivePowerRecord> repository =
         CassandraRepository.forNormal(this.session);
     final CassandraWriter<SpecificRecord> writer =
         this.buildCassandraWriter(ActivePowerRecord.class);
@@ -125,7 +125,7 @@ public class CassandraRepositoryTest extends AbstractCassandraTest {
 
   @Test
   public void testGetWithAfterRestrictionOnExact() {
-    final ActivePowerRepository<ActivePowerRecord> repository =
+    final CassandraRepository<ActivePowerRecord> repository =
         CassandraRepository.forNormal(this.session);
     final CassandraWriter<SpecificRecord> writer =
         this.buildCassandraWriter(ActivePowerRecord.class);
