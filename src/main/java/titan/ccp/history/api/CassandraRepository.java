@@ -16,6 +16,8 @@ import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import titan.ccp.common.cassandra.AvroMapper;
+import titan.ccp.common.cassandra.DecodeException;
 import titan.ccp.model.records.ActivePowerRecord;
 import titan.ccp.model.records.AggregatedActivePowerRecord;
 
@@ -200,8 +202,13 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
 
     final List<T> records = new ArrayList<>();
     for (final Row row : resultSet) {
-      final T record = this.recordFactory.apply(row);
-      records.add(record);
+      try {
+        final T record = this.recordFactory.apply(row);
+        records.add(record);
+      } catch (final DecodeException e) {
+        LOGGER.error("Cannot create object from cassandra row.", e);
+      }
+
     }
 
     return records;
@@ -212,18 +219,14 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
    */
   public static CassandraRepository<AggregatedActivePowerRecord> forAggregated(
       final Session cassandraSession) {
+
     return new CassandraRepository<>(
         cassandraSession,
         AggregatedActivePowerRecord.class.getSimpleName(),
-        row -> AggregatedActivePowerRecord.newBuilder()
-            .setIdentifier(row.getString(IDENTIFIER_KEY))
-            .setTimestamp(row.getLong(TIMESTAMP_KEY))
-            .setCount(row.getLong("count"))
-            .setSumInW(row.getDouble("sumInW"))
-            .setAverageInW(row.getDouble("averageInW"))
-            .build(),
+        new AvroMapper<>(AggregatedActivePowerRecord::new),
         record -> record.getSumInW());
   }
+
 
   /**
    * Create an {@link ActivePowerRepository} for {@link ActivePowerRecord}s.
@@ -232,11 +235,7 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
     return new CassandraRepository<>(
         cassandraSession,
         ActivePowerRecord.class.getSimpleName(),
-        row -> ActivePowerRecord.newBuilder()
-            .setIdentifier(row.getString(IDENTIFIER_KEY))
-            .setTimestamp(row.getLong(TIMESTAMP_KEY))
-            .setValueInW(row.getDouble("valueInW"))
-            .build(),
+        new AvroMapper<>(ActivePowerRecord::new),
         record -> record.getValueInW());
   }
 

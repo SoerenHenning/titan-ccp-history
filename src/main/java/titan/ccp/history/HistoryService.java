@@ -5,9 +5,10 @@ import org.apache.commons.configuration2.Configuration;
 import org.apache.kafka.streams.KafkaStreams;
 import titan.ccp.common.cassandra.SessionBuilder;
 import titan.ccp.common.cassandra.SessionBuilder.ClusterSession;
-import titan.ccp.common.configuration.Configurations;
+import titan.ccp.common.configuration.ServiceConfigurations;
 import titan.ccp.history.api.RestApiServer;
 import titan.ccp.history.streamprocessing.KafkaStreamsBuilder;
+import titan.ccp.history.streamprocessing.TimeWindowsConfigurationsFactory;
 
 /**
  * A microservice that manages the history and, therefore, stores and aggregates incoming
@@ -16,7 +17,7 @@ import titan.ccp.history.streamprocessing.KafkaStreamsBuilder;
  */
 public class HistoryService {
 
-  private final Configuration config = Configurations.create();
+  private final Configuration config = ServiceConfigurations.createWithDefaults();
 
   private final CompletableFuture<Void> stopEvent = new CompletableFuture<>();
 
@@ -63,6 +64,8 @@ public class HistoryService {
             .bootstrapServers(this.config.getString(ConfigurationKeys.KAFKA_BOOTSTRAP_SERVERS))
             .inputTopic(this.config.getString(ConfigurationKeys.KAFKA_INPUT_TOPIC))
             .outputTopic(this.config.getString(ConfigurationKeys.KAFKA_OUTPUT_TOPIC))
+            .timeWindowsConfigurations(
+                TimeWindowsConfigurationsFactory.createTimeWindowConfigurations(this.config))
             .schemaRegistry(this.config.getString(ConfigurationKeys.SCHEMA_REGISTRY_URL))
             .numThreads(this.config.getInt(ConfigurationKeys.NUM_THREADS))
             .commitIntervalMs(this.config.getInt(ConfigurationKeys.COMMIT_INTERVAL_MS))
