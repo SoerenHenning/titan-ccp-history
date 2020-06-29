@@ -38,6 +38,12 @@ test:
   tags:
     - dockerex
   script: ./gradlew test
+  artifacts:
+    reports:
+      junit:
+        - "build/test-results/test/TEST-*.xml"
+    expire_in: 28 day
+
   
 .integration-test:
   stage: test
@@ -50,6 +56,12 @@ test:
     DOCKER_HOST: "tcp://docker:2375"
     DOCKER_DRIVER: overlay2
   script: ./gradlew intTest
+  artifacts:
+    reports:
+      junit:
+        - "build/test-results/test/TEST-*.xml"
+    expire_in: 28 day
+
 
 checkstyle:
   stage: check
