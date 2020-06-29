@@ -39,7 +39,7 @@ test:
     - dockerex
   script: ./gradlew test
   
-integration-test:
+.integration-test:
   stage: test
   tags:
     - dockerex
