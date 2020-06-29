@@ -37,8 +37,13 @@ test:
   stage: test
   tags:
     - dockerex
-  image: openjdk:8-jdk # Cassandra requires Java 8
   script: ./gradlew test
+  
+integration-test:
+  stage: test
+  tags:
+    - dockerex
+  script: ./gradlew intTest
 
 checkstyle:
   stage: check
