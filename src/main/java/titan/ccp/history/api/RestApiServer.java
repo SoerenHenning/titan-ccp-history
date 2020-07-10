@@ -27,8 +27,8 @@ public class RestApiServer {
 
   private final Gson gson = new GsonBuilder().create();
 
-  private final ActivePowerRepository<AggregatedActivePowerRecord> aggregatedRepository;
   private final ActivePowerRepository<ActivePowerRecord> normalRepository;
+  private final ActivePowerRepository<AggregatedActivePowerRecord> aggregatedRepository;
 
   private final Service webService;
 
@@ -179,6 +179,62 @@ public class RestApiServer {
     this.webService.stop();
   }
 
+
+  /**
+   * Creates the common active power records for a given prefix and {@code ActivePowerRepository}.
+   *
+   * @param prefix to access the resource (e.g. "/power-consumption").
+   * @param activePowerRepository to access the data.
+   */
+  public void addEndpoints(final String prefix,
+      final ActivePowerRepository<?> activePowerRepository) {
+
+    this.webService.get(prefix, (request, response) -> {
+      return activePowerRepository.getIdentifiers();
+    }, this.gson::toJson);
+
+    this.webService.get(prefix + "/:identifier", (request, response) -> {
+      final String identifier = request.params("identifier"); // NOCS NOPMD
+      final TimeRestriction timeRestriction = constructTimeRestriction(request);
+      return activePowerRepository.get(identifier, timeRestriction);
+    }, this.gson::toJson);
+
+    this.webService.get(prefix + "/:identifier/latest", (request, response) -> {
+      final String identifier = request.params("identifier");
+      final TimeRestriction timeRestriction = constructTimeRestriction(request);
+      final int count = NumberUtils.toInt(request.queryParams("count"), 1); // NOCS
+      return activePowerRepository.getLatest(identifier, timeRestriction, count);
+    }, this.gson::toJson);
+
+    this.webService.get(prefix + "/:identifier/distribution", (request, response) -> {
+      final String identifier = request.params("identifier");
+      final TimeRestriction timeRestriction = constructTimeRestriction(request);
+      final int buckets = NumberUtils.toInt(request.queryParams("buckets"), 4); // NOCS
+      return activePowerRepository.getDistribution(identifier, timeRestriction, buckets);
+    }, this.gson::toJson);
+
+    this.webService.get(prefix + "/:identifier/trend", (request, response) -> {
+      final String identifier = request.params("identifier");
+      final TimeRestriction timeRestriction = constructTimeRestriction(request);
+      final int pointsToSmooth =
+          NumberUtils.toInt(request.queryParams("pointsToSmooth"), 10); // NOCS NOPMD
+      return activePowerRepository.getTrend(identifier, timeRestriction, pointsToSmooth);
+    }, this.gson::toJson);
+
+
+    this.webService.get(prefix + "/:identifier/count", (request, response) -> {
+      final String identifier = request.params("identifier");
+      final TimeRestriction timeRestriction = constructTimeRestriction(request);
+      return activePowerRepository.getCount(identifier, timeRestriction);
+    }, this.gson::toJson);
+  }
+
+  /**
+   * Create a {@code TimeRestriction} object from a request.
+   *
+   * @param request containing the parameters.
+   * @return a {@code TimeRestriction} object.
+   */
   private static TimeRestriction constructTimeRestriction(final Request request) {
     final TimeRestriction timeRestriction = new TimeRestriction();
     maybeAddRestriction(request, FROM_QUERY_PARAM, timeRestriction::setFrom);
@@ -187,6 +243,13 @@ public class RestApiServer {
     return timeRestriction;
   }
 
+  /**
+   * Helper method to set the {@code TimeRestriction} attribute using the request.
+   *
+   * @param request containing the parameters.
+   * @param paramName to check if exists.
+   * @param setter to set the attribute in the {@code TimeRestriction} object.
+   */
   private static void maybeAddRestriction(
       final Request request,
       final String paramName,

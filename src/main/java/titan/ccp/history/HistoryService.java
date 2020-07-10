@@ -1,13 +1,16 @@
 package titan.ccp.history;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.kafka.streams.KafkaStreams;
 import titan.ccp.common.cassandra.SessionBuilder;
 import titan.ccp.common.cassandra.SessionBuilder.ClusterSession;
 import titan.ccp.common.configuration.ServiceConfigurations;
+import titan.ccp.history.api.CassandraRepository;
 import titan.ccp.history.api.RestApiServer;
 import titan.ccp.history.streamprocessing.KafkaStreamsBuilder;
+import titan.ccp.history.streamprocessing.TimeWindowsConfiguration;
 import titan.ccp.history.streamprocessing.TimeWindowsConfigurationsFactory;
 
 /**
@@ -20,6 +23,8 @@ public class HistoryService {
   private final Configuration config = ServiceConfigurations.createWithDefaults();
 
   private final CompletableFuture<Void> stopEvent = new CompletableFuture<>();
+
+  private List<TimeWindowsConfiguration> timeWindowConfigurations;
 
   /**
    * Start the service.
@@ -58,6 +63,8 @@ public class HistoryService {
    * @param clusterSession the database session which the application should use.
    */
   private void createKafkaStreamsApplication(final ClusterSession clusterSession) {
+    this.timeWindowConfigurations =
+        TimeWindowsConfigurationsFactory.createTimeWindowConfigurations(this.config);
     final KafkaStreams kafkaStreams =
         new KafkaStreamsBuilder()
             .cassandraSession(clusterSession.getSession())
@@ -65,7 +72,7 @@ public class HistoryService {
             .inputTopic(this.config.getString(ConfigurationKeys.KAFKA_INPUT_TOPIC))
             .outputTopic(this.config.getString(ConfigurationKeys.KAFKA_OUTPUT_TOPIC))
             .timeWindowsConfigurations(
-                TimeWindowsConfigurationsFactory.createTimeWindowConfigurations(this.config))
+                this.timeWindowConfigurations)
             .schemaRegistry(this.config.getString(ConfigurationKeys.SCHEMA_REGISTRY_URL))
             .numThreads(this.config.getInt(ConfigurationKeys.NUM_THREADS))
             .commitIntervalMs(this.config.getInt(ConfigurationKeys.COMMIT_INTERVAL_MS))
@@ -88,6 +95,8 @@ public class HistoryService {
           this.config.getBoolean(ConfigurationKeys.WEBSERVER_CORS),
           this.config.getBoolean(ConfigurationKeys.WEBSERVER_GZIP));
       this.stopEvent.thenRun(restApiServer::stop);
+      restApiServer.addEndpoints("/minutely", CassandraRepository
+          .forWindowed(this.timeWindowConfigurations.get(0), clusterSession.getSession()));
       restApiServer.start();
     }
   }
