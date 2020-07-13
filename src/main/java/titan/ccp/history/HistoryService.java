@@ -7,7 +7,6 @@ import org.apache.kafka.streams.KafkaStreams;
 import titan.ccp.common.cassandra.SessionBuilder;
 import titan.ccp.common.cassandra.SessionBuilder.ClusterSession;
 import titan.ccp.common.configuration.ServiceConfigurations;
-import titan.ccp.history.api.CassandraRepository;
 import titan.ccp.history.api.RestApiServer;
 import titan.ccp.history.streamprocessing.KafkaStreamsBuilder;
 import titan.ccp.history.streamprocessing.TimeWindowsConfiguration;
@@ -94,9 +93,8 @@ public class HistoryService {
           this.config.getInt(ConfigurationKeys.WEBSERVER_PORT),
           this.config.getBoolean(ConfigurationKeys.WEBSERVER_CORS),
           this.config.getBoolean(ConfigurationKeys.WEBSERVER_GZIP));
+      restApiServer.addWindowedEndpoints(this.timeWindowConfigurations);
       this.stopEvent.thenRun(restApiServer::stop);
-      restApiServer.addEndpoints("/minutely", CassandraRepository
-          .forWindowed(this.timeWindowConfigurations.get(0), clusterSession.getSession()));
       restApiServer.start();
     }
   }

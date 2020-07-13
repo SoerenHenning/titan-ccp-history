@@ -30,6 +30,7 @@ import titan.ccp.model.records.WindowedActivePowerRecord;
  */
 public class CassandraRepository<T> implements ActivePowerRepository<T> {
 
+  private static final String TIMESTAMP = "timestamp";
   private static final Logger LOGGER = LoggerFactory.getLogger(CassandraRepository.class);
   private static final String IDENTIFIER_KEY = "identifier";
 
@@ -225,7 +226,7 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
     return new CassandraRepository<>(
         cassandraSession,
         ActivePowerRecord.class.getSimpleName(),
-        "timestamp",
+        TIMESTAMP,
         new AvroMapper<>(ActivePowerRecord::new),
         record -> record.getValueInW());
   }
@@ -239,7 +240,7 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
     return new CassandraRepository<>(
         cassandraSession,
         AggregatedActivePowerRecord.class.getSimpleName(),
-        "timestamp",
+        TIMESTAMP,
         new AvroMapper<>(AggregatedActivePowerRecord::new),
         record -> record.getSumInW());
   }

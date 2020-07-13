@@ -3,14 +3,17 @@ package titan.ccp.history.api;
 import com.datastax.driver.core.Session;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import java.util.List;
 import java.util.function.LongConsumer;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spark.Request;
 import spark.Service;
+import titan.ccp.history.streamprocessing.TimeWindowsConfiguration;
 import titan.ccp.model.records.ActivePowerRecord;
 import titan.ccp.model.records.AggregatedActivePowerRecord;
+import titan.ccp.model.records.WindowedActivePowerRecord;
 
 
 /**
@@ -27,6 +30,7 @@ public class RestApiServer {
 
   private final Gson gson = new GsonBuilder().create();
 
+  private final Session cassandraSession;
   private final ActivePowerRepository<ActivePowerRecord> normalRepository;
   private final ActivePowerRepository<AggregatedActivePowerRecord> aggregatedRepository;
 
@@ -40,6 +44,7 @@ public class RestApiServer {
    */
   public RestApiServer(final Session cassandraSession, final int port, final boolean enableCors,
       final boolean enableGzip) {
+    this.cassandraSession = cassandraSession;
     this.aggregatedRepository = CassandraRepository.forAggregated(cassandraSession);
     this.normalRepository = CassandraRepository.forNormal(cassandraSession);
     LOGGER.info("Instantiate API server.");
@@ -179,41 +184,66 @@ public class RestApiServer {
     this.webService.stop();
   }
 
+  /**
+   * Creates for every time windows configuration an endpoint.
+   *
+   * @param timeWindowsConfigurations for the endpoints.
+   */
+  public void addWindowedEndpoints(final List<TimeWindowsConfiguration> timeWindowsConfigurations) {
+    for (final TimeWindowsConfiguration twc : timeWindowsConfigurations) {
+      // Check if an Endpoint name is given, otherwise discard this time window
+      if (twc.getApiEndpoint() == null) {
+        LOGGER.info("No endpoint created for windowed aggregation: {}", twc.getKafkaTopic());
+        return;
+      }
+
+      // Create a Cassandra repository for this particular window
+      final CassandraRepository<WindowedActivePowerRecord> windowedRepository = CassandraRepository
+          .forWindowed(twc, this.cassandraSession);
+
+      this.addEndpoints(twc.getApiEndpoint(), windowedRepository);
+    }
+  }
 
   /**
    * Creates the common active power records for a given prefix and {@code ActivePowerRepository}.
    *
-   * @param prefix to access the resource (e.g. "/power-consumption").
+   * @param routePrefix to access the resource (e.g. "power-consumption" creates route
+   *        "/power-consumption").
    * @param activePowerRepository to access the data.
    */
-  public void addEndpoints(final String prefix,
+  private void addEndpoints(final String prefix,
       final ActivePowerRepository<?> activePowerRepository) {
 
-    this.webService.get(prefix, (request, response) -> {
+    // Create the prefix for the routes
+    final String routePrefix = "/" + prefix;
+
+
+    this.webService.get(routePrefix, (request, response) -> {
       return activePowerRepository.getIdentifiers();
     }, this.gson::toJson);
 
-    this.webService.get(prefix + "/:identifier", (request, response) -> {
+    this.webService.get(routePrefix + "/:identifier", (request, response) -> {
       final String identifier = request.params("identifier"); // NOCS NOPMD
       final TimeRestriction timeRestriction = constructTimeRestriction(request);
       return activePowerRepository.get(identifier, timeRestriction);
     }, this.gson::toJson);
 
-    this.webService.get(prefix + "/:identifier/latest", (request, response) -> {
+    this.webService.get(routePrefix + "/:identifier/latest", (request, response) -> {
       final String identifier = request.params("identifier");
       final TimeRestriction timeRestriction = constructTimeRestriction(request);
       final int count = NumberUtils.toInt(request.queryParams("count"), 1); // NOCS
       return activePowerRepository.getLatest(identifier, timeRestriction, count);
     }, this.gson::toJson);
 
-    this.webService.get(prefix + "/:identifier/distribution", (request, response) -> {
+    this.webService.get(routePrefix + "/:identifier/distribution", (request, response) -> {
       final String identifier = request.params("identifier");
       final TimeRestriction timeRestriction = constructTimeRestriction(request);
       final int buckets = NumberUtils.toInt(request.queryParams("buckets"), 4); // NOCS
       return activePowerRepository.getDistribution(identifier, timeRestriction, buckets);
     }, this.gson::toJson);
 
-    this.webService.get(prefix + "/:identifier/trend", (request, response) -> {
+    this.webService.get(routePrefix + "/:identifier/trend", (request, response) -> {
       final String identifier = request.params("identifier");
       final TimeRestriction timeRestriction = constructTimeRestriction(request);
       final int pointsToSmooth =
@@ -222,7 +252,7 @@ public class RestApiServer {
     }, this.gson::toJson);
 
 
-    this.webService.get(prefix + "/:identifier/count", (request, response) -> {
+    this.webService.get(routePrefix + "/:identifier/count", (request, response) -> {
       final String identifier = request.params("identifier");
       final TimeRestriction timeRestriction = constructTimeRestriction(request);
       return activePowerRepository.getCount(identifier, timeRestriction);
@@ -265,7 +295,6 @@ public class RestApiServer {
             e);
       }
     }
-
   }
 
 }
