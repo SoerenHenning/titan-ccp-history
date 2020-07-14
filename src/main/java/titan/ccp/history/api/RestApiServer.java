@@ -61,6 +61,7 @@ public class RestApiServer {
   public void start() { // NOPMD NOCS declaration of routes
     LOGGER.info("Instantiate API routes.");
 
+    // Common configurations
     if (this.enableCors) {
       this.webService.options("/*", (request, response) -> {
 
@@ -83,94 +84,6 @@ public class RestApiServer {
       });
     }
 
-    // TODO rename urls
-
-    this.webService.get("/power-consumption", (request, response) -> {
-      return this.normalRepository.getIdentifiers();
-    }, this.gson::toJson);
-
-    this.webService.get("/power-consumption/:identifier", (request, response) -> {
-      final String identifier = request.params("identifier"); // NOCS NOPMD
-      final TimeRestriction timeRestriction = constructTimeRestriction(request);
-      return this.normalRepository.get(identifier, timeRestriction);
-    }, this.gson::toJson);
-
-    this.webService.get("/power-consumption/:identifier/latest", (request, response) -> {
-      final String identifier = request.params("identifier");
-      final TimeRestriction timeRestriction = constructTimeRestriction(request);
-      final int count = NumberUtils.toInt(request.queryParams("count"), 1); // NOCS
-      return this.normalRepository.getLatest(identifier, timeRestriction, count);
-    }, this.gson::toJson);
-
-    this.webService.get("/power-consumption/:identifier/distribution", (request, response) -> {
-      final String identifier = request.params("identifier");
-      final TimeRestriction timeRestriction = constructTimeRestriction(request);
-      final int buckets = NumberUtils.toInt(request.queryParams("buckets"), 4); // NOCS
-      return this.normalRepository.getDistribution(identifier, timeRestriction, buckets);
-    }, this.gson::toJson);
-
-    this.webService.get("/power-consumption/:identifier/trend", (request, response) -> {
-      final String identifier = request.params("identifier");
-      final TimeRestriction timeRestriction = constructTimeRestriction(request);
-      final int pointsToSmooth =
-          NumberUtils.toInt(request.queryParams("pointsToSmooth"), 10); // NOCS NOPMD
-      return this.normalRepository.getTrend(identifier, timeRestriction, pointsToSmooth);
-    }, this.gson::toJson);
-
-
-    this.webService.get("/power-consumption/:identifier/count", (request, response) -> {
-      final String identifier = request.params("identifier");
-      final TimeRestriction timeRestriction = constructTimeRestriction(request);
-      return this.normalRepository.getCount(identifier, timeRestriction);
-    }, this.gson::toJson);
-
-    // TODO Temporary for evaluation, this is not working for huge data sets
-    this.webService.get("/power-consumption-count", (request, response) -> {
-      return this.normalRepository.getTotalCount();
-    }, this.gson::toJson);
-
-    this.webService.get("/aggregated-power-consumption", (request, response) -> {
-      return this.aggregatedRepository.getIdentifiers();
-    }, this.gson::toJson);
-
-    this.webService.get("/aggregated-power-consumption/:identifier", (request, response) -> {
-      final String identifier = request.params("identifier");
-      final TimeRestriction timeRestriction = constructTimeRestriction(request);
-      return this.aggregatedRepository.get(identifier, timeRestriction);
-    }, this.gson::toJson);
-
-    this.webService.get("/aggregated-power-consumption/:identifier/latest",
-        (request, response) -> {
-          final String identifier = request.params("identifier");
-          final TimeRestriction timeRestriction = constructTimeRestriction(request);
-          final int count = NumberUtils.toInt(request.queryParams("count"), 1); // NOCS NOPMD
-          return this.aggregatedRepository.getLatest(identifier, timeRestriction, count);
-        }, this.gson::toJson);
-
-    this.webService.get("/aggregated-power-consumption/:identifier/distribution",
-        (request, response) -> {
-          final String identifier = request.params("identifier");
-          final TimeRestriction timeRestriction = constructTimeRestriction(request);
-          final int buckets = NumberUtils.toInt(request.queryParams("buckets"), 4); // NOCS NOPMD
-          return this.aggregatedRepository.getDistribution(identifier, timeRestriction, buckets);
-        }, this.gson::toJson);
-
-    this.webService.get("/aggregated-power-consumption/:identifier/trend",
-        (request, response) -> {
-          final String identifier = request.params("identifier");
-          final TimeRestriction timeRestriction = constructTimeRestriction(request);
-          final int pointsToSmooth =
-              NumberUtils.toInt(request.queryParams("pointsToSmooth"), 10); // NOCS NOPMD
-          return this.aggregatedRepository.getTrend(identifier, timeRestriction, pointsToSmooth);
-        }, this.gson::toJson);
-
-    this.webService.get("/aggregated-power-consumption/:identifier/count",
-        (request, response) -> {
-          final String identifier = request.params("identifier");
-          final TimeRestriction timeRestriction = constructTimeRestriction(request);
-          return this.aggregatedRepository.getCount(identifier, timeRestriction);
-        }, this.gson::toJson);
-
     this.webService.after((request, response) -> {
       response.type("application/json");
       if (this.enableGzip) {
@@ -178,6 +91,11 @@ public class RestApiServer {
       }
     });
 
+    // Active power routes for raw and aggregated
+    this.addActivePowerEndpoints("power-consumption", this.normalRepository);
+    this.addActivePowerEndpoints("aggregated-power-consumption", this.aggregatedRepository);
+
+    // Route to get the different windowed power routes
     this.webService.get("/active-power/windowed", (request, response) -> {
       return this.windowResolutions;
     }, this.gson::toJson);
@@ -207,7 +125,8 @@ public class RestApiServer {
       final CassandraRepository<WindowedActivePowerRecord> windowedRepository = CassandraRepository
           .forWindowed(twc, this.cassandraSession);
 
-      this.addActivePowerEndpoints("windowed/" + twc.getApiEndpoint(), windowedRepository);
+      this.addActivePowerEndpoints("active-power/windowed/" + twc.getApiEndpoint(),
+          windowedRepository);
       this.windowResolutions.add(twc.getApiEndpoint());
     }
   }
@@ -215,15 +134,14 @@ public class RestApiServer {
   /**
    * Creates the common active power records for a given prefix and {@code ActivePowerRepository}.
    *
-   * @param routePrefix to access the resource (e.g. "aggregated" creates route
-   *        "/active-power/aggregated").
+   * @param routePrefix to access the resource (e.g. "aggregated" creates route "/aggregated").
    * @param activePowerRepository to access the data.
    */
   private void addActivePowerEndpoints(final String prefix,
       final ActivePowerRepository<?> activePowerRepository) {
 
     // Create the prefix for the routes
-    final String routePrefix = "/active-power/" + prefix;
+    final String routePrefix = "/" + prefix;
 
 
     this.webService.get(routePrefix, (request, response) -> {
