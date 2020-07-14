@@ -3,6 +3,7 @@ package titan.ccp.history.api;
 import com.datastax.driver.core.Session;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.function.LongConsumer;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -38,6 +39,7 @@ public class RestApiServer {
 
   private final boolean enableCors;
   private final boolean enableGzip;
+  private final List<String> windowResolutions = new LinkedList<>();
 
   /**
    * Creates a new API server using the passed parameters.
@@ -175,6 +177,10 @@ public class RestApiServer {
         response.header("Content-Encoding", "gzip");
       }
     });
+
+    this.webService.get("/active-power/windowed", (request, response) -> {
+      return this.windowResolutions;
+    }, this.gson::toJson);
   }
 
   /**
@@ -201,22 +207,23 @@ public class RestApiServer {
       final CassandraRepository<WindowedActivePowerRecord> windowedRepository = CassandraRepository
           .forWindowed(twc, this.cassandraSession);
 
-      this.addEndpoints(twc.getApiEndpoint(), windowedRepository);
+      this.addActivePowerEndpoints("windowed/" + twc.getApiEndpoint(), windowedRepository);
+      this.windowResolutions.add(twc.getApiEndpoint());
     }
   }
 
   /**
    * Creates the common active power records for a given prefix and {@code ActivePowerRepository}.
    *
-   * @param routePrefix to access the resource (e.g. "power-consumption" creates route
-   *        "/power-consumption").
+   * @param routePrefix to access the resource (e.g. "aggregated" creates route
+   *        "/active-power/aggregated").
    * @param activePowerRepository to access the data.
    */
-  private void addEndpoints(final String prefix,
+  private void addActivePowerEndpoints(final String prefix,
       final ActivePowerRepository<?> activePowerRepository) {
 
     // Create the prefix for the routes
-    final String routePrefix = "/" + prefix;
+    final String routePrefix = "/active-power/" + prefix;
 
 
     this.webService.get(routePrefix, (request, response) -> {
