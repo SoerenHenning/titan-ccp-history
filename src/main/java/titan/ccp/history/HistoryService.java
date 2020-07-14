@@ -23,7 +23,13 @@ public class HistoryService {
 
   private final CompletableFuture<Void> stopEvent = new CompletableFuture<>();
 
-  private List<TimeWindowsConfiguration> timeWindowConfigurations;
+  private final List<TimeWindowsConfiguration> timeWindowConfigurations;
+
+
+  public HistoryService() {
+    this.timeWindowConfigurations =
+        TimeWindowsConfigurationsFactory.createTimeWindowConfigurations(this.config);
+  }
 
   /**
    * Start the service.
@@ -62,8 +68,6 @@ public class HistoryService {
    * @param clusterSession the database session which the application should use.
    */
   private void createKafkaStreamsApplication(final ClusterSession clusterSession) {
-    this.timeWindowConfigurations =
-        TimeWindowsConfigurationsFactory.createTimeWindowConfigurations(this.config);
     final KafkaStreams kafkaStreams =
         new KafkaStreamsBuilder()
             .cassandraSession(clusterSession.getSession())
