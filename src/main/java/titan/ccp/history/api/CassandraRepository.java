@@ -30,9 +30,11 @@ import titan.ccp.model.records.WindowedActivePowerRecord;
  */
 public class CassandraRepository<T> implements ActivePowerRepository<T> {
 
-  private static final String TIMESTAMP = "timestamp";
   private static final Logger LOGGER = LoggerFactory.getLogger(CassandraRepository.class);
+
+  // Keys for identifying the cassandra object columns
   private static final String IDENTIFIER_KEY = "identifier";
+  private static final String TIMESTAMP_KEY = "timestamp";
 
   private final Session cassandraSession;
   private final String tableName;
@@ -150,9 +152,8 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
         .countAll()
         .from(this.tableName)
         .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
-        .and(QueryBuilder.gte(this.timestampKey, timeRestriction.getFromOrDefault(Long.MIN_VALUE)))
-        .and(QueryBuilder.lte(this.timestampKey, timeRestriction.getToOrDefault(Long.MAX_VALUE)))
-        .and(QueryBuilder.gt(this.timestampKey, timeRestriction.getAfterOrDefault(Long.MIN_VALUE)));
+        .and(this.buildLowerTimeRestrictionClause(timeRestriction))
+        .and(this.buildUpperTimeRestrictionClause(timeRestriction));
     return this.cassandraSession.execute(statement).all().get(0).getLong(0);
   }
 
@@ -226,7 +227,7 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
     return new CassandraRepository<>(
         cassandraSession,
         ActivePowerRecord.class.getSimpleName(),
-        TIMESTAMP,
+        TIMESTAMP_KEY,
         new AvroMapper<>(ActivePowerRecord::new),
         record -> record.getValueInW());
   }
@@ -240,7 +241,7 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
     return new CassandraRepository<>(
         cassandraSession,
         AggregatedActivePowerRecord.class.getSimpleName(),
-        TIMESTAMP,
+        TIMESTAMP_KEY,
         new AvroMapper<>(AggregatedActivePowerRecord::new),
         record -> record.getSumInW());
   }
