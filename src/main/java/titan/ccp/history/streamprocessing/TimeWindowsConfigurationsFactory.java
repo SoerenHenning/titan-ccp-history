@@ -41,6 +41,7 @@ public final class TimeWindowsConfigurationsFactory {
       final TimeWindowsConfiguration timeWindowsConfiguration = new TimeWindowsConfiguration(
           config.getString(timeWindowPrefix + "kafka"),
           config.getString(timeWindowPrefix + "cassandra"),
+          config.getString(timeWindowPrefix + "api"),
           TimeWindows.of(duration));
 
       timeWindowsConfigurations.add(timeWindowsConfiguration);

@@ -3,14 +3,18 @@ package titan.ccp.history.api;
 import com.datastax.driver.core.Session;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.function.LongConsumer;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spark.Request;
 import spark.Service;
+import titan.ccp.history.streamprocessing.TimeWindowsConfiguration;
 import titan.ccp.model.records.ActivePowerRecord;
 import titan.ccp.model.records.AggregatedActivePowerRecord;
+import titan.ccp.model.records.WindowedActivePowerRecord;
 
 
 /**
@@ -27,19 +31,22 @@ public class RestApiServer {
 
   private final Gson gson = new GsonBuilder().create();
 
-  private final ActivePowerRepository<AggregatedActivePowerRecord> aggregatedRepository;
+  private final Session cassandraSession;
   private final ActivePowerRepository<ActivePowerRecord> normalRepository;
+  private final ActivePowerRepository<AggregatedActivePowerRecord> aggregatedRepository;
 
   private final Service webService;
 
   private final boolean enableCors;
   private final boolean enableGzip;
+  private final List<String> windowResolutions = new LinkedList<>();
 
   /**
    * Creates a new API server using the passed parameters.
    */
   public RestApiServer(final Session cassandraSession, final int port, final boolean enableCors,
       final boolean enableGzip) {
+    this.cassandraSession = cassandraSession;
     this.aggregatedRepository = CassandraRepository.forAggregated(cassandraSession);
     this.normalRepository = CassandraRepository.forNormal(cassandraSession);
     LOGGER.info("Instantiate API server.");
@@ -54,6 +61,7 @@ public class RestApiServer {
   public void start() { // NOPMD NOCS declaration of routes
     LOGGER.info("Instantiate API routes.");
 
+    // Common configurations
     if (this.enableCors) {
       this.webService.options("/*", (request, response) -> {
 
@@ -76,100 +84,21 @@ public class RestApiServer {
       });
     }
 
-    // TODO rename urls
-
-    this.webService.get("/power-consumption", (request, response) -> {
-      return this.normalRepository.getIdentifiers();
-    }, this.gson::toJson);
-
-    this.webService.get("/power-consumption/:identifier", (request, response) -> {
-      final String identifier = request.params("identifier"); // NOCS NOPMD
-      final TimeRestriction timeRestriction = constructTimeRestriction(request);
-      return this.normalRepository.get(identifier, timeRestriction);
-    }, this.gson::toJson);
-
-    this.webService.get("/power-consumption/:identifier/latest", (request, response) -> {
-      final String identifier = request.params("identifier");
-      final TimeRestriction timeRestriction = constructTimeRestriction(request);
-      final int count = NumberUtils.toInt(request.queryParams("count"), 1); // NOCS
-      return this.normalRepository.getLatest(identifier, timeRestriction, count);
-    }, this.gson::toJson);
-
-    this.webService.get("/power-consumption/:identifier/distribution", (request, response) -> {
-      final String identifier = request.params("identifier");
-      final TimeRestriction timeRestriction = constructTimeRestriction(request);
-      final int buckets = NumberUtils.toInt(request.queryParams("buckets"), 4); // NOCS
-      return this.normalRepository.getDistribution(identifier, timeRestriction, buckets);
-    }, this.gson::toJson);
-
-    this.webService.get("/power-consumption/:identifier/trend", (request, response) -> {
-      final String identifier = request.params("identifier");
-      final TimeRestriction timeRestriction = constructTimeRestriction(request);
-      final int pointsToSmooth =
-          NumberUtils.toInt(request.queryParams("pointsToSmooth"), 10); // NOCS NOPMD
-      return this.normalRepository.getTrend(identifier, timeRestriction, pointsToSmooth);
-    }, this.gson::toJson);
-
-
-    this.webService.get("/power-consumption/:identifier/count", (request, response) -> {
-      final String identifier = request.params("identifier");
-      final TimeRestriction timeRestriction = constructTimeRestriction(request);
-      return this.normalRepository.getCount(identifier, timeRestriction);
-    }, this.gson::toJson);
-
-    // TODO Temporary for evaluation, this is not working for huge data sets
-    this.webService.get("/power-consumption-count", (request, response) -> {
-      return this.normalRepository.getTotalCount();
-    }, this.gson::toJson);
-
-    this.webService.get("/aggregated-power-consumption", (request, response) -> {
-      return this.aggregatedRepository.getIdentifiers();
-    }, this.gson::toJson);
-
-    this.webService.get("/aggregated-power-consumption/:identifier", (request, response) -> {
-      final String identifier = request.params("identifier");
-      final TimeRestriction timeRestriction = constructTimeRestriction(request);
-      return this.aggregatedRepository.get(identifier, timeRestriction);
-    }, this.gson::toJson);
-
-    this.webService.get("/aggregated-power-consumption/:identifier/latest",
-        (request, response) -> {
-          final String identifier = request.params("identifier");
-          final TimeRestriction timeRestriction = constructTimeRestriction(request);
-          final int count = NumberUtils.toInt(request.queryParams("count"), 1); // NOCS NOPMD
-          return this.aggregatedRepository.getLatest(identifier, timeRestriction, count);
-        }, this.gson::toJson);
-
-    this.webService.get("/aggregated-power-consumption/:identifier/distribution",
-        (request, response) -> {
-          final String identifier = request.params("identifier");
-          final TimeRestriction timeRestriction = constructTimeRestriction(request);
-          final int buckets = NumberUtils.toInt(request.queryParams("buckets"), 4); // NOCS NOPMD
-          return this.aggregatedRepository.getDistribution(identifier, timeRestriction, buckets);
-        }, this.gson::toJson);
-
-    this.webService.get("/aggregated-power-consumption/:identifier/trend",
-        (request, response) -> {
-          final String identifier = request.params("identifier");
-          final TimeRestriction timeRestriction = constructTimeRestriction(request);
-          final int pointsToSmooth =
-              NumberUtils.toInt(request.queryParams("pointsToSmooth"), 10); // NOCS NOPMD
-          return this.aggregatedRepository.getTrend(identifier, timeRestriction, pointsToSmooth);
-        }, this.gson::toJson);
-
-    this.webService.get("/aggregated-power-consumption/:identifier/count",
-        (request, response) -> {
-          final String identifier = request.params("identifier");
-          final TimeRestriction timeRestriction = constructTimeRestriction(request);
-          return this.aggregatedRepository.getCount(identifier, timeRestriction);
-        }, this.gson::toJson);
-
     this.webService.after((request, response) -> {
       response.type("application/json");
       if (this.enableGzip) {
         response.header("Content-Encoding", "gzip");
       }
     });
+
+    // Active power routes for raw and aggregated
+    this.addActivePowerEndpoints("power-consumption", this.normalRepository);
+    this.addActivePowerEndpoints("aggregated-power-consumption", this.aggregatedRepository);
+
+    // Route to get the different windowed power routes
+    this.webService.get("/active-power/windowed", (request, response) -> {
+      return this.windowResolutions;
+    }, this.gson::toJson);
   }
 
   /**
@@ -179,6 +108,88 @@ public class RestApiServer {
     this.webService.stop();
   }
 
+  /**
+   * Creates for every time windows configuration an endpoint.
+   *
+   * @param timeWindowsConfigurations for the endpoints.
+   */
+  public void addWindowedEndpoints(final List<TimeWindowsConfiguration> timeWindowsConfigurations) {
+    for (final TimeWindowsConfiguration twc : timeWindowsConfigurations) {
+      // Check if an Endpoint name is given, otherwise discard this time window
+      if (twc.getApiEndpoint() == null) {
+        LOGGER.info("No endpoint created for windowed aggregation: {}", twc.getKafkaTopic());
+        return;
+      }
+
+      // Create a Cassandra repository for this particular window
+      final CassandraRepository<WindowedActivePowerRecord> windowedRepository = CassandraRepository
+          .forWindowed(twc, this.cassandraSession);
+
+      this.addActivePowerEndpoints("active-power/windowed/" + twc.getApiEndpoint(),
+          windowedRepository);
+      this.windowResolutions.add(twc.getApiEndpoint());
+    }
+  }
+
+  /**
+   * Creates the common active power records for a given prefix and {@code ActivePowerRepository}.
+   *
+   * @param routePrefix to access the resource (e.g. "aggregated" creates route "/aggregated").
+   * @param activePowerRepository to access the data.
+   */
+  private void addActivePowerEndpoints(final String prefix,
+      final ActivePowerRepository<?> activePowerRepository) {
+
+    // Create the prefix for the routes
+    final String routePrefix = "/" + prefix;
+
+
+    this.webService.get(routePrefix, (request, response) -> {
+      return activePowerRepository.getIdentifiers();
+    }, this.gson::toJson);
+
+    this.webService.get(routePrefix + "/:identifier", (request, response) -> {
+      final String identifier = request.params("identifier"); // NOCS NOPMD
+      final TimeRestriction timeRestriction = constructTimeRestriction(request);
+      return activePowerRepository.get(identifier, timeRestriction);
+    }, this.gson::toJson);
+
+    this.webService.get(routePrefix + "/:identifier/latest", (request, response) -> {
+      final String identifier = request.params("identifier");
+      final TimeRestriction timeRestriction = constructTimeRestriction(request);
+      final int count = NumberUtils.toInt(request.queryParams("count"), 1); // NOCS
+      return activePowerRepository.getLatest(identifier, timeRestriction, count);
+    }, this.gson::toJson);
+
+    this.webService.get(routePrefix + "/:identifier/distribution", (request, response) -> {
+      final String identifier = request.params("identifier");
+      final TimeRestriction timeRestriction = constructTimeRestriction(request);
+      final int buckets = NumberUtils.toInt(request.queryParams("buckets"), 4); // NOCS
+      return activePowerRepository.getDistribution(identifier, timeRestriction, buckets);
+    }, this.gson::toJson);
+
+    this.webService.get(routePrefix + "/:identifier/trend", (request, response) -> {
+      final String identifier = request.params("identifier");
+      final TimeRestriction timeRestriction = constructTimeRestriction(request);
+      final int pointsToSmooth =
+          NumberUtils.toInt(request.queryParams("pointsToSmooth"), 10); // NOCS NOPMD
+      return activePowerRepository.getTrend(identifier, timeRestriction, pointsToSmooth);
+    }, this.gson::toJson);
+
+
+    this.webService.get(routePrefix + "/:identifier/count", (request, response) -> {
+      final String identifier = request.params("identifier");
+      final TimeRestriction timeRestriction = constructTimeRestriction(request);
+      return activePowerRepository.getCount(identifier, timeRestriction);
+    }, this.gson::toJson);
+  }
+
+  /**
+   * Create a {@code TimeRestriction} object from a request.
+   *
+   * @param request containing the parameters.
+   * @return a {@code TimeRestriction} object.
+   */
   private static TimeRestriction constructTimeRestriction(final Request request) {
     final TimeRestriction timeRestriction = new TimeRestriction();
     maybeAddRestriction(request, FROM_QUERY_PARAM, timeRestriction::setFrom);
@@ -187,6 +198,13 @@ public class RestApiServer {
     return timeRestriction;
   }
 
+  /**
+   * Helper method to set the {@code TimeRestriction} attribute using the request.
+   *
+   * @param request containing the parameters.
+   * @param paramName to check if exists.
+   * @param setter to set the attribute in the {@code TimeRestriction} object.
+   */
   private static void maybeAddRestriction(
       final Request request,
       final String paramName,
@@ -202,7 +220,6 @@ public class RestApiServer {
             e);
       }
     }
-
   }
 
 }

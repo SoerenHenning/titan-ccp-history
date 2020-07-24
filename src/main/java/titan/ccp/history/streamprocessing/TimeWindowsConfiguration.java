@@ -10,6 +10,7 @@ public class TimeWindowsConfiguration {
 
   private final String kafkaTopic;
   private final String cassandraTableName;
+  private final String apiEndpoint;
   private final TimeWindows timeWindows;
 
   /**
@@ -20,9 +21,11 @@ public class TimeWindowsConfiguration {
    * @param timeWindows The time window that should be used for aggregation.
    */
   public TimeWindowsConfiguration(final String kafkTopic, final String cassandraTableName,
+      final String apiEndpoint,
       final TimeWindows timeWindows) {
     this.kafkaTopic = kafkTopic;
     this.cassandraTableName = cassandraTableName;
+    this.apiEndpoint = apiEndpoint;
     this.timeWindows = timeWindows;
   }
 
@@ -32,6 +35,10 @@ public class TimeWindowsConfiguration {
 
   public String getCassandraTableName() {
     return this.cassandraTableName;
+  }
+
+  public String getApiEndpoint() {
+    return this.apiEndpoint;
   }
 
   public TimeWindows getTimeWindows() {

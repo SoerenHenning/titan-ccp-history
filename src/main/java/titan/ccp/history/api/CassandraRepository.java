@@ -18,8 +18,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import titan.ccp.common.cassandra.AvroMapper;
 import titan.ccp.common.cassandra.DecodeException;
+import titan.ccp.history.streamprocessing.TimeWindowsConfiguration;
 import titan.ccp.model.records.ActivePowerRecord;
 import titan.ccp.model.records.AggregatedActivePowerRecord;
+import titan.ccp.model.records.WindowedActivePowerRecord;
 
 /**
  * An {@link ActivePowerRepository} for the Cassandra data storage.
@@ -30,11 +32,13 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CassandraRepository.class);
 
-  private static final String TIMESTAMP_KEY = "timestamp";
+  // Keys for identifying the cassandra object columns
   private static final String IDENTIFIER_KEY = "identifier";
+  private static final String TIMESTAMP_KEY = "timestamp";
 
   private final Session cassandraSession;
   private final String tableName;
+  private final String timestampKey;
   private final Function<Row, T> recordFactory;
   private final ToDoubleFunction<T> valueAccessor;
 
@@ -42,9 +46,11 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
    * Create a new {@link CassandraRepository}.
    */
   public CassandraRepository(final Session cassandraSession, final String tableName,
+      final String timestampKey,
       final Function<Row, T> recordFactory, final ToDoubleFunction<T> valueAccessor) {
     this.cassandraSession = cassandraSession;
     this.tableName = tableName;
+    this.timestampKey = timestampKey;
     this.recordFactory = recordFactory;
     this.valueAccessor = valueAccessor;
   }
@@ -61,7 +67,7 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
       final int count) {
     final Statement statement =
         this.buildRestrictedSelectAllBaseStatement(identifier, timeRestriction)
-            .orderBy(QueryBuilder.desc(TIMESTAMP_KEY))
+            .orderBy(QueryBuilder.desc(this.timestampKey))
             .limit(count);
 
     return this.executeStatement(statement);
@@ -72,7 +78,7 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
       final int count) {
     final Statement statement =
         this.buildRestrictedSelectAllBaseStatement(identifier, timeRestriction)
-            .orderBy(QueryBuilder.asc(TIMESTAMP_KEY))
+            .orderBy(QueryBuilder.asc(this.timestampKey))
             .limit(count);
 
     return this.executeStatement(statement);
@@ -146,9 +152,8 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
         .countAll()
         .from(this.tableName)
         .where(QueryBuilder.eq(IDENTIFIER_KEY, identifier))
-        .and(QueryBuilder.gte(TIMESTAMP_KEY, timeRestriction.getFromOrDefault(Long.MIN_VALUE)))
-        .and(QueryBuilder.lte(TIMESTAMP_KEY, timeRestriction.getToOrDefault(Long.MAX_VALUE)))
-        .and(QueryBuilder.gt(TIMESTAMP_KEY, timeRestriction.getAfterOrDefault(Long.MIN_VALUE)));
+        .and(this.buildLowerTimeRestrictionClause(timeRestriction))
+        .and(this.buildUpperTimeRestrictionClause(timeRestriction));
     return this.cassandraSession.execute(statement).all().get(0).getLong(0);
   }
 
@@ -180,19 +185,19 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
     if (timeRestriction.hasFrom()) {
       // If two lower restrictions do exists, find the "superior" one.
       if (timeRestriction.hasAfter() && timeRestriction.getAfter() >= timeRestriction.getFrom()) {
-        return QueryBuilder.gt(TIMESTAMP_KEY, timeRestriction.getAfter());
+        return QueryBuilder.gt(this.timestampKey, timeRestriction.getAfter());
       } else {
-        return QueryBuilder.gte(TIMESTAMP_KEY, timeRestriction.getFrom());
+        return QueryBuilder.gte(this.timestampKey, timeRestriction.getFrom());
       }
     } else if (timeRestriction.hasAfter()) {
-      return QueryBuilder.gt(TIMESTAMP_KEY, timeRestriction.getAfter());
+      return QueryBuilder.gt(this.timestampKey, timeRestriction.getAfter());
     } else {
-      return QueryBuilder.gte(TIMESTAMP_KEY, Long.MIN_VALUE);
+      return QueryBuilder.gte(this.timestampKey, Long.MIN_VALUE);
     }
   }
 
   private Clause buildUpperTimeRestrictionClause(final TimeRestriction timeRestriction) {
-    return QueryBuilder.lte(TIMESTAMP_KEY, timeRestriction.getToOrDefault(Long.MAX_VALUE));
+    return QueryBuilder.lte(this.timestampKey, timeRestriction.getToOrDefault(Long.MAX_VALUE));
   }
 
   /**
@@ -216,6 +221,18 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
   }
 
   /**
+   * Create an {@link CassandraRepository} for {@link ActivePowerRecord}s.
+   */
+  public static CassandraRepository<ActivePowerRecord> forNormal(final Session cassandraSession) {
+    return new CassandraRepository<>(
+        cassandraSession,
+        ActivePowerRecord.class.getSimpleName(),
+        TIMESTAMP_KEY,
+        new AvroMapper<>(ActivePowerRecord::new),
+        record -> record.getValueInW());
+  }
+
+  /**
    * Create an {@link CassandraRepository} for {@link AggregatedActivePowerRecord}s.
    */
   public static CassandraRepository<AggregatedActivePowerRecord> forAggregated(
@@ -224,20 +241,24 @@ public class CassandraRepository<T> implements ActivePowerRepository<T> {
     return new CassandraRepository<>(
         cassandraSession,
         AggregatedActivePowerRecord.class.getSimpleName(),
+        TIMESTAMP_KEY,
         new AvroMapper<>(AggregatedActivePowerRecord::new),
         record -> record.getSumInW());
   }
 
-
   /**
-   * Create an {@link CassandraRepository} for {@link ActivePowerRecord}s.
+   * Create an {@link CassandraRepository} for {@link AggregatedActivePowerRecord}s.
    */
-  public static CassandraRepository<ActivePowerRecord> forNormal(final Session cassandraSession) {
+  public static CassandraRepository<WindowedActivePowerRecord> forWindowed(
+      final TimeWindowsConfiguration twc,
+      final Session cassandraSession) {
+
     return new CassandraRepository<>(
         cassandraSession,
-        ActivePowerRecord.class.getSimpleName(),
-        new AvroMapper<>(ActivePowerRecord::new),
-        record -> record.getValueInW());
+        twc.getCassandraTableName(),
+        "startTimestamp",
+        new AvroMapper<>(WindowedActivePowerRecord::new),
+        record -> record.getMean());
   }
 
 }
