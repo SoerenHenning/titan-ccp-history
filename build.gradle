@@ -50,7 +50,7 @@ configurations {
 dependencies {
     compile('org.industrial-devops:titan-ccp-common:0.1.0-SNAPSHOT') { changing = true }
     compile('org.industrial-devops:titan-ccp-common-kafka:0.1.0-SNAPSHOT') { changing = true }
-    compile('org.industrial-devops:titan-ccp-common-cassandra:0.0.2-SNAPSHOT') { changing = true }
+    compile('org.industrial-devops:titan-ccp-common-cassandra:0.0.3-SNAPSHOT') { changing = true }
     compile 'org.apache.kafka:kafka-streams:2.3.0'
     compile 'com.sparkjava:spark-core:2.7.2'
 	compile 'com.google.code.gson:gson:2.8.2'

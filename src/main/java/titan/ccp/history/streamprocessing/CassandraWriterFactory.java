@@ -45,7 +45,7 @@ public final class CassandraWriterFactory {
    * Build a {@link CassandraWriter} for windowed Avro records, which provide an {@code identifier}
    * and a {@code standTimestamp} field.
    */
-  public CassandraWriter<SpecificRecord> buildWindowed(final String tableName) {
+  public CassandraWriter<SpecificRecord> buildWindowed(final String tableName, final int ttl) {
     final ExplicitPrimaryKeySelectionStrategy strategy = new ExplicitPrimaryKeySelectionStrategy();
     strategy.registerPartitionKeys(tableName, IDENTIFIER_COLUMN);
     strategy.registerClusteringColumns(tableName, START_TIMESTAMP_COLUMN);
@@ -54,6 +54,7 @@ public final class CassandraWriterFactory {
         .builder(this.session, new AvroDataAdapter())
         .tableNameMapper(c -> tableName)
         .primaryKeySelectionStrategy(strategy)
+        .ttl(ttl)
         .build();
 
     return cassandraWriter;
