@@ -142,12 +142,11 @@ public class TopologyBuilder {
   private void addTumblingWindow(final TimeWindowsConfiguration timeWindowsConfiguration,
       final KStream<String, ActivePowerRecord> combinedActivePowerStream) {
 
-    final int ttl = (int) timeWindowsConfiguration.getTtl().toSeconds();
-
     // Create a cassandra writer for this tumbling Window
     final CassandraWriter<SpecificRecord> windowedCassandraWriter =
         this.writerFactory
-            .buildWindowed(timeWindowsConfiguration.getCassandraTableName(), ttl);
+            .buildWindowed(timeWindowsConfiguration.getCassandraTableName(),
+                timeWindowsConfiguration.getTtl());
 
     // Create tumbling window stream with the aggregations
     final KStream<String, WindowedActivePowerRecord> windowedStream =

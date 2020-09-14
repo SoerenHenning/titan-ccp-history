@@ -1,6 +1,7 @@
 package titan.ccp.history.streamprocessing;
 
 import com.datastax.driver.core.Session;
+import java.time.Duration;
 import org.apache.avro.specific.SpecificRecord;
 import titan.ccp.common.avro.cassandra.AvroDataAdapter;
 import titan.ccp.common.cassandra.CassandraWriter;
@@ -45,7 +46,7 @@ public final class CassandraWriterFactory {
    * Build a {@link CassandraWriter} for windowed Avro records, which provide an {@code identifier}
    * and a {@code standTimestamp} field.
    */
-  public CassandraWriter<SpecificRecord> buildWindowed(final String tableName, final int ttl) {
+  public CassandraWriter<SpecificRecord> buildWindowed(final String tableName, final Duration ttl) {
     final ExplicitPrimaryKeySelectionStrategy strategy = new ExplicitPrimaryKeySelectionStrategy();
     strategy.registerPartitionKeys(tableName, IDENTIFIER_COLUMN);
     strategy.registerClusteringColumns(tableName, START_TIMESTAMP_COLUMN);
