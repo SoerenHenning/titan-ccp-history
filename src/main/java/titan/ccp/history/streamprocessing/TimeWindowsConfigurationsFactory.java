@@ -38,11 +38,16 @@ public final class TimeWindowsConfigurationsFactory {
     for (final String timeWindowPrefix : timeWindowPrefixes) {
       final Duration duration = Duration.parse(config.getString(timeWindowPrefix + "duration"));
 
+      final String ttlString = config.getString(timeWindowPrefix + "ttl");
+      final Duration ttl =
+          ttlString == null ? null : Duration.parse(ttlString);
+
       final TimeWindowsConfiguration timeWindowsConfiguration = new TimeWindowsConfiguration(
           config.getString(timeWindowPrefix + "kafka"),
           config.getString(timeWindowPrefix + "cassandra"),
           config.getString(timeWindowPrefix + "api"),
-          TimeWindows.of(duration));
+          TimeWindows.of(duration),
+          ttl);
 
       timeWindowsConfigurations.add(timeWindowsConfiguration);
     }
