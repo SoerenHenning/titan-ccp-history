@@ -37,7 +37,10 @@ public final class TimeWindowsConfigurationsFactory {
     // Iterate over prefixes to create a TimeWindowsConfiguration
     for (final String timeWindowPrefix : timeWindowPrefixes) {
       final Duration duration = Duration.parse(config.getString(timeWindowPrefix + "duration"));
-      final Duration ttl = Duration.parse(config.getString(timeWindowPrefix + "ttl"));
+
+      final String ttlString = config.getString(timeWindowPrefix + "ttl");
+      final Duration ttl =
+          ttlString == null ? null : Duration.parse(ttlString);
 
       final TimeWindowsConfiguration timeWindowsConfiguration = new TimeWindowsConfiguration(
           config.getString(timeWindowPrefix + "kafka"),
