@@ -11,77 +11,11 @@ info:
 servers:
   - url: https://industrial-devops.org
 tags:
-- name: Sensor registry
-  description: Find information about sensor registry
 - name: Power Consumption
   description: Get details of power consumption of a sensor
 - name: Aggregated Power consumption
   description: Check aggregated power consumption for a sensor
 paths:
-  /sensor-registry:
-    get:
-      tags:
-      - Sensor registry
-      summary: Fetch sensor registry
-      operationId: getSensor
-      responses:
-        200:
-          description: Success
-          content:
-            application/json:
-              schema:
-                  type: array
-                  items:
-                    required:
-                      - username
-                    properties:
-                      identifier:
-                        type: string
-                      children:
-                        type: object
-                  example:
-                    identifier: root
-                    children: {identifier: "comcenter",
-                               "children": [
-                                  {"identifier": "server1"},
-                                  {"identifier": "server2"},
-                                  {"identifier": "server3"}
-                                  ]
-                              }
-    put:
-      tags:
-      - Sensor registry
-      summary: Update or Add the sensor registry
-      operationId: updateSensor
-      requestBody:
-        description: Sensor object that needs to be added
-        required: true
-        content:
-          application/json:
-            schema:
-                type: array
-                items:
-                  properties:
-                    identifier:
-                      type: string
-                    children:
-                      type: object
-                example:
-                  identifier: root
-                  children:
-                    {"identifier": "comcenter",
-                     "children": [
-                        {"identifier": "server1"},
-                        {"identifier": "server2"},
-                        {"identifier": "server3"}
-                      ]
-                    }
-      responses:
-        404:
-          description: Sensor not found
-        204:
-          description: Created
-
   /power-consumption/{identifier}:
     get:
       tags:
