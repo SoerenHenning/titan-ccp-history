@@ -1,0 +1,430 @@
+openapi: 3.0.3
+info:
+  description: This is documentation for Titan API
+  version: 1.0.0
+  title: Titan
+  contact:
+    email: post@soeren-henning.de
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: https://industrial-devops.org
+tags:
+- name: Sensor registry
+  description: Find information about sensor registry
+- name: Power Consumption
+  description: Get details of power consumption of a sensor
+- name: Aggregated Power consumption
+  description: Check aggregated power consumption for a sensor
+paths:
+  /sensor-registry:
+    get:
+      tags:
+      - Sensor registry
+      summary: Fetch sensor registry
+      operationId: getSensor
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                  type: array
+                  items:
+                    required:
+                      - username
+                    properties:
+                      identifier:
+                        type: string
+                      children:
+                        type: object
+                  example:
+                    identifier: root
+                    children: {identifier: "comcenter",
+                               "children": [
+                                  {"identifier": "server1"},
+                                  {"identifier": "server2"},
+                                  {"identifier": "server3"}
+                                  ]
+                              }
+    put:
+      tags:
+      - Sensor registry
+      summary: Update or Add the sensor registry
+      operationId: updateSensor
+      requestBody:
+        description: Sensor object that needs to be added
+        required: true
+        content:
+          application/json:
+            schema:
+                type: array
+                items:
+                  properties:
+                    identifier:
+                      type: string
+                    children:
+                      type: object
+                example:
+                  identifier: root
+                  children:
+                    {"identifier": "comcenter",
+                     "children": [
+                        {"identifier": "server1"},
+                        {"identifier": "server2"},
+                        {"identifier": "server3"}
+                      ]
+                    }
+      responses:
+        404:
+          description: Sensor not found
+        204:
+          description: Created
+
+  /power-consumption/{identifier}:
+    get:
+      tags:
+      - Power Consumption
+      summary: Find power consumption by identifier
+      description: Power consumption for particular sensor can be found
+      operationId: findPowerByIdentifier
+      parameters:
+        - in: path
+          name: identifier
+          schema:
+            type: string
+          required: true
+          description: String of the sensor to get
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    identifier:
+                      type: string
+                    timestamp:
+                      type: string
+                    valueInW:
+                      type: number
+                    loggingTimestamp:
+                      type: number
+                example:
+                  identifier:
+                    server1
+                  timestamp:
+                    1529495701000
+                  valueInW:
+                    121.22001042992338
+                  loggingTimestamp:
+                    -1
+        400:
+          description: Invalid operation
+
+  /power-consumption/:identifier/latest:
+    get:
+      tags:
+      - Power Consumption
+      summary: Find latest power consumption by identifier
+      description: Latest Power consumption for particular sensor can be found
+      operationId: findLatestPowerByIdentifier
+      parameters:
+      - in: query
+        name: count
+        description: Counter parameter
+        schema:
+          type: integer
+          default: 1
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    identifier:
+                      type: string
+                    timestamp:
+                      type: string
+                    valueInW:
+                      type: number
+                    loggingTimestamp:
+                      type: number
+                example:
+                  identifier:
+                    server1
+                  timestamp:
+                    1529495701000
+                  valueInW:
+                    121.22001042992338
+                  loggingTimestamp:
+                    -1
+        400:
+          description: Invalid operation
+  /power-consumption/:identifier/distribution:
+    get:
+      tags:
+      - Power Consumption
+      summary: Find power distribution by identifier
+      description: Power distribution for particular sensor can be found
+      operationId: findPowerDistribution
+      parameters:
+      - in: query
+        name: after
+        description: Timestamp filter to define after interval
+        schema:
+          type: number
+          default: 0
+      - in: query
+        name: bucket
+        description: Define bucket interval for distribution
+        schema:
+          type: number
+          default: 4
+
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+
+                  properties:
+                    lower:
+                      type: number
+                    upper:
+                      type: number
+                    elements:
+                      type: number
+
+                example:
+                  lower:
+                    73.02266006350054
+                  upper:
+                    90.30658985024013
+                  elements:
+                    225
+        400:
+          description: Invalid operation
+  /power-consumption/:identifier/trend:
+    get:
+      tags:
+      - Power Consumption
+      summary: Find power consumption trend
+      description: Trend for power consumption
+      operationId: findPowerTrendByIdentifier
+      parameters:
+      - in: query
+        name: after
+        description: Timestamp filter to define after interval
+        schema:
+          type: number
+          default: 0
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: number
+                example:
+                  value:
+                    1.1926056154356381
+        400:
+          description: Invalid operation
+  /aggregated-power-consumption/:identifier:
+    get:
+      tags:
+      - Aggregated Power consumption
+      summary: Find aggregated power consumption by identifier
+      description: Aggregated Power consumption for particular sensor can be found
+      operationId: findPowerAggByIdentifier
+      parameters:
+      - in: query
+        name: after
+        description: Timestamp filter to define after interval
+        schema:
+          type: number
+          default: 0
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    identifier:
+                      type: string
+                    timestamp:
+                      type: string
+                    loggingTimestamp:
+                      type: number
+                    minInW:
+                      type: number
+                    maxInW:
+                      type: number
+                    count:
+                      type: number
+                    sumInW:
+                      type: number
+                    averageInW:
+                      type: number
+                example:
+                  identifier:
+                    server1
+                  timestamp:
+                    1529495701000
+                  minInW:
+                    0
+                  loggingTimestamp:
+                    -1
+                  maxInW:
+                    33.709002
+                  count:
+                    2
+                  sumInW:
+                    33.709002
+                  averageInW:
+                    16.854501
+        400:
+          description: Invalid operation
+
+  /aggregated-power-consumption/:identifier/latest:
+    get:
+      tags:
+      - Aggregated Power consumption
+      summary: Find Aggregated latest power consumption by identifier
+      description: Aggregated Latest Power consumption for particular sensor can be found
+      operationId: findLatestAggPowerByIdentifier
+      parameters:
+      - in: query
+        name: count
+        description: Counter parameter
+        schema:
+          type: number
+          default: 1
+
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    identifier:
+                      type: string
+                    timestamp:
+                      type: string
+                    loggingTimestamp:
+                      type: number
+                    minInW:
+                      type: number
+                    maxInW:
+                      type: number
+                    count:
+                      type: number
+                    sumInW:
+                      type: number
+                    averageInW:
+                      type: number
+                example:
+                  identifier:
+                    server1
+                  timestamp:
+                    1529495701000
+                  minInW:
+                    0
+                  loggingTimestamp:
+                    -1
+                  maxInW:
+                    33.709002
+                  count:
+                    2
+                  sumInW:
+                    33.709002
+                  averageInW:
+                    16.854501
+        400:
+          description: Invalid operation
+  /aggregated-power-consumption/:identifier/distribution:
+    get:
+      tags:
+      - Aggregated Power consumption
+      summary: Find Aggregated power distribution by identifier
+      description: Aggregated Power distribution for particular sensor can be found
+      operationId: findAggPowerDistribution
+      parameters:
+      - in: query
+        name: after
+        description: Timestamp filter to define after interval
+        schema:
+          type: number
+          default: 0
+      - in: query
+        name: bucket
+        description: Define bucket interval for distribution
+        schema:
+          type: number
+          default: 4
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    lower:
+                      type: number
+                    upper:
+                      type: number
+                    elements:
+                      type: number
+                example:
+                  lower:
+                    73.02266006350054
+                  upper:
+                    90.30658985024013
+                  elements:
+                    225
+        400:
+          description: Invalid operation
+  /aggregated-power-consumption/:identifier/trend:
+    get:
+      tags:
+      - Aggregated Power consumption
+      summary: Find aggregated power consumption trend
+      description: Trend for aggregated power consumption
+      operationId: findAggPowerTrendByIdentifier
+      parameters:
+      - in: query
+        name: after
+        description: Timestamp filter to define after interval
+        schema:
+          type: number
+          default: 0
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: number
+                example:
+                  value:
+                    1.1926056154356381
+        400:
+          description: Invalid operation
