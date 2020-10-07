@@ -9,13 +9,46 @@ info:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
 servers:
-  - url: https://industrial-devops.org
+  - url: http://localhost:8081
+  - url: '{protocol}://industrial-devops.org'
+    variables:
+      protocol:
+        enum:
+          - http
+          - https
+        default: https
 tags:
 - name: Power Consumption
   description: Get details of power consumption of a sensor
 - name: Aggregated Power consumption
   description: Check aggregated power consumption for a sensor
 paths:
+  /power-consumption:
+    get:
+      tags:
+      - Power Consumption
+      summary: Get sensor identifiers
+      description: Get list of sensor identifiers
+      operationId: getIdentifiers
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    identifier:
+                      type: string
+              examples:
+                sensorList:
+                  value:
+                    - printer1
+                    - server1
+                    - server2
+        400:
+          description: Invalid operation
   /power-consumption/{identifier}:
     get:
       tags:
@@ -24,12 +57,10 @@ paths:
       description: Power consumption for particular sensor can be found
       operationId: findPowerByIdentifier
       parameters:
-        - in: path
-          name: identifier
-          schema:
-            type: string
-          required: true
-          description: String of the sensor to get
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
       responses:
         200:
           description: successful operation
@@ -38,28 +69,13 @@ paths:
               schema:
                 type: array
                 items:
-                  properties:
-                    identifier:
-                      type: string
-                    timestamp:
-                      type: string
-                    valueInW:
-                      type: number
-                    loggingTimestamp:
-                      type: number
-                example:
-                  identifier:
-                    server1
-                  timestamp:
-                    1529495701000
-                  valueInW:
-                    121.22001042992338
-                  loggingTimestamp:
-                    -1
+                  $ref: '#/components/schemas/ActivePowerRecord'
+              examples:
+                ActivePowerRecordList:
+                  $ref: '#/components/examples/ActivePowerRecordList'
         400:
           description: Invalid operation
-
-  /power-consumption/:identifier/latest:
+  /power-consumption/{identifier}/latest:
     get:
       tags:
       - Power Consumption
@@ -67,12 +83,11 @@ paths:
       description: Latest Power consumption for particular sensor can be found
       operationId: findLatestPowerByIdentifier
       parameters:
-      - in: query
-        name: count
-        description: Counter parameter
-        schema:
-          type: integer
-          default: 1
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/countParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
       responses:
         200:
           description: successful operation
@@ -81,27 +96,13 @@ paths:
               schema:
                 type: array
                 items:
-                  properties:
-                    identifier:
-                      type: string
-                    timestamp:
-                      type: string
-                    valueInW:
-                      type: number
-                    loggingTimestamp:
-                      type: number
-                example:
-                  identifier:
-                    server1
-                  timestamp:
-                    1529495701000
-                  valueInW:
-                    121.22001042992338
-                  loggingTimestamp:
-                    -1
+                  $ref: '#/components/schemas/ActivePowerRecord'
+              examples:
+                ActivePowerRecordList:
+                  $ref: '#/components/examples/ActivePowerRecordList'
         400:
           description: Invalid operation
-  /power-consumption/:identifier/distribution:
+  /power-consumption/{identifier}/distribution:
     get:
       tags:
       - Power Consumption
@@ -109,46 +110,24 @@ paths:
       description: Power distribution for particular sensor can be found
       operationId: findPowerDistribution
       parameters:
-      - in: query
-        name: after
-        description: Timestamp filter to define after interval
-        schema:
-          type: number
-          default: 0
-      - in: query
-        name: bucket
-        description: Define bucket interval for distribution
-        schema:
-          type: number
-          default: 4
-
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+        - $ref: '#/components/parameters/bucketParam'
       responses:
         200:
           description: successful operation
           content:
             application/json:
               schema:
-                type: array
-                items:
-
-                  properties:
-                    lower:
-                      type: number
-                    upper:
-                      type: number
-                    elements:
-                      type: number
-
-                example:
-                  lower:
-                    73.02266006350054
-                  upper:
-                    90.30658985024013
-                  elements:
-                    225
+                $ref: '#/components/schemas/DistributionBucketList'
+              examples:
+                DistributionBucketList:
+                  $ref: '#/components/examples/DistributionBucketList'
         400:
           description: Invalid operation
-  /power-consumption/:identifier/trend:
+  /power-consumption/{identifier}/trend:
     get:
       tags:
       - Power Consumption
@@ -156,12 +135,11 @@ paths:
       description: Trend for power consumption
       operationId: findPowerTrendByIdentifier
       parameters:
-      - in: query
-        name: after
-        description: Timestamp filter to define after interval
-        schema:
-          type: number
-          default: 0
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+        - $ref: '#/components/parameters/pointsToSmoothParam'
       responses:
         200:
           description: successful operation
@@ -170,11 +148,59 @@ paths:
               schema:
                 type: number
                 example:
-                  value:
-                    1.1926056154356381
+                  value: 1.1926056154356381
         400:
           description: Invalid operation
-  /aggregated-power-consumption/:identifier:
+  /power-consumption/{identifier}/count:
+    get:
+      tags:
+      - Power Consumption
+      summary: Find power consumption trend
+      description: Trend for power consumption
+      operationId: getActivePowerCount
+      parameters:
+      - $ref: '#/components/parameters/identifierParam'
+      - $ref: '#/components/parameters/fromParam'
+      - $ref: '#/components/parameters/toParam'
+      - $ref: '#/components/parameters/afterParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: integer
+                example:
+                  value: 1989
+        400:
+          description: Invalid operation
+  /aggregated-power-consumption:
+    get:
+      tags:
+      - Aggregated Power consumption
+      summary: Get sensor identifiers
+      description: Get list of sensor group identifiers
+      operationId: getGroupIdentifiers
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    identifier:
+                      type: string
+              examples:
+                sensorList:
+                  value:
+                    - printers
+                    - comcenter
+                    - cooling
+        400:
+          description: Invalid operation
+  /aggregated-power-consumption/{identifier}:
     get:
       tags:
       - Aggregated Power consumption
@@ -182,12 +208,10 @@ paths:
       description: Aggregated Power consumption for particular sensor can be found
       operationId: findPowerAggByIdentifier
       parameters:
-      - in: query
-        name: after
-        description: Timestamp filter to define after interval
-        schema:
-          type: number
-          default: 0
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
       responses:
         200:
           description: successful operation
@@ -196,44 +220,14 @@ paths:
               schema:
                 type: array
                 items:
-                  properties:
-                    identifier:
-                      type: string
-                    timestamp:
-                      type: string
-                    loggingTimestamp:
-                      type: number
-                    minInW:
-                      type: number
-                    maxInW:
-                      type: number
-                    count:
-                      type: number
-                    sumInW:
-                      type: number
-                    averageInW:
-                      type: number
-                example:
-                  identifier:
-                    server1
-                  timestamp:
-                    1529495701000
-                  minInW:
-                    0
-                  loggingTimestamp:
-                    -1
-                  maxInW:
-                    33.709002
-                  count:
-                    2
-                  sumInW:
-                    33.709002
-                  averageInW:
-                    16.854501
+                  $ref: '#/components/schemas/AggregatedActivePowerRecord'
+              examples:
+                AggregatedActivePowerRecordList:
+                  $ref: '#/components/examples/AggregatedActivePowerRecordList'
         400:
           description: Invalid operation
 
-  /aggregated-power-consumption/:identifier/latest:
+  /aggregated-power-consumption/{identifier}/latest:
     get:
       tags:
       - Aggregated Power consumption
@@ -241,13 +235,11 @@ paths:
       description: Aggregated Latest Power consumption for particular sensor can be found
       operationId: findLatestAggPowerByIdentifier
       parameters:
-      - in: query
-        name: count
-        description: Counter parameter
-        schema:
-          type: number
-          default: 1
-
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/countParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
       responses:
         200:
           description: successful operation
@@ -256,43 +248,13 @@ paths:
               schema:
                 type: array
                 items:
-                  properties:
-                    identifier:
-                      type: string
-                    timestamp:
-                      type: string
-                    loggingTimestamp:
-                      type: number
-                    minInW:
-                      type: number
-                    maxInW:
-                      type: number
-                    count:
-                      type: number
-                    sumInW:
-                      type: number
-                    averageInW:
-                      type: number
-                example:
-                  identifier:
-                    server1
-                  timestamp:
-                    1529495701000
-                  minInW:
-                    0
-                  loggingTimestamp:
-                    -1
-                  maxInW:
-                    33.709002
-                  count:
-                    2
-                  sumInW:
-                    33.709002
-                  averageInW:
-                    16.854501
+                  $ref: '#/components/schemas/AggregatedActivePowerRecord'
+              examples:
+                AggregatedActivePowerRecordList:
+                  $ref: '#/components/examples/AggregatedActivePowerRecordList'
         400:
           description: Invalid operation
-  /aggregated-power-consumption/:identifier/distribution:
+  /aggregated-power-consumption/{identifier}/distribution:
     get:
       tags:
       - Aggregated Power consumption
@@ -300,43 +262,24 @@ paths:
       description: Aggregated Power distribution for particular sensor can be found
       operationId: findAggPowerDistribution
       parameters:
-      - in: query
-        name: after
-        description: Timestamp filter to define after interval
-        schema:
-          type: number
-          default: 0
-      - in: query
-        name: bucket
-        description: Define bucket interval for distribution
-        schema:
-          type: number
-          default: 4
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+        - $ref: '#/components/parameters/bucketParam'
       responses:
         200:
           description: successful operation
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  properties:
-                    lower:
-                      type: number
-                    upper:
-                      type: number
-                    elements:
-                      type: number
-                example:
-                  lower:
-                    73.02266006350054
-                  upper:
-                    90.30658985024013
-                  elements:
-                    225
+                $ref: '#/components/schemas/DistributionBucketList'
+              examples:
+                DistributionBucketList:
+                  $ref: '#/components/examples/DistributionBucketList'
         400:
           description: Invalid operation
-  /aggregated-power-consumption/:identifier/trend:
+  /aggregated-power-consumption/{identifier}/trend:
     get:
       tags:
       - Aggregated Power consumption
@@ -344,12 +287,11 @@ paths:
       description: Trend for aggregated power consumption
       operationId: findAggPowerTrendByIdentifier
       parameters:
-      - in: query
-        name: after
-        description: Timestamp filter to define after interval
-        schema:
-          type: number
-          default: 0
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+        - $ref: '#/components/parameters/pointsToSmoothParam'
       responses:
         200:
           description: successful operation
@@ -362,3 +304,157 @@ paths:
                     1.1926056154356381
         400:
           description: Invalid operation
+  /aggregated-power-consumption/{identifier}/count:
+    get:
+      tags:
+      - Aggregated Power consumption
+      summary: Find power consumption trend
+      description: Trend for power consumption
+      operationId: getAggregatedActivePowerCount
+      parameters:
+      - $ref: '#/components/parameters/identifierParam'
+      - $ref: '#/components/parameters/fromParam'
+      - $ref: '#/components/parameters/toParam'
+      - $ref: '#/components/parameters/afterParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: integer
+                example:
+                  value: 1989
+        400:
+          description: Invalid operation
+components:
+  schemas:
+    ActivePowerRecord:
+      type: object
+      properties:
+        identifier:
+          type: string
+        timestamp:
+          type: integer
+          format: int64
+        valueInW:
+          type: number
+          format: double
+    AggregatedActivePowerRecord:
+      type: object
+      properties:
+        identifier:
+          type: string
+        timestamp:
+          type: integer
+          format: int64
+        count:
+          type: integer
+          format: int64
+        sumInW:
+          type: number
+          format: double
+        averageInW:
+          type: number
+          format: double
+    WindowedActivePowerRecord:
+      type: object
+      properties:
+        identifier:
+          type: string
+        startTimestamp:
+          type: integer
+          format: int64
+        endTimestamp:
+          type: integer
+          format: int64
+        count:
+          type: integer
+          format: int64
+        mean:
+          type: number
+          format: double
+        populationVariance:
+          type: number
+          format: double
+        min:
+          type: number
+          format: double
+        max:
+          type: number
+          format: double
+    DistributionBucketList:
+      type: array
+      items:
+        properties:
+          lower:
+            type: number
+          upper:
+            type: number
+          elements:
+            type: number
+  parameters:
+    identifierParam:
+      in: path
+      name: identifier
+      required: true
+      schema:
+        type: string
+      description: String of the sensor to get
+    afterParam:
+      in: query
+      name: after
+      description: Timestamp filter to define after interval
+      schema:
+        type: integer
+        format: int64
+    toParam:
+      in: query
+      name: to
+      description: Timestamp filter to define to interval
+      schema:
+        type: integer
+        format: int64
+    fromParam:
+      in: query
+      name: from
+      description: Timestamp filter to define from interval
+      schema:
+        type: integer
+        format: int64
+    countParam:
+      in: query
+      name: count
+      description: Counter parameter
+      schema:
+        type: integer
+    bucketParam:
+      in: query
+      name: bucket
+      description: Define bucket interval for distribution
+      schema:
+        type: integer
+    pointsToSmoothParam:
+      in: query
+      name: pointsToSmooth
+      description: Points to smooth
+      schema:
+        type: integer
+  examples:
+    ActivePowerRecordList:
+      value:
+        - identifier: server1
+          timestamp: 1529495701000
+          valueInW: 121.22001042992338
+    AggregatedActivePowerRecordList:
+      value:
+        - identifier: server1
+          timestamp: 1529495701000
+          count: 2
+          sumInW: 33.709002
+          averageInW: 16.854501
+    DistributionBucketList:
+      value:
+        - lower: 73.02266006350054
+          upper: 90.30658985024013
+          elements: 225
