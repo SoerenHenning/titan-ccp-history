@@ -18,18 +18,22 @@ servers:
           - https
         default: https
 tags:
-- name: Power Consumption
+- name: active-power/raw
   description: Get details of power consumption of a sensor
-- name: Aggregated Power consumption
-  description: Check aggregated power consumption for a sensor
+- name: active-power/aggregated
+  description: Get details of aggregated power consumption for a group of sensors
+- name: active-power/windowed
+  description: Get details windowed power consumption of sensors and groups
 paths:
-  /power-consumption:
+  #---------------------
+  # Sensor data endpoints
+  #---------------------
+  /active-power/raw:
     get:
       tags:
-      - Power Consumption
+      - active-power/raw
       summary: Get sensor identifiers
       description: Get list of sensor identifiers
-      operationId: getIdentifiers
       responses:
         200:
           description: successful operation
@@ -48,14 +52,13 @@ paths:
                     - server1
                     - server2
         400:
-          description: Invalid operation
-  /power-consumption/{identifier}:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/raw/{identifier}:
     get:
       tags:
-      - Power Consumption
+      - active-power/raw
       summary: Find power consumption by identifier
       description: Power consumption for particular sensor can be found
-      operationId: findPowerByIdentifier
       parameters:
         - $ref: '#/components/parameters/identifierParam'
         - $ref: '#/components/parameters/fromParam'
@@ -74,14 +77,13 @@ paths:
                 ActivePowerRecordList:
                   $ref: '#/components/examples/ActivePowerRecordList'
         400:
-          description: Invalid operation
-  /power-consumption/{identifier}/latest:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/raw/{identifier}/latest:
     get:
       tags:
-      - Power Consumption
+      - active-power/raw
       summary: Find latest power consumption by identifier
       description: Latest Power consumption for particular sensor can be found
-      operationId: findLatestPowerByIdentifier
       parameters:
         - $ref: '#/components/parameters/identifierParam'
         - $ref: '#/components/parameters/countParam'
@@ -101,14 +103,13 @@ paths:
                 ActivePowerRecordList:
                   $ref: '#/components/examples/ActivePowerRecordList'
         400:
-          description: Invalid operation
-  /power-consumption/{identifier}/distribution:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/raw/{identifier}/distribution:
     get:
       tags:
-      - Power Consumption
+      - active-power/raw
       summary: Find power distribution by identifier
       description: Power distribution for particular sensor can be found
-      operationId: findPowerDistribution
       parameters:
         - $ref: '#/components/parameters/identifierParam'
         - $ref: '#/components/parameters/fromParam'
@@ -126,14 +127,13 @@ paths:
                 DistributionBucketList:
                   $ref: '#/components/examples/DistributionBucketList'
         400:
-          description: Invalid operation
-  /power-consumption/{identifier}/trend:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/raw/{identifier}/trend:
     get:
       tags:
-      - Power Consumption
+      - active-power/raw
       summary: Find power consumption trend
       description: Trend for power consumption
-      operationId: findPowerTrendByIdentifier
       parameters:
         - $ref: '#/components/parameters/identifierParam'
         - $ref: '#/components/parameters/fromParam'
@@ -150,14 +150,13 @@ paths:
                 example:
                   value: 1.1926056154356381
         400:
-          description: Invalid operation
-  /power-consumption/{identifier}/count:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/raw/{identifier}/count:
     get:
       tags:
-      - Power Consumption
-      summary: Find power consumption trend
+      - active-power/raw
+      summary: Find power consumption count
       description: Trend for power consumption
-      operationId: getActivePowerCount
       parameters:
       - $ref: '#/components/parameters/identifierParam'
       - $ref: '#/components/parameters/fromParam'
@@ -173,14 +172,16 @@ paths:
                 example:
                   value: 1989
         400:
-          description: Invalid operation
-  /aggregated-power-consumption:
+          $ref: '#/components/responses/400Invalid'
+  #---------------------
+  # Aggregated Endpoints
+  #---------------------
+  /active-power/aggregated:
     get:
       tags:
-      - Aggregated Power consumption
-      summary: Get sensor identifiers
+      - active-power/aggregated
+      summary: Get sensor groups
       description: Get list of sensor group identifiers
-      operationId: getGroupIdentifiers
       responses:
         200:
           description: successful operation
@@ -199,14 +200,13 @@ paths:
                     - comcenter
                     - cooling
         400:
-          description: Invalid operation
-  /aggregated-power-consumption/{identifier}:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/aggregated/{identifier}:
     get:
       tags:
-      - Aggregated Power consumption
+      - active-power/aggregated
       summary: Find aggregated power consumption by identifier
-      description: Aggregated Power consumption for particular sensor can be found
-      operationId: findPowerAggByIdentifier
+      description: active-power/aggregated for particular sensor can be found
       parameters:
         - $ref: '#/components/parameters/identifierParam'
         - $ref: '#/components/parameters/fromParam'
@@ -225,15 +225,14 @@ paths:
                 AggregatedActivePowerRecordList:
                   $ref: '#/components/examples/AggregatedActivePowerRecordList'
         400:
-          description: Invalid operation
+          $ref: '#/components/responses/400Invalid'
 
-  /aggregated-power-consumption/{identifier}/latest:
+  /active-power/aggregated/{identifier}/latest:
     get:
       tags:
-      - Aggregated Power consumption
+      - active-power/aggregated
       summary: Find Aggregated latest power consumption by identifier
       description: Aggregated Latest Power consumption for particular sensor can be found
-      operationId: findLatestAggPowerByIdentifier
       parameters:
         - $ref: '#/components/parameters/identifierParam'
         - $ref: '#/components/parameters/countParam'
@@ -253,14 +252,13 @@ paths:
                 AggregatedActivePowerRecordList:
                   $ref: '#/components/examples/AggregatedActivePowerRecordList'
         400:
-          description: Invalid operation
-  /aggregated-power-consumption/{identifier}/distribution:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/aggregated/{identifier}/distribution:
     get:
       tags:
-      - Aggregated Power consumption
+      - active-power/aggregated
       summary: Find Aggregated power distribution by identifier
       description: Aggregated Power distribution for particular sensor can be found
-      operationId: findAggPowerDistribution
       parameters:
         - $ref: '#/components/parameters/identifierParam'
         - $ref: '#/components/parameters/fromParam'
@@ -278,14 +276,13 @@ paths:
                 DistributionBucketList:
                   $ref: '#/components/examples/DistributionBucketList'
         400:
-          description: Invalid operation
-  /aggregated-power-consumption/{identifier}/trend:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/aggregated/{identifier}/trend:
     get:
       tags:
-      - Aggregated Power consumption
+      - active-power/aggregated
       summary: Find aggregated power consumption trend
       description: Trend for aggregated power consumption
-      operationId: findAggPowerTrendByIdentifier
       parameters:
         - $ref: '#/components/parameters/identifierParam'
         - $ref: '#/components/parameters/fromParam'
@@ -303,19 +300,18 @@ paths:
                   value:
                     1.1926056154356381
         400:
-          description: Invalid operation
-  /aggregated-power-consumption/{identifier}/count:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/aggregated/{identifier}/count:
     get:
       tags:
-      - Aggregated Power consumption
+      - active-power/aggregated
       summary: Find power consumption trend
       description: Trend for power consumption
-      operationId: getAggregatedActivePowerCount
       parameters:
-      - $ref: '#/components/parameters/identifierParam'
-      - $ref: '#/components/parameters/fromParam'
-      - $ref: '#/components/parameters/toParam'
-      - $ref: '#/components/parameters/afterParam'
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
       responses:
         200:
           description: successful operation
@@ -326,8 +322,197 @@ paths:
                 example:
                   value: 1989
         400:
-          description: Invalid operation
+          $ref: '#/components/responses/400Invalid'
+  #---------------------
+  # Windowed Endpoints
+  #---------------------
+  /active-power/windowed:
+    get:
+      tags:
+      - active-power/windowed
+      summary: Get resolutions for windowed data
+      description: Get list of resolutions
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    identifier:
+                      type: string
+              examples:
+                sensorList:
+                  value:
+                    - minutely
+                    - hourly
+        400:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/windowed/{resolution}:
+    get:
+      tags:
+      - active-power/windowed
+      summary: Get sensor and group identifiers
+      description: Get list of sensor group identifiers
+      parameters:
+        - $ref: '#/components/parameters/resolutionParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    identifier:
+                      type: string
+              examples:
+                sensorList:
+                  value:
+                    - printer1
+                    - printers
+                    - server1
+                    - server2
+                    - comcenter
+        400:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/windowed/{resolution}/{identifier}:
+    get:
+      tags:
+      - active-power/windowed
+      summary: Find windowed power consumption for resolution by identifier
+      description: Windowed power consumption for sensor/group
+      parameters:
+        - $ref: '#/components/parameters/resolutionParam'
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WindowedActivePowerRecord'
+              examples:
+                AggregatedActivePowerRecordList:
+                  $ref: '#/components/examples/WindowedActivePowerRecordList'
+        400:
+          $ref: '#/components/responses/400Invalid'
+
+  /active-power/windowed/{resolution}/{identifier}/latest:
+    get:
+      tags:
+      - active-power/windowed
+      summary: Find Aggregated latest power consumption by identifier
+      description: Aggregated Latest Power consumption for particular sensor can be found
+      parameters:
+        - $ref: '#/components/parameters/resolutionParam'
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/countParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WindowedActivePowerRecord'
+              examples:
+                AggregatedActivePowerRecordList:
+                  $ref: '#/components/examples/WindowedActivePowerRecordList'
+        400:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/windowed/{resolution}/{identifier}/distribution:
+    get:
+      tags:
+      - active-power/windowed
+      summary: Find Aggregated power distribution by identifier
+      description: Aggregated Power distribution for particular sensor can be found
+      parameters:
+        - $ref: '#/components/parameters/resolutionParam'
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+        - $ref: '#/components/parameters/bucketParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistributionBucketList'
+              examples:
+                DistributionBucketList:
+                  $ref: '#/components/examples/DistributionBucketList'
+        400:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/windowed/{resolution}/{identifier}/trend:
+    get:
+      tags:
+      - active-power/windowed
+      summary: Find aggregated power consumption trend
+      description: Trend for aggregated power consumption
+      parameters:
+        - $ref: '#/components/parameters/resolutionParam'
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+        - $ref: '#/components/parameters/pointsToSmoothParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: number
+                example:
+                  value:
+                    1.1926056154356381
+        400:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/windowed/{resolution}/{identifier}/count:
+    get:
+      tags:
+      - active-power/windowed
+      summary: Find power consumption trend
+      description: Trend for power consumption
+      parameters:
+        - $ref: '#/components/parameters/resolutionParam'
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: integer
+                example:
+                  value: 1989
+        400:
+          $ref: '#/components/responses/400Invalid'
+#---------------------
+# Reusable components
+#---------------------
 components:
+  #-------------------------------
+  # Reusable schemas (data models)
+  #-------------------------------
   schemas:
     ActivePowerRecord:
       type: object
@@ -393,6 +578,9 @@ components:
             type: number
           elements:
             type: number
+  #-------------------------------
+  # Reusable operation parameters
+  #-------------------------------
   parameters:
     identifierParam:
       in: path
@@ -440,6 +628,23 @@ components:
       description: Points to smooth
       schema:
         type: integer
+    resolutionParam:
+      in: path
+      name: resolution
+      required: true
+      schema:
+        type: string
+      description: String of the resolution to get
+  #-------------------------------
+  # Reusable responses
+  #-------------------------------
+  responses:
+    400Invalid:       # Can be referenced as '#/components/responses/404NotFound'
+      description: Invalid operation.
+
+  #-------------------------------
+  # Reusable examples
+  #-------------------------------
   examples:
     ActivePowerRecordList:
       value:
@@ -453,6 +658,16 @@ components:
           count: 2
           sumInW: 33.709002
           averageInW: 16.854501
+    WindowedActivePowerRecordList:
+      value:
+        - identifier: server1
+          startTimestamp: 1602053700000
+          endTimestamp: 1602053760000
+          count: 45
+          mean: 9.828967534085473
+          populationVariance: 37.98817657834878
+          min: 0.15151034865601787
+          max: 19.972019259485712
     DistributionBucketList:
       value:
         - lower: 73.02266006350054
