@@ -92,8 +92,8 @@ public class RestApiServer {
     });
 
     // Active power routes for raw and aggregated
-    this.addActivePowerEndpoints("power-consumption", this.normalRepository);
-    this.addActivePowerEndpoints("aggregated-power-consumption", this.aggregatedRepository);
+    this.addActivePowerEndpoints("active-power/raw", this.normalRepository);
+    this.addActivePowerEndpoints("active-power/aggregated", this.aggregatedRepository);
 
     // Route to get the different windowed power routes
     this.webService.get("/active-power/windowed", (request, response) -> {
