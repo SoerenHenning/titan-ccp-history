@@ -42,7 +42,7 @@ pmd {
 }
 
 checkstyle {
-  configDir = file("../config")
+  configDirectory = file("../config")
   configFile = file("../config/checkstyle.xml")
   maxWarnings = 0
   ignoreFailures = false
@@ -59,7 +59,7 @@ spotbugs {
 
 // Per default XML reports for SpotBugs are generated
 // Include this to generate HTML reports
-tasks.withType(com.github.spotbugs.SpotBugsTask) {
+tasks.withType(com.github.spotbugs.snom.SpotBugsTask) {
   reports {
     // Either HTML or XML reports can be activated
     html.enabled true
