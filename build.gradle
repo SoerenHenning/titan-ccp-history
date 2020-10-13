@@ -69,7 +69,10 @@ dependencies {
     intTestImplementation 'org.testcontainers:cassandra:1.14.3' // Compile, otherwise eclipse had problems
 }
 
-mainClassName = "titan.ccp.history.HistoryService"
+mainClassName = '${mainClass}'
+distTar{
+  archiveFileName = 'titan-ccp-history.tar'
+}
 
 task integrationTest(type: Test) {
     description = 'Runs integration tests.'
