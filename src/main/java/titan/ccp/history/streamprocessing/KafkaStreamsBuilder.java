@@ -12,12 +12,10 @@ import titan.ccp.common.kafka.streams.PropertiesBuilder;
  * Builder for the Kafka Streams configuration.
  */
 public class KafkaStreamsBuilder {
-
-  private static final String APPLICATION_NAME = "titan-ccp-history";
-  private static final String APPLICATION_VERSION = "0.0.2";
-
   // private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStreamsBuilder.class);
 
+  private String applicationName = "titan-ccp-history"; // NOPMD
+  private String applicationVersion = "dev"; // NOPMD
   private Session cassandraSession; // NOPMD
   private String bootstrapServers; // NOPMD
   private String inputTopic; // NOPMD
@@ -27,6 +25,36 @@ public class KafkaStreamsBuilder {
   private int numThreads = -1; // NOPMD
   private int commitIntervalMs = -1; // NOPMD
   private int cacheMaxBytesBuff = -1; // NOPMD
+
+  /**
+   * Sets the application name of the kafka streams application. Used for the ID.
+   *
+   * @param applicationName Name of the application
+   * @return
+   */
+  public KafkaStreamsBuilder applicationName(final String applicationName) {
+    // check if it is the not replaced name for the application (when executed with IDE)
+    if ("@application.name@".equals(applicationName)) {
+      return this;
+    }
+    this.applicationName = applicationName;
+    return this;
+  }
+
+  /**
+   * Sets the application version of the kafka streams application. Used for the ID.
+   *
+   * @param applicationVersion Version of the application
+   * @return
+   */
+  public KafkaStreamsBuilder applicationVersion(final String applicationVersion) {
+    // check if it is the not replaced version for the application (when executed with IDE)
+    if ("@application.version@".equals(applicationVersion)) {
+      return this;
+    }
+    this.applicationVersion = applicationVersion;
+    return this;
+  }
 
   public KafkaStreamsBuilder cassandraSession(final Session cassandraSession) {
     this.cassandraSession = cassandraSession;
@@ -113,7 +141,7 @@ public class KafkaStreamsBuilder {
         this.cassandraSession);
     final Properties properties = PropertiesBuilder
         .bootstrapServers(this.bootstrapServers)
-        .applicationId(APPLICATION_NAME + '-' + APPLICATION_VERSION) // TODO as parameter
+        .applicationId(this.applicationName + '-' + this.applicationVersion)
         .set(StreamsConfig.NUM_STREAM_THREADS_CONFIG, this.numThreads, p -> p > 0)
         .set(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, this.commitIntervalMs, p -> p >= 0)
         .set(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, this.cacheMaxBytesBuff, p -> p >= 0)

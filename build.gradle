@@ -69,10 +69,21 @@ dependencies {
     intTestImplementation 'org.testcontainers:cassandra:1.14.3' // Compile, otherwise eclipse had problems
 }
 
-mainClassName = '${mainClass}'
+mainClassName = mainClass
+
 distTar{
-  archiveFileName = 'titan-ccp-history.tar'
+  archiveFileName = rootProject.name + '.tar'
 }
+
+// Replace values in the application.properties file
+import org.apache.tools.ant.filters.*
+processResources {
+    filter ReplaceTokens, tokens: [
+        "application.name": rootProject.name,
+        "application.version": version
+    ]
+}
+
 
 task integrationTest(type: Test) {
     description = 'Runs integration tests.'
