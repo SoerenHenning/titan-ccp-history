@@ -66,7 +66,7 @@ dependencies {
     testImplementation 'junit:junit:4.13'
 
     intTestImplementation 'junit:junit:4.13'
-    intTestImplementation 'org.testcontainers:cassandra:1.14.3' // Compile, otherwise eclipse had problems
+    intTestImplementation 'org.testcontainers:cassandra:1.14.3'
 }
 
 mainClassName = mainClass

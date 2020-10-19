@@ -11,7 +11,7 @@ import titan.ccp.common.kafka.streams.PropertiesBuilder;
 /**
  * Builder for the Kafka Streams configuration.
  */
-public class KafkaStreamsBuilder {
+public class KafkaStreamsBuilder { // NOPMD because
   // private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStreamsBuilder.class);
 
   private String applicationName = "titan-ccp-history"; // NOPMD
