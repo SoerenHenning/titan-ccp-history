@@ -33,7 +33,7 @@ build:
       - record-counter/build/distributions/*.tar
     expire_in: 1 day
 
-test:
+.test:
   stage: test
   tags:
     - dockerex
@@ -63,25 +63,25 @@ test:
     expire_in: 28 day
 
 
-checkstyle:
+.checkstyle:
   stage: check
   tags:
     - dockerex
   script: ./gradlew checkstyle
   
-pmd:
+.pmd:
   stage: check
   tags:
     - dockerex
   script: ./gradlew pmd
   
-spotbugs:
+.spotbugs:
   stage: check
   tags:
     - dockerex
   script: ./gradlew spotbugs
 
-deploy:
+.deploy:
   stage: deploy
   tags:
     - dockerex
@@ -109,10 +109,15 @@ deploy-record-tester:
   stage: deploy
   tags:
     - dockerex
-  image: docker:latest
+  image: docker:19.03.1
   services:
-    - docker:dind
+    - docker:19.03.1-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
   script:
+    - ls record-counter
+    - ls record-counter/build/
+    - ls record-counter/build/distributions/
     - DOCKER_TAG_NAME=$(echo $CI_COMMIT_REF_SLUG- | sed 's/^master-$//')
     - docker build --pull -t titan-ccp-record-counter ./record-counter
     - docker tag titan-ccp-record-counter industrialdevops/titan-ccp-record-counter:${DOCKER_TAG_NAME}latest
