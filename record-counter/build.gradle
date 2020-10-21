@@ -35,7 +35,7 @@ dependencies {
 mainClassName = "titan.ccp.history.recordcounter.RecordCounter"
 
 distTar{
-  archiveFileName = rootProject.name + '.tar'
+  archiveFileName = project.name + '.tar'
 }
 
 pmd {
