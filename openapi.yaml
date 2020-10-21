@@ -1,10 +1,10 @@
 openapi: 3.0.3
 info:
-  description: This is documentation for Titan API
+  description: REST API of the Titan Control Center History microservice
   version: 1.0.0
-  title: Titan
+  title: Titan Control Center - History microservice
   contact:
-    email: post@soeren-henning.de
+    email: soeren.henning@email.uni-kiel.de
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
