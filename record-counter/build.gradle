@@ -34,6 +34,10 @@ dependencies {
 
 mainClassName = "titan.ccp.history.recordcounter.RecordCounter"
 
+distTar{
+  archiveFileName = project.name + '.tar'
+}
+
 pmd {
   ruleSets = [] // Gradle requires to clean the rule sets first
   ruleSetFiles = files("../config/pmd.xml")
