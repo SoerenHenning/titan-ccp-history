@@ -1,0 +1,675 @@
+openapi: 3.0.3
+info:
+  description: REST API of the Titan Control Center History microservice
+  version: 1.0.0
+  title: Titan Control Center - History microservice
+  contact:
+    email: soeren.henning@email.uni-kiel.de
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: http://localhost:8081
+  - url: '{protocol}://industrial-devops.org'
+    variables:
+      protocol:
+        enum:
+          - http
+          - https
+        default: https
+tags:
+- name: active-power/raw
+  description: Get details of power consumption of a sensor
+- name: active-power/aggregated
+  description: Get details of aggregated power consumption for a group of sensors
+- name: active-power/windowed
+  description: Get details windowed power consumption of sensors and groups
+paths:
+  #---------------------
+  # Sensor data endpoints
+  #---------------------
+  /active-power/raw:
+    get:
+      tags:
+      - active-power/raw
+      summary: Get sensor identifiers
+      description: Get list of sensor identifiers
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    identifier:
+                      type: string
+              examples:
+                sensorList:
+                  value:
+                    - printer1
+                    - server1
+                    - server2
+        400:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/raw/{identifier}:
+    get:
+      tags:
+      - active-power/raw
+      summary: Find power consumption by identifier
+      description: Power consumption for particular sensor can be found
+      parameters:
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActivePowerRecord'
+              examples:
+                ActivePowerRecordList:
+                  $ref: '#/components/examples/ActivePowerRecordList'
+        400:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/raw/{identifier}/latest:
+    get:
+      tags:
+      - active-power/raw
+      summary: Find latest power consumption by identifier
+      description: Latest Power consumption for particular sensor can be found
+      parameters:
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/countParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActivePowerRecord'
+              examples:
+                ActivePowerRecordList:
+                  $ref: '#/components/examples/ActivePowerRecordList'
+        400:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/raw/{identifier}/distribution:
+    get:
+      tags:
+      - active-power/raw
+      summary: Find power distribution by identifier
+      description: Power distribution for particular sensor can be found
+      parameters:
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+        - $ref: '#/components/parameters/bucketParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistributionBucketList'
+              examples:
+                DistributionBucketList:
+                  $ref: '#/components/examples/DistributionBucketList'
+        400:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/raw/{identifier}/trend:
+    get:
+      tags:
+      - active-power/raw
+      summary: Find power consumption trend
+      description: Trend for power consumption
+      parameters:
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+        - $ref: '#/components/parameters/pointsToSmoothParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: number
+                example:
+                  value: 1.1926056154356381
+        400:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/raw/{identifier}/count:
+    get:
+      tags:
+      - active-power/raw
+      summary: Find power consumption count
+      description: Trend for power consumption
+      parameters:
+      - $ref: '#/components/parameters/identifierParam'
+      - $ref: '#/components/parameters/fromParam'
+      - $ref: '#/components/parameters/toParam'
+      - $ref: '#/components/parameters/afterParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: integer
+                example:
+                  value: 1989
+        400:
+          $ref: '#/components/responses/400Invalid'
+  #---------------------
+  # Aggregated Endpoints
+  #---------------------
+  /active-power/aggregated:
+    get:
+      tags:
+      - active-power/aggregated
+      summary: Get sensor groups
+      description: Get list of sensor group identifiers
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    identifier:
+                      type: string
+              examples:
+                sensorList:
+                  value:
+                    - printers
+                    - comcenter
+                    - cooling
+        400:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/aggregated/{identifier}:
+    get:
+      tags:
+      - active-power/aggregated
+      summary: Find aggregated power consumption by identifier
+      description: active-power/aggregated for particular sensor can be found
+      parameters:
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AggregatedActivePowerRecord'
+              examples:
+                AggregatedActivePowerRecordList:
+                  $ref: '#/components/examples/AggregatedActivePowerRecordList'
+        400:
+          $ref: '#/components/responses/400Invalid'
+
+  /active-power/aggregated/{identifier}/latest:
+    get:
+      tags:
+      - active-power/aggregated
+      summary: Find Aggregated latest power consumption by identifier
+      description: Aggregated Latest Power consumption for particular sensor can be found
+      parameters:
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/countParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AggregatedActivePowerRecord'
+              examples:
+                AggregatedActivePowerRecordList:
+                  $ref: '#/components/examples/AggregatedActivePowerRecordList'
+        400:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/aggregated/{identifier}/distribution:
+    get:
+      tags:
+      - active-power/aggregated
+      summary: Find Aggregated power distribution by identifier
+      description: Aggregated Power distribution for particular sensor can be found
+      parameters:
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+        - $ref: '#/components/parameters/bucketParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistributionBucketList'
+              examples:
+                DistributionBucketList:
+                  $ref: '#/components/examples/DistributionBucketList'
+        400:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/aggregated/{identifier}/trend:
+    get:
+      tags:
+      - active-power/aggregated
+      summary: Find aggregated power consumption trend
+      description: Trend for aggregated power consumption
+      parameters:
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+        - $ref: '#/components/parameters/pointsToSmoothParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: number
+                example:
+                  value:
+                    1.1926056154356381
+        400:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/aggregated/{identifier}/count:
+    get:
+      tags:
+      - active-power/aggregated
+      summary: Find power consumption trend
+      description: Trend for power consumption
+      parameters:
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: integer
+                example:
+                  value: 1989
+        400:
+          $ref: '#/components/responses/400Invalid'
+  #---------------------
+  # Windowed Endpoints
+  #---------------------
+  /active-power/windowed:
+    get:
+      tags:
+      - active-power/windowed
+      summary: Get resolutions for windowed data
+      description: Get list of resolutions
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    identifier:
+                      type: string
+              examples:
+                sensorList:
+                  value:
+                    - minutely
+                    - hourly
+        400:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/windowed/{resolution}:
+    get:
+      tags:
+      - active-power/windowed
+      summary: Get sensor and group identifiers
+      description: Get list of sensor group identifiers
+      parameters:
+        - $ref: '#/components/parameters/resolutionParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    identifier:
+                      type: string
+              examples:
+                sensorList:
+                  value:
+                    - printer1
+                    - printers
+                    - server1
+                    - server2
+                    - comcenter
+        400:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/windowed/{resolution}/{identifier}:
+    get:
+      tags:
+      - active-power/windowed
+      summary: Find windowed power consumption for resolution by identifier
+      description: Windowed power consumption for sensor/group
+      parameters:
+        - $ref: '#/components/parameters/resolutionParam'
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WindowedActivePowerRecord'
+              examples:
+                AggregatedActivePowerRecordList:
+                  $ref: '#/components/examples/WindowedActivePowerRecordList'
+        400:
+          $ref: '#/components/responses/400Invalid'
+
+  /active-power/windowed/{resolution}/{identifier}/latest:
+    get:
+      tags:
+      - active-power/windowed
+      summary: Find Aggregated latest power consumption by identifier
+      description: Aggregated Latest Power consumption for particular sensor can be found
+      parameters:
+        - $ref: '#/components/parameters/resolutionParam'
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/countParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WindowedActivePowerRecord'
+              examples:
+                AggregatedActivePowerRecordList:
+                  $ref: '#/components/examples/WindowedActivePowerRecordList'
+        400:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/windowed/{resolution}/{identifier}/distribution:
+    get:
+      tags:
+      - active-power/windowed
+      summary: Find Aggregated power distribution by identifier
+      description: Aggregated Power distribution for particular sensor can be found
+      parameters:
+        - $ref: '#/components/parameters/resolutionParam'
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+        - $ref: '#/components/parameters/bucketParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistributionBucketList'
+              examples:
+                DistributionBucketList:
+                  $ref: '#/components/examples/DistributionBucketList'
+        400:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/windowed/{resolution}/{identifier}/trend:
+    get:
+      tags:
+      - active-power/windowed
+      summary: Find aggregated power consumption trend
+      description: Trend for aggregated power consumption
+      parameters:
+        - $ref: '#/components/parameters/resolutionParam'
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+        - $ref: '#/components/parameters/pointsToSmoothParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: number
+                example:
+                  value:
+                    1.1926056154356381
+        400:
+          $ref: '#/components/responses/400Invalid'
+  /active-power/windowed/{resolution}/{identifier}/count:
+    get:
+      tags:
+      - active-power/windowed
+      summary: Find power consumption trend
+      description: Trend for power consumption
+      parameters:
+        - $ref: '#/components/parameters/resolutionParam'
+        - $ref: '#/components/parameters/identifierParam'
+        - $ref: '#/components/parameters/fromParam'
+        - $ref: '#/components/parameters/toParam'
+        - $ref: '#/components/parameters/afterParam'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: integer
+                example:
+                  value: 1989
+        400:
+          $ref: '#/components/responses/400Invalid'
+#---------------------
+# Reusable components
+#---------------------
+components:
+  #-------------------------------
+  # Reusable schemas (data models)
+  #-------------------------------
+  schemas:
+    ActivePowerRecord:
+      type: object
+      properties:
+        identifier:
+          type: string
+        timestamp:
+          type: integer
+          format: int64
+        valueInW:
+          type: number
+          format: double
+    AggregatedActivePowerRecord:
+      type: object
+      properties:
+        identifier:
+          type: string
+        timestamp:
+          type: integer
+          format: int64
+        count:
+          type: integer
+          format: int64
+        sumInW:
+          type: number
+          format: double
+        averageInW:
+          type: number
+          format: double
+    WindowedActivePowerRecord:
+      type: object
+      properties:
+        identifier:
+          type: string
+        startTimestamp:
+          type: integer
+          format: int64
+        endTimestamp:
+          type: integer
+          format: int64
+        count:
+          type: integer
+          format: int64
+        mean:
+          type: number
+          format: double
+        populationVariance:
+          type: number
+          format: double
+        min:
+          type: number
+          format: double
+        max:
+          type: number
+          format: double
+    DistributionBucketList:
+      type: array
+      items:
+        properties:
+          lower:
+            type: number
+          upper:
+            type: number
+          elements:
+            type: number
+  #-------------------------------
+  # Reusable operation parameters
+  #-------------------------------
+  parameters:
+    identifierParam:
+      in: path
+      name: identifier
+      required: true
+      schema:
+        type: string
+      description: String of the sensor to get
+    afterParam:
+      in: query
+      name: after
+      description: Timestamp filter to define after interval
+      schema:
+        type: integer
+        format: int64
+    toParam:
+      in: query
+      name: to
+      description: Timestamp filter to define to interval
+      schema:
+        type: integer
+        format: int64
+    fromParam:
+      in: query
+      name: from
+      description: Timestamp filter to define from interval
+      schema:
+        type: integer
+        format: int64
+    countParam:
+      in: query
+      name: count
+      description: Counter parameter
+      schema:
+        type: integer
+    bucketParam:
+      in: query
+      name: bucket
+      description: Define bucket interval for distribution
+      schema:
+        type: integer
+    pointsToSmoothParam:
+      in: query
+      name: pointsToSmooth
+      description: Points to smooth
+      schema:
+        type: integer
+    resolutionParam:
+      in: path
+      name: resolution
+      required: true
+      schema:
+        type: string
+      description: String of the resolution to get
+  #-------------------------------
+  # Reusable responses
+  #-------------------------------
+  responses:
+    400Invalid:       # Can be referenced as '#/components/responses/404NotFound'
+      description: Invalid operation.
+
+  #-------------------------------
+  # Reusable examples
+  #-------------------------------
+  examples:
+    ActivePowerRecordList:
+      value:
+        - identifier: server1
+          timestamp: 1529495701000
+          valueInW: 121.22001042992338
+    AggregatedActivePowerRecordList:
+      value:
+        - identifier: server1
+          timestamp: 1529495701000
+          count: 2
+          sumInW: 33.709002
+          averageInW: 16.854501
+    WindowedActivePowerRecordList:
+      value:
+        - identifier: server1
+          startTimestamp: 1602053700000
+          endTimestamp: 1602053760000
+          count: 45
+          mean: 9.828967534085473
+          populationVariance: 37.98817657834878
+          min: 0.15151034865601787
+          max: 19.972019259485712
+    DistributionBucketList:
+      value:
+        - lower: 73.02266006350054
+          upper: 90.30658985024013
+          elements: 225

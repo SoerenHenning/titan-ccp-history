@@ -1,19 +1,20 @@
-apply plugin: 'application'
-apply plugin: 'pmd'
-apply plugin: 'checkstyle'
-apply plugin: 'com.github.spotbugs'
-apply plugin: 'eclipse'
-
 buildscript {
   repositories {
     maven {
       url "https://plugins.gradle.org/m2/"
     }
   }
-  dependencies {
-    classpath "gradle.plugin.com.github.spotbugs:spotbugs-gradle-plugin:1.6.3"
-  }
 }
+
+plugins {
+  id "com.github.spotbugs" version "4.5.1"
+}
+
+apply plugin: 'application'
+apply plugin: 'pmd'
+apply plugin: 'checkstyle'
+apply plugin: 'com.github.spotbugs'
+apply plugin: 'eclipse'
 
 sourceCompatibility = "1.11"
 targetCompatibility = "1.11"
@@ -44,30 +45,45 @@ sourceSets {
 
 configurations {
     intTestImplementation.extendsFrom implementation
+    intTestImplementation.canBeResolved = true // enable eclipse to have dependencies at classpath
     intTestRuntimeOnly.extendsFrom runtimeOnly
 }
 
 dependencies {
-    compile('org.industrial-devops:titan-ccp-common:0.1.0-SNAPSHOT') { changing = true }
-    compile('org.industrial-devops:titan-ccp-common-kafka:0.1.0-SNAPSHOT') { changing = true }
-    compile('org.industrial-devops:titan-ccp-common-cassandra:0.0.2-SNAPSHOT') { changing = true }
-    compile 'org.apache.kafka:kafka-streams:2.3.0'
-    compile 'com.sparkjava:spark-core:2.7.2'
-	compile 'com.google.code.gson:gson:2.8.2'
-    compile 'com.google.guava:guava:20.0'
-    compile 'net.jodah:failsafe:1.1.0'
-    compile 'org.apache.commons:commons-configuration2:2.2'
-    compile 'commons-beanutils:commons-beanutils:1.9.2' // for commons-configuration2
-    compile 'org.apache.commons:commons-lang3:3.7'
-    compile 'org.slf4j:slf4j-simple:1.7.25'
+    implementation('org.industrial-devops:titan-ccp-common:0.1.0-SNAPSHOT') { changing = true }
+    implementation('org.industrial-devops:titan-ccp-common-kafka:0.1.0-SNAPSHOT') { changing = true }
+    implementation('org.industrial-devops:titan-ccp-common-cassandra:0.0.2-SNAPSHOT') { changing = true }
+    implementation 'org.apache.kafka:kafka-streams:2.3.0'
+    implementation 'com.sparkjava:spark-core:2.7.2'
+    implementation 'com.google.code.gson:gson:2.8.2'
+    implementation 'com.google.guava:guava:23.0'
+    implementation 'net.jodah:failsafe:1.1.0'
+    implementation 'org.apache.commons:commons-configuration2:2.2'
+    implementation 'commons-beanutils:commons-beanutils:1.9.2' // for commons-configuration2
+    implementation 'org.apache.commons:commons-lang3:3.7'
+    implementation 'org.slf4j:slf4j-simple:1.7.25'
 
-    testCompile 'junit:junit:4.13'
-    
-    intTestCompile 'junit:junit:4.13'
-    intTestCompile 'org.testcontainers:cassandra:1.14.3'
+    testImplementation 'junit:junit:4.13'
+
+    intTestImplementation 'junit:junit:4.13'
+    intTestImplementation 'org.testcontainers:cassandra:1.14.3'
 }
 
-mainClassName = "titan.ccp.history.HistoryService"
+mainClassName = mainClass
+
+distTar{
+  archiveFileName = rootProject.name + '.tar'
+}
+
+// Replace values in the application.properties file
+import org.apache.tools.ant.filters.*
+processResources {
+    filter ReplaceTokens, tokens: [
+        "application.name": rootProject.name,
+        "application.version": version
+    ]
+}
+
 
 task integrationTest(type: Test) {
     description = 'Runs integration tests.'
@@ -88,7 +104,7 @@ pmd {
 }
 
 checkstyle {
-  configDir = file("config")
+  configDirectory = file("config")
   configFile = file("config/checkstyle.xml")
   maxWarnings = 0
   ignoreFailures = false
@@ -100,12 +116,17 @@ spotbugs {
   reportLevel = "low"
   effort = "max"
   ignoreFailures = false
-  toolVersion = '3.1.7'
+  toolVersion = '4.1.3'
+}
+
+// Allow code flaws in the integration Test
+spotbugsIntTest {
+  ignoreFailures = true
 }
 
 // Per default XML reports for SpotBugs are generated
 // Include this to generate HTML reports
-tasks.withType(com.github.spotbugs.SpotBugsTask) {
+tasks.withType(com.github.spotbugs.snom.SpotBugsTask) {
   reports {
     // Either HTML or XML reports can be activated
     html.enabled true
@@ -135,14 +156,15 @@ task spotbugs {
 
   dependsOn 'spotbugsMain'
   dependsOn 'spotbugsTest'
+  dependsOn 'spotbugsIntTest'
 }
 
 eclipse {
   classpath {
     downloadSources=true
     downloadJavadoc=true
-       
-    plusConfigurations.add configurations.intTestCompile
+
+    plusConfigurations.add configurations.intTestImplementation
     plusConfigurations.add configurations.intTestRuntime
   }
 }

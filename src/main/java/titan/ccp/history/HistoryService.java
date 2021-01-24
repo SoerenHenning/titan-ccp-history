@@ -70,6 +70,8 @@ public class HistoryService {
   private void createKafkaStreamsApplication(final ClusterSession clusterSession) {
     final KafkaStreams kafkaStreams =
         new KafkaStreamsBuilder()
+            .applicationName(this.config.getString(ConfigurationKeys.APPLICATION_NAME))
+            .applicationVersion(this.config.getString(ConfigurationKeys.APPLICATION_VERSION))
             .cassandraSession(clusterSession.getSession())
             .bootstrapServers(this.config.getString(ConfigurationKeys.KAFKA_BOOTSTRAP_SERVERS))
             .inputTopic(this.config.getString(ConfigurationKeys.KAFKA_INPUT_TOPIC))

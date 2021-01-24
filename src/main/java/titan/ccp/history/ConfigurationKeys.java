@@ -5,6 +5,10 @@ package titan.ccp.history;
  */
 public final class ConfigurationKeys {
 
+  public static final String APPLICATION_NAME = "application.name";
+
+  public static final String APPLICATION_VERSION = "application.version";
+
   public static final String CASSANDRA_HOST = "cassandra.host";
 
   public static final String CASSANDRA_PORT = "cassandra.port";

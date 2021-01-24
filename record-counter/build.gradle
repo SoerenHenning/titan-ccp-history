@@ -1,34 +1,42 @@
-apply plugin: 'application'
-apply plugin: 'pmd'
-apply plugin: 'checkstyle'
-apply plugin: 'com.github.spotbugs'
-apply plugin: 'eclipse'
-
 buildscript {
   repositories {
     maven {
       url "https://plugins.gradle.org/m2/"
     }
   }
-  dependencies {
-    classpath "gradle.plugin.com.github.spotbugs:spotbugs-gradle-plugin:1.6.3"
-  }
 }
+
+plugins {
+  id "com.github.spotbugs"
+}
+
+apply plugin: 'application'
+apply plugin: 'pmd'
+apply plugin: 'checkstyle'
+apply plugin: 'eclipse'
+
 
 sourceCompatibility = "1.11"
 targetCompatibility = "1.11"
 
 dependencies {
-    compile project(':')
-    
-    compile 'org.slf4j:slf4j-simple:1.6.1'
-    compile 'redis.clients:jedis:2.9.0'
+    implementation project(':')
+
+    implementation 'org.slf4j:slf4j-simple:1.6.1'
+    implementation 'redis.clients:jedis:2.9.0'
+
+    implementation('org.industrial-devops:titan-ccp-common-cassandra:0.0.2-SNAPSHOT') { changing = true }
+    implementation('org.industrial-devops:titan-ccp-common:0.1.0-SNAPSHOT') { changing = true }
 
     // Use JUnit test framework
-    testCompile 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.12'
 }
 
 mainClassName = "titan.ccp.history.recordcounter.RecordCounter"
+
+distTar{
+  archiveFileName = project.name + '.tar'
+}
 
 pmd {
   ruleSets = [] // Gradle requires to clean the rule sets first
@@ -38,7 +46,7 @@ pmd {
 }
 
 checkstyle {
-  configDir = file("../config")
+  configDirectory = file("../config")
   configFile = file("../config/checkstyle.xml")
   maxWarnings = 0
   ignoreFailures = false
@@ -55,7 +63,7 @@ spotbugs {
 
 // Per default XML reports for SpotBugs are generated
 // Include this to generate HTML reports
-tasks.withType(com.github.spotbugs.SpotBugsTask) {
+tasks.withType(com.github.spotbugs.snom.SpotBugsTask) {
   reports {
     // Either HTML or XML reports can be activated
     html.enabled true
@@ -66,7 +74,7 @@ tasks.withType(com.github.spotbugs.SpotBugsTask) {
 task checkstyle {
   group 'Quality Assurance'
   description 'Run Checkstyle'
-  
+
   dependsOn 'checkstyleMain'
   dependsOn 'checkstyleTest'
 }
@@ -82,7 +90,7 @@ task pmd {
 task spotbugs {
   group 'Quality Assurance'
   description 'Run SpotBugs'
-  
+
   dependsOn 'spotbugsMain'
   dependsOn 'spotbugsTest'
 }

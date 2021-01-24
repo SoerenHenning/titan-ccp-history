@@ -1,5 +1,6 @@
 package titan.ccp.history.streamprocessing;
 
+import java.time.Duration;
 import org.apache.kafka.streams.kstream.TimeWindows;
 
 /**
@@ -12,6 +13,7 @@ public class TimeWindowsConfiguration {
   private final String cassandraTableName;
   private final String apiEndpoint;
   private final TimeWindows timeWindows;
+  private final Duration ttl;
 
   /**
    * Creates a new {@code TimeWindowsConfiguration}.
@@ -20,13 +22,17 @@ public class TimeWindowsConfiguration {
    * @param cassandraTableName Table name for cassandra.
    * @param timeWindows The time window that should be used for aggregation.
    */
-  public TimeWindowsConfiguration(final String kafkTopic, final String cassandraTableName,
+  public TimeWindowsConfiguration(
+      final String kafkTopic,
+      final String cassandraTableName,
       final String apiEndpoint,
-      final TimeWindows timeWindows) {
+      final TimeWindows timeWindows,
+      final Duration ttl) {
     this.kafkaTopic = kafkTopic;
     this.cassandraTableName = cassandraTableName;
     this.apiEndpoint = apiEndpoint;
     this.timeWindows = timeWindows;
+    this.ttl = ttl;
   }
 
   public String getKafkaTopic() {
@@ -43,5 +49,9 @@ public class TimeWindowsConfiguration {
 
   public TimeWindows getTimeWindows() {
     return this.timeWindows;
+  }
+
+  public Duration getTtl() {
+    return ttl;
   }
 }
